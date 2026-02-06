@@ -1,0 +1,175 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{BC3720B2-C019-4216-8DF1-9A6FF91C7397}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>FaarFieldAnalysis</RootNamespace>
+    <AssemblyName>FaarFieldAnalysis</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <MyType>Windows</MyType>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DocumentationFile>FaarFieldAnalysis.xml</DocumentationFile>
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DocumentationFile>FaarFieldAnalysis.xml</DocumentationFile>
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionExplicit>On</OptionExplicit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionCompare>Binary</OptionCompare>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionStrict>Off</OptionStrict>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionInfer>On</OptionInfer>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Import Include="Microsoft.VisualBasic" />
+    <Import Include="System" />
+    <Import Include="System.Collections" />
+    <Import Include="System.Collections.Generic" />
+    <Import Include="System.Data" />
+    <Import Include="System.Diagnostics" />
+    <Import Include="System.Linq" />
+    <Import Include="System.Xml.Linq" />
+    <Import Include="System.Threading.Tasks" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ZZZZZ_TEST.vb" />
+    <Compile Include="FormPCN.designer.vb">
+      <DependentUpon>FormPCN.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormPCN.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="modAdvisoryCircularRq.vb" />
+    <Compile Include="modCDF.vb" />
+    <Compile Include="modDesignP209.vb" />
+    <Compile Include="modDesignRigid_Adj.vb" />
+    <Compile Include="modFAILURE_MODEL_NP.vb" />
+    <Compile Include="modFedfaaGbl.vb" />
+    <Compile Include="modFILEPROC.vb" />
+    <Compile Include="modINITLIBS.vb" />
+    <Compile Include="modOVERLAY.vb" />
+    <Compile Include="modPCN_ACNflexICAO.vb" />
+    <Compile Include="modPCN_ACNICAOGlobal.vb" />
+    <Compile Include="modPCN_ACNMain.vb" />
+    <Compile Include="modPCN_ACNRigComp.vb" />
+    <Compile Include="modPCN_Alpha.vb" />
+    <Compile Include="modPCN_GearEdit.vb" />
+    <Compile Include="modPCN_H51inVB.vb" />
+    <Compile Include="modPCN_MainWindow.vb" />
+    <Compile Include="modPCN_Nonstandard.vb" />
+    <Compile Include="modPCN_runACNClass.vb" />
+    <Compile Include="modPCN_Testgbl.vb" />
+    <Compile Include="modPCN_ThicknessDesign.vb" />
+    <Compile Include="modPCN_ZZZ.vb" />
+    <Compile Include="modPCN_ZZZ2.vb" />
+    <Compile Include="modStrDesign13.vb" />
+    <Compile Include="modStrDesignFlex.vb" />
+    <Compile Include="modPCN_ZZZ3.vb" />
+    <Compile Include="modZ_Edward.vb" />
+    <Compile Include="modWindows.vb" />
+    <Compile Include="My Project\AssemblyInfo.vb" />
+    <Compile Include="My Project\Application.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Application.myapp</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="My Project\Resources.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="My Project\Settings.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="Settings.vb" />
+    <Compile Include="T_PCN.vb" />
+    <Compile Include="ZFindLife.vb" />
+    <Compile Include="ZZLibraries.vb" />
+    <Compile Include="ZZZ.vb" />
+    <Compile Include="ZZZZ01.vb" />
+    <Compile Include="ZZZZ02 extra.vb" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="FormPCN.resx">
+      <DependentUpon>FormPCN.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="My Project\Resources.resx">
+      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+      <CustomToolNamespace>My.Resources</CustomToolNamespace>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="My Project\Application.myapp">
+      <Generator>MyApplicationCodeGenerator</Generator>
+      <LastGenOutput>Application.Designer.vb</LastGenOutput>
+    </None>
+    <None Include="My Project\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <CustomToolNamespace>My</CustomToolNamespace>
+      <LastGenOutput>Settings.Designer.vb</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ACNClassLib\ACRClassLib.vbproj">
+      <Project>{DEE608EA-D0E4-49C8-BC9E-A0503BF25717}</Project>
+      <Name>ACRClassLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ACClassLib\ACClassLib.vbproj">
+      <Project>{81be712b-13b6-4018-a274-5759e45be2c0}</Project>
+      <Name>ACClassLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\AMClassLib\AMClassLib.vbproj">
+      <Project>{a6106882-f23e-4ee6-814d-2d7a45a6e2dd}</Project>
+      <Name>AMClassLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FaarFieldModel\FaarFieldModel.vbproj">
+      <Project>{f9d10d5e-dcfb-4393-b95b-ef6b57ce54fc}</Project>
+      <Name>FaarFieldModel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LEAFClassLib\LEAFClassLib.vbproj">
+      <Project>{c12214c6-d7fc-4c18-8de4-ff9b74920fd4}</Project>
+      <Name>LEAFClassLib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
+</Project>

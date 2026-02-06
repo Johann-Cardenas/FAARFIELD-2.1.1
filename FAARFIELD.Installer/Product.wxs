@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:netfx="http://schemas.microsoft.com/wix/NetFxExtension">
+	<Product Id="*" Name="FAARFIELD" Language="1033" Version="2.1.8.10" Manufacturer="FAA" UpgradeCode="d7088790-9275-499f-ab8d-08fb189bffdc">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed."
+                  AllowSameVersionUpgrades="yes" AllowDowngrades="no" Schedule="afterInstallInitialize"/>
+    <MediaTemplate EmbedCab="yes"/>
+
+    <Icon Id="BackC.ico" SourceFile="Resources\BackC.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="BackC.ico" />
+    
+              
+    <PropertyRef Id="NETFRAMEWORK45" />   
+    <Condition Message="This application requires .NET Framework 4.5.2. Please install the .NET Framework then run this installer again.">
+      <![CDATA[Installed OR NETFRAMEWORK45>="#379893"]]>
+    </Condition>
+
+    <!--<UIRef Id="WixUI_InstallDir"/>
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER"/>-->
+
+    <UI Id="WixUI_SkipLicenseAgreement">
+      <UIRef Id="WixUI_InstallDir"/>
+      <!-- Skip license dialog -->
+      <Publish Dialog="WelcomeDlg"
+               Control="Next"
+               Event="NewDialog"
+               Value="InstallDirDlg"
+               Order="2">1</Publish>
+      <Publish Dialog="InstallDirDlg"
+               Control="Back"
+               Event="NewDialog"
+               Value="WelcomeDlg"
+               Order="2">1</Publish>
+    </UI>
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER"/>
+
+		<Feature Id="ProductFeature" Title="FAARFIELD" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+      <ComponentRef Id="ApplicationShortcut" />
+      <ComponentRef Id="CopyAircraftFile" />
+		</Feature>
+  
+	</Product>
+
+</Wix>

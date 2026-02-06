@@ -1,0 +1,437 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+		<Fragment>
+				<Directory Id="TARGETDIR" Name="SourceDir">
+
+						<Directory Id="DesktopFolder" Name="Desktop" />
+
+						<Directory Id="ProgramMenuFolder">
+							<Directory Id="ApplicationProgramsFolder" Name="FAARFIELD"/>
+						</Directory>
+
+						<Directory Id="ProgramFilesFolder">
+							<Directory Id="INSTALLFOLDER" Name="FAARFIELD" />
+						</Directory>
+
+						<Directory Id="PersonalFolder">
+							<Directory Id="MyFaarfieldDir"
+												 Name="My FAARFIELD">
+								<Directory Id="DefaultsDir"
+													 Name="Defaults">
+									<Directory Id="AircraftDir"
+														 Name="Aircraft" />
+								</Directory>
+							</Directory>
+						</Directory>
+
+				</Directory>
+		</Fragment>	
+		
+		<Fragment>
+				<DirectoryRef Id="INSTALLFOLDER">
+						<Component Id="cmp11FBBCDEE2B72E9081ABA7C8AEAC1DE2" Guid="{F47E2C44-0651-4B94-8B33-B0439B232AB8}">
+								<File Id="filA5E5EFB060208AA9E4F1CB7ABCF7E38F" KeyPath="yes" Source="$(var.FF2.TargetDir)\ACClassLib.dll" />
+						</Component>
+						<Component Id="cmp7772007F800A91FE5C42C3B2EF91E1A1" Guid="{D0612320-5F56-495E-95ED-31B0C06C0D64}">
+								<File Id="fil1B144228E2901331C3A606C2A2D4D46F" KeyPath="yes" Source="$(var.FF2.TargetDir)\ACClassLib.xml" />
+						</Component>
+						<Component Id="cmpD0EE60907EB4B4E3BB555B3183C8D649" Guid="{97EA173E-0A70-4705-A3A3-FA59A7F5B1B1}">
+								<File Id="fil3251A4BE0B2D0FC6A4126ADC908A84DA" KeyPath="yes" Source="$(var.FF2.TargetDir)\ACRClassLib.dll" />
+						</Component>
+						<Component Id="cmp16BD149D6E2F41FCDF96E8AE88293B45" Guid="{879A8EA2-F96D-4B46-9D3A-D16843820EB8}">
+								<File Id="fil07F4A83A9D6B24632E41F7BF05D1C571" KeyPath="yes" Source="$(var.FF2.TargetDir)\ACRClassLib.xml" />
+						</Component>
+						<Component Id="cmp038D93B34D071A1DFF1D38F9CA43E08B" Guid="{05256912-3281-49C4-9A1F-EE666094CF44}">
+								<File Id="fil90741765F052237DCD48DA2064F3F351" KeyPath="yes" Source="$(var.FF2.TargetDir)\AMClassLib.dll" />
+						</Component>
+						<Component Id="cmp4B261E41865D3022AF16870797CEDBEF" Guid="{D93B4542-A234-48AB-A4AC-39698D824C3C}">
+								<File Id="fil704AF2072A22F649DA6742166DF56A3A" KeyPath="yes" Source="$(var.FF2.TargetDir)\AMClassLib.xml" />
+						</Component>
+						<Component Id="cmpEC6DD4C4913FE9F63F6582CCA5FE52DF" Guid="{9D70382B-BEC6-4375-963A-C03AE28C8B73}">
+								<File Id="filDEF3FD5CB64716D864D595433E1BB8BF" KeyPath="yes" Source="$(var.FF2.TargetDir)\FAAMeshClassLib.dll" />
+						</Component>
+						<Component Id="cmpE37360329026988923085D610D6575D7" Guid="{BEB2F16F-02B4-4B4E-9932-997133A4A59F}">
+								<File Id="fil27169CB5517458DF7D2952C3CB0087F8" KeyPath="yes" Source="$(var.FF2.TargetDir)\FAAMeshClassLib.xml" />
+						</Component>
+						<Component Id="cmp8DFD9C50125D7D5792815E82F096B195" Guid="{DB40BBF9-A8BA-4AEF-A829-B8830731C321}">
+								<File Id="fil1B1B9DB3E4DCD938FE3E0E0C0E8BDFAE" KeyPath="yes" Source="$(var.FF2.TargetDir)\FaarFieldAnalysis.dll" />
+						</Component>
+						<Component Id="cmp6B3044BEB67639498610CEAD4A46F128" Guid="{365CBED0-3D97-46A0-9E05-6D14C73F0E28}">
+								<File Id="filED19594AFF7596D178ECCA56E403CAF2" KeyPath="yes" Source="$(var.FF2.TargetDir)\FaarFieldAnalysis.xml" />
+						</Component>
+						<Component Id="cmp1194DB712315A6C1E6823E7450165DCB" Guid="{37284516-CB0D-409F-8FF1-A34FB5AD1812}">
+								<File Id="fil07E72FF52BC76F54A49C8DE1CF58A6A2" KeyPath="yes" Source="$(var.FF2.TargetDir)\FaarFieldModel.dll" />
+						</Component>
+						<Component Id="cmp20ED4402E5B8090991F9D33A847433D0" Guid="{615A315D-B37C-4002-BA67-C12CE222230A}">
+								<File Id="fil27298849E4AF7B26BD466714C32C9F91" KeyPath="yes" Source="$(var.FF2.TargetDir)\FaarFieldModel.xml" />
+						</Component>
+			 
+						<Component Id="ApplicationShortcut" Guid="{CBA22D1F-4DCC-4406-A672-E4739F770DDE}">
+								<File Id="filC9890B579FA34F9BAD1C0EC1413065DF" Source="$(var.FF2.TargetDir)\FF2.exe" >
+									 <Shortcut Id="FAARFIELD.ProgramMenu.Shortcut"
+												Name="FAARFIELD"
+												Description="FAARFIELD Shortcut"
+												Directory="ProgramMenuFolder"
+												WorkingDirectory="INSTALLFOLDER"
+												Icon="BackC.ico"/>
+									 <Shortcut Id="FAARFIELD.DesktopFolder.Shortcut"
+												Name="FAARFIELD"
+												Description="FAARFIELD"
+												Directory="DesktopFolder"
+												WorkingDirectory='INSTALLFOLDER'
+												Icon="BackC.ico"/>
+								</File>
+								<RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
+								<RegistryValue Root="HKCU" Key="Software\ARA\FAARFIELD" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+						</Component>
+						<Component Id="FAARFIELDjobxFileAssociationID" Guid="{90017B18-E091-43F8-976F-88965BE75FF2}" KeyPath="yes">
+							<ProgId Id="jobxfileassociation" Description="FAARFIELD jobx File Association">
+								<Extension Id="jobx">
+									<Verb Id="open" TargetFile="filC9890B579FA34F9BAD1C0EC1413065DF" Argument="&quot;%1&quot;" />
+								</Extension>
+							</ProgId>
+						</Component>
+						<Component Id="cmp133CA30FBC892EA40D7A3EAAE20C121A" Guid="{6B7ECF52-3D12-4362-8B23-29BDC0D0629D}">
+								<File Id="filA76B00EACF22F0F6C3C2F231E156D4CD" KeyPath="yes" Source="$(var.FF2.TargetDir)\FF2.exe.config" />
+						</Component>
+						<Component Id="cmp39CB17DC0511F1F81B1E3310F47B70A7" Guid="{963E6427-028B-43A9-B09F-5ED7A73EE39B}">
+								<File Id="fil117D15417EADD17A941D0E8A59D37CCD" KeyPath="yes" Source="$(var.FF2.TargetDir)\FF2.exe.manifest" />
+						</Component>
+						<Component Id="cmp9598EDA213EB928EBCB782667033B69A" Guid="{EE1FB506-BA20-4870-A02A-8F73218E5DD3}">
+								<File Id="filA9D969EA1ACC83BDE6E70681865795B6" KeyPath="yes" Source="$(var.FF2.TargetDir)\FF2.xml" />
+						</Component>
+						<Component Id="cmpCCC2E42BE79997A01FF7863052AF1D7A" Guid="{50B1DF58-48FE-4D0F-8616-329CA878C300}">
+								<File Id="fil6A6E75F1960AC7110B0D7E35F4FF9C18" KeyPath="yes" Source="$(var.FF2.TargetDir)\FEMClassLib.dll" />
+						</Component>
+						<Component Id="cmp10E6CFFC9E3B3299B0DADFE2F342450C" Guid="{66226738-92E1-4568-82AB-AE248F1434B6}">
+								<File Id="filD03FB07B78D170B0818B43FF01027D87" KeyPath="yes" Source="$(var.FF2.TargetDir)\FEMClassLib.xml" />
+						</Component>
+						<Component Id="cmp0AC436FBA8BB7343C3AFF82B0FAF2892" Guid="{13BD18C6-ACE0-4A34-8468-20DF46E058E4}">
+								<File Id="filDA48FAC832EF812BCBE2A69DF438ACD4" KeyPath="yes" Source="$(var.FF2.TargetDir)\Interop.Scripting.dll" />
+						</Component>
+						<Component Id="cmp1DE0B23F7942D4E47B62522F774F3C76" Guid="{FD5020BB-C78E-4E39-B1AB-82A5DE18FFA8}">
+								<File Id="filF35DB5A41DFF81B0642F8FCBC3DFB906" KeyPath="yes" Source="$(var.FF2.TargetDir)\itextsharp.dll" />
+						</Component>
+						<Component Id="cmp93004A2A70CA6CC5550444DB6A0BB24B" Guid="{7C87CF1D-E98E-4BE1-B975-5C76A25135E0}">
+								<File Id="fil718E22AC4914F03FC39F7293CDC8C672" KeyPath="yes" Source="$(var.FF2.TargetDir)\itextsharp.xml" />
+						</Component>
+						<Component Id="cmpDEF6086D824919941D29C6078E5B23B6" Guid="{60E5FF26-7300-433C-B3AB-2D4C6054797D}">
+								<File Id="filC06B4BC677870453D4141FC760239AB5" KeyPath="yes" Source="$(var.FF2.TargetDir)\LEAFClassLib.dll" />
+						</Component>
+						<Component Id="cmp66BB2810FAF62119181E4A831822C143" Guid="{D58F6537-B94B-4F77-B004-988AE44C0A7A}">
+								<File Id="fil6DD617D024E32ED177572256B4F4D657" KeyPath="yes" Source="$(var.FF2.TargetDir)\LEAFClassLib.xml" />
+						</Component>
+						<Component Id="cmp227B2F253D6CB8A27087F47F70A62459" Guid="{40197FF6-09E5-4AAB-ABE2-D12DA5A8A784}">
+								<File Id="filB5261509ADB8E7D2D70A1C67DCA37876" KeyPath="yes" Source="$(var.FF2.TargetDir)\Microsoft.Expression.Interactions.dll" />
+						</Component>
+						<Component Id="cmpC2107C307F76E546D2A4A5EAD4DA36D7" Guid="{4623A341-B145-45B8-A6A7-500F3DC71156}">
+								<File Id="filBA11534FF762BA52842645F853FD1935" KeyPath="yes" Source="$(var.FF2.TargetDir)\Microsoft.Expression.Interactions.xml" />
+						</Component>
+						<Component Id="cmp831dc641fad7cdc22d3f38d80bd27c12" Guid="{67AF5875-6E8E-4AE9-AB29-666E362B2B85}">
+							<File Id="filb2999cdd339202a25c33916d4da8e2d0" KeyPath="yes" Source="$(var.FF2.TargetDir)\Select.Html.dep" />
+						</Component>
+						<Component Id="cmp83fa4790f70907613acc189457bd6332" Guid="{E01AB144-F2EC-4692-AA67-BDF5F6D67DA3}">
+							<File Id="fil10df35b433e1b6ef90430767da6fa445" KeyPath="yes" Source="$(var.FF2.TargetDir)\Select.HtmlToPdf.dll" />
+						</Component>
+						<Component Id="cmpc0baf4d0a0a03d0089857c9506d846f0" Guid="{2747D3ED-5EC2-4633-A6CC-8AE90AC22630}">
+							<File Id="fildeb72fd7e1c86e156e8afdd9c8d6bcee" KeyPath="yes" Source="$(var.FF2.TargetDir)\Select.HtmlToPdf.xml" />
+						</Component>
+						<Component Id="cmp017BFB3832A5B110A2B3A350E13F2A5C" Guid="{E829C527-912B-42F5-9F7E-16B4C8D416C0}">
+								<File Id="fil17E34524E8398461D615894C92558FE9" KeyPath="yes" Source="$(var.FF2.TargetDir)\System.Windows.Interactivity.dll" />
+						</Component>
+						<Component Id="cmp278E62245C5B0A0B8A6A38F03AFAF157" Guid="{33506DC1-81F4-4898-9BC7-BD648FAC4C17}">
+								<File Id="fil79CEBF2A3B2604BFFEE54F9D75DFEB94" KeyPath="yes" Source="$(var.FF2.TargetDir)\System.Windows.Interactivity.xml" />
+						</Component>
+						<Component Id="cmp11C8820ECB0CB2D86F64F2996509DCA7" Guid="{78CD4EF6-5695-41DF-A08F-C09AAB78075B}">
+								<File Id="fil634B1A249B0D62C150EFB286C2C91A46" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Controls.dll" />
+						</Component>
+						<Component Id="cmpAF56AE510EB3BDF893C5B06C6ABA7BDD" Guid="{876D4922-1918-498D-928A-86182A8A6246}">
+								<File Id="filF728404062A49EA67C9D8FE3BBE0E898" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Controls.Docking.dll" />
+						</Component>
+						<Component Id="cmp981B52B264ACCDC26BB772393FF2DF9C" Guid="{456A2204-95D3-4DE0-B553-24C1A7DE1A7A}">
+								<File Id="fil7284D9F8DD62613A5F0C883BFF8F2FD1" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Controls.FixedDocumentViewers.dll" />
+						</Component>
+						<Component Id="cmp21BF690CF842B5194CB2028F73189055" Guid="{BBDEEA8D-5382-4C0C-AAE2-D0E279080495}">
+								<File Id="fil266D83FF68961E612507118F431810F7" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Controls.GridView.dll" />
+						</Component>
+						<Component Id="cmp4CBD77EFA337CFC3401C374F65E29BAA" Guid="{64DC7E81-F77E-4404-BE3C-FC605C5D9CE4}">
+								<File Id="fil3DF9298853D1D63F2B5664B24979D0E0" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Controls.Input.dll" />
+						</Component>
+						<Component Id="cmpBBA2EA4FDA3C5AA2693FAC9589038964" Guid="{667F8803-03C2-4111-A60C-995D00DEB0FC}">
+								<File Id="filDC3BAC1BF9BBD0564415BD06BEEE0135" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Controls.Navigation.dll" />
+						</Component>
+						<Component Id="cmp92AE6AD1C56764FC0C2F256343677A9F" Guid="{E8B62A90-65DF-409D-9EE5-E9D8E6E1220B}">
+								<File Id="filD747EE49E2E0D8A06187AA226FF1C561" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Data.dll" />
+						</Component>
+						<Component Id="cmp9A38A7702001D2F986CA1B7A1E3EC82F" Guid="{CC888379-7F77-4136-9C4E-E75C201BD869}">
+								<File Id="filD9529F3C513D15B990BDDAF4DB2BEA88" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Documents.Core.dll" />
+						</Component>
+						<Component Id="cmp6D2D3CF1892BE8594F95F18F1621BC17" Guid="{536D8E8A-A640-4DC7-8902-C2ABC55F1BDF}">
+								<File Id="fil782134DCAA24D86C44CDE32FA0EE4654" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Documents.Fixed.dll" />
+						</Component>
+						<Component Id="cmpD4F96F8456CA51A0505F7EC4B9879DD3" Guid="{F1516CFF-F416-4460-9B9A-607CB3EF13CE}">
+								<File Id="fil3BD41897DF05C8AF141EB84E9B234F25" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Themes.Office2016.dll" />
+						</Component>
+						<Component Id="cmp67D06C6A3614FCAA3686018A4D82593A" Guid="{E507ED91-2BFA-4013-9FA9-9DA5496A7C40}">
+								<File Id="fil2A7AFF6E00FF86AF081BAD13D0D8C7D0" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Themes.Office2016Touch.dll" />
+						</Component>
+						<Component Id="cmpCD235197A0E4A6BCD3DEB46A5728EB4F" Guid="{388B9333-980D-486E-9A71-EA104543927F}">
+								<File Id="fil0E4AE6C9555A11AC8411AE8BE6530CDA" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Themes.VisualStudio2013.dll" />
+						</Component>
+						<Component Id="cmp7F07F6231918203727082BB6A28CC75F" Guid="{66BF0399-6C60-48BD-A016-179EBD31231D}">
+								<File Id="fil3E19A0F06927704B530947F360809AD8" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Zip.dll" />
+						</Component>
+						<Directory Id="dirCC7AFA5059DB666DB0B7C96AD137A9F3" Name="Resources">
+							<Component Id="cmp79D2A2A1E15703178DFD2ADAD190439F" Guid="{977F6422-C61A-4AB1-8CA4-94523DDE3B1E}">
+								<File Id="filAECBA54F326B5009A04F640127A287A1" KeyPath="yes" Source="$(var.FF2.TargetDir)\Resources\FAARFIELD.chm" />
+							</Component>
+						</Directory>
+						<Directory Id="dirCC7AFA5059DB666DB0B7C96AD13738D8" Name="Defaults">
+								<Component Id="cmp79D2A2A1E15703178DFD2ADAD1901610" Guid="{DD24803E-6AEC-49F1-B1B7-C54E9056E261}">
+										<File Id="filAECBA54F326B5009A04F640127A249E2" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\DesignOptions.txt" />
+								</Component>
+								<Component Id="cmpE136E0AA6D99964949B98577B56121F4" Guid="{E26B856C-D3E3-441E-873D-563EA999D992}">
+										<File Id="filB983DBCC83BD3231FA275FA8730A9576" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Readme.txt" />
+								</Component>
+								<Component Id="cmp5BB66CFF1BF73FDFBFE55A1F8E31EDF2" Guid="{E1A78879-EE4C-4E59-AF41-12365504159A}">
+										<File Id="fil72A7C5057993F06F8622702908A4DA39" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\TextFile1.txt" />
+								</Component>
+								<Directory Id="dirAC617569ED6FF64C9C17417DAF530CB4" Name="Aircraft">
+										<Component Id="cmpA098C9CCD89C6AF50EAD75A01EC28A77" Guid="{1009E1D0-25B1-4366-ACFF-26C40677CC7E}">
+												<File Id="filEC54A9877F8E174623BE233777673B83" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Aircraft\aircraft.csv" />
+										</Component>
+										<Component Id="cmpB1C7CC737640FB00030D62AF9D5F5609" Guid="{6CE98BD9-67C4-4761-8804-8099FEAD20D0}">
+												<File Id="filBC52B4D2E2FC2B35CA91A7D5C6DF869D" Name="aircraft.xml" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Aircraft\aircraft.xml" />
+										</Component>
+								</Directory>
+								<Directory Id="dirC6E295E7BD5571AB6E5C19E02A3A9981" Name="Materials">
+										<Component Id="cmp210C8002C29A713CE930FC1DC1E29CDB" Guid="{7FC13AE3-1F61-45F7-ACF1-56EC16BD51CF}">
+												<File Id="fil763E964B5424F2D181FE4D6835EB21F7" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\Aggregate.jpg" />
+										</Component>
+										<Component Id="cmp071D444179467D3B65F6CFBD999FC464" Guid="{1FF05DD4-2D03-4D66-B1D3-4372CF38ABA5}">
+												<File Id="fil665905A472F3027430AA5B6AF837A0E8" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\AggregateCr-Hatch.JPG" />
+										</Component>
+										<Component Id="cmp9CE2F1050B2BBAC95F3ED6CD09A4937B" Guid="{6D6C0A3E-0F67-4904-966A-07A25BBFD51C}">
+												<File Id="fil5C670D9F3D07C18DDA25A05E6986E80A" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\AggregateUnCr-Hatch.JPG" />
+										</Component>
+										<Component Id="cmpF67B8397296A71E6EF80CB272DF2C273" Guid="{C19A0E4F-FD89-48FD-BD05-92760C48F4D1}">
+												<File Id="fil2D4ED9048AE7D47064D2142A5F65141C" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\General.jpg" />
+										</Component>
+										<Component Id="cmpDA743A3A71FE8D7BC832EF01DCA97513" Guid="{C782E1E2-C307-4660-AA5C-82EEC77CD6C0}">
+												<File Id="fil7BB5DA75C8668FF967BFBCB6721DA5F9" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\HMA-Hatch.JPG" />
+										</Component>
+										<Component Id="cmp73A23FFA55375A3618D08E438F0F99D1" Guid="{4C57E74C-321D-4875-AB72-A63135BF619E}">
+												<File Id="fil13B605A7007D8CDB707E8DE2D844642D" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\HMA.jpg" />
+										</Component>
+										<Component Id="cmpC1AD82CA43B22E038E98DA7C54E0EF76" Guid="{E231D72E-1771-4CFD-B8C6-04563BA370F0}">
+												<File Id="fil4611A35956644447631714CCC734B46C" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\PCC-Hatch.JPG" />
+										</Component>
+										<Component Id="cmp4381FDE340B8CA6AE9A75DB6F69B44DA" Guid="{2A516EE5-CB8A-4E7D-9392-8BAA67B20D16}">
+												<File Id="filA7A31D9E1CAF0A1EA88C6D984C4C9680" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\PCC.jpg" />
+										</Component>
+										<Component Id="cmp2208DEB882704B3F6620FE5BA495BBDC" Guid="{E9BBF03C-2C0C-4324-85A0-CA80C7B56BD6}">
+												<File Id="fil16FDD6F6B5A94A0156C69F3E31E1427D" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\Stabilized-Hatch.JPG" />
+										</Component>
+										<Component Id="cmpBED08C93C163343826487E2B324C5613" Guid="{3E7A6D78-32C0-40BE-B739-529047C2897A}">
+												<File Id="fil1459A4182258212CE148BB0D707C579A" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\Stabilized.jpg" />
+										</Component>
+										<Component Id="cmpE48F43794D6736FB75680BD8173222D6" Guid="{5B6630A2-0FCE-4DD9-8003-5B0191FE7137}">
+												<File Id="fil9D65B218A511BC6C382183D9A2ABF929" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\Subgrade-Hatch.JPG" />
+										</Component>
+										<Component Id="cmpB2A609D1B5BAA64CA54E0F6E41514D26" Guid="{A2B56C0A-B39B-403D-898D-D333D1667254}">
+												<File Id="filE97F276973F4504B11BC32CD2605EA1E" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\UserDefined.jpg" />
+										</Component>
+										<Component Id="cmpB4FDBE99426E0D9E1EB3F4951C5B2910" Guid="{B665B1CD-8378-4656-99C7-DC3A1E3A3296}">
+												<File Id="fil352799386883ABE6BDFD12581EA6871D" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\UserDefined2.JPG" />
+										</Component>
+										<Directory Id="dir807DDCA01372D583D7AACF948E18BFF7" Name="Hatch1">
+												<Component Id="cmpB04F20DC29EB7E5D3311DC8A202AECB4" Guid="{4D0754E8-970C-432D-8892-06FEA507A87C}">
+														<File Id="fil10AD657F65884D9570016C9B338E1AB5" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\Hatch1\AggregateCr-Hatch.JPG" />
+												</Component>
+												<Component Id="cmp5329B43F35E21257BF22BF43F37579D7" Guid="{52D77200-C82C-4A0D-B59C-1568E7098E8B}">
+														<File Id="fil75084415BE2D397C1F055FEB005F8091" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\Hatch1\AggregateUnCr-Hatch.JPG" />
+												</Component>
+												<Component Id="cmp02DEB41BFC19BDEA395CA21F4102E2A1" Guid="{342D0FDC-AF4E-4F3A-B93C-129D1AC9D4B3}">
+														<File Id="fil31753BE22BFB09437DA6A9906B1EFBF9" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\Hatch1\HMA-Hatch.JPG" />
+												</Component>
+												<Component Id="cmpF88376E7C2607168AD0520CFB440D101" Guid="{8CC4D836-0703-4CF0-8274-0D0912E26B07}">
+														<File Id="fil7A1AFE6F36B1AB0555D4FC6C7E1F55DF" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\Hatch1\PCC-Hatch.JPG" />
+												</Component>
+												<Component Id="cmp8404445A3FC793608DD8EF10B5133958" Guid="{FED9C08A-7EE5-415D-BC49-1870125C4C86}">
+														<File Id="fil252D56BE056661D659CB9C6FEFE86287" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\Hatch1\Stabilized-Hatch.JPG" />
+												</Component>
+												<Component Id="cmpA963117B58FB311B951F9B4E64198E8D" Guid="{03FF422B-664F-49F7-96CC-49858B232B0C}">
+														<File Id="fil344B6D2CAC2B5A8A2B92C4493D506127" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\Hatch1\Subgrade-Hatch.JPG" />
+												</Component>
+												<Component Id="cmpAB5490122D6D25A8CD50025DD20BABBF" Guid="{1BE17682-1AC8-4F68-96BC-8EA1590685D7}">
+														<File Id="fil256D117BE33336218D3D1FC3BE03A159" KeyPath="yes" Source="$(var.FF2.TargetDir)\Defaults\Materials\Hatch1\User defined hatch.JPG" />
+												</Component>
+										</Directory>
+								</Directory>
+						</Directory>
+						<Directory Id="dirB9D7C534D6FDB783AD70B4201BA1E2AB" Name="de">
+							<Component Id="cmp05D9462A53C53B61BA13D7A4A2044136" Guid="{26780337-E74F-48FA-A446-3354A82C8153}">
+								<File Id="fil5D221C285CBDF95E78D02896D4F04688" KeyPath="yes" Source="$(var.FF2.TargetDir)\de\Telerik.Windows.Controls.resources.dll" />
+							</Component>
+						</Directory>
+						<Directory Id="dir6FD23CB9C9F78CEFA36D891DCE2C8A26" Name="es">
+							<Component Id="cmp714597588191E80209570C5A99521740" Guid="{1291A343-3BB4-47FA-89B9-59B57B30A068}">
+								<File Id="fil6ABA03272C6C5E468B8CA4E79B140AB9" KeyPath="yes" Source="$(var.FF2.TargetDir)\es\Telerik.Windows.Controls.resources.dll" />
+							</Component>
+						</Directory>
+						<Directory Id="dir5F0B9E844451DA2F920675C5BFAE2D13" Name="fr">
+							<Component Id="cmp3A683C8D1EEDBBE55430C8D16407CF22" Guid="{61B9BDC6-D71B-4387-AECE-8F88F0F787FF}">
+								<File Id="filE4F7EAEBFB13C38AC4C5E0451A4A923F" KeyPath="yes" Source="$(var.FF2.TargetDir)\fr\Telerik.Windows.Controls.resources.dll" />
+							</Component>
+						</Directory>
+						<Directory Id="dir641F4A27751A80FC6E32DC07AE12777E" Name="it">
+							<Component Id="cmp8252EB6E9029C87F61B24EDCDEF31898" Guid="{450F1A45-B634-4E48-8073-8261FF6A414A}">
+								<File Id="fil16124107C702CB422B85C66A06BE19BB" KeyPath="yes" Source="$(var.FF2.TargetDir)\it\Telerik.Windows.Controls.resources.dll" />
+							</Component>
+						</Directory>
+						<Directory Id="dir372880F813164ADD7FC8D1D4E585ABE9" Name="nl">
+							<Component Id="cmp0BCF55EEBEF1550235E3DE54D429AE06" Guid="{354595EB-1695-459D-A3F5-D4FC9B98029B}">
+								<File Id="fil208E6BC83B537DD3EDE3D1752E9774D7" KeyPath="yes" Source="$(var.FF2.TargetDir)\nl\Telerik.Windows.Controls.resources.dll" />
+							</Component>
+						</Directory>
+						<Directory Id="dir91E62274E7974F4B749AAE3D7B105E1F" Name="tr">
+							<Component Id="cmp87E084A374288B89B0873B921570F68F" Guid="{0218C86D-60F9-47CA-B902-32CBAABC0B40}">
+								<File Id="filE5226024760DE64FD5097BE8C72C06E6" KeyPath="yes" Source="$(var.FF2.TargetDir)\tr\Telerik.Windows.Controls.resources.dll" />
+							</Component>
+						</Directory>
+						<Component Id="cmpEC744704EEDE1012F0C4C69B3328808C" Guid="{4E737C66-4172-4D34-B03F-EF9F475A122B}">
+							<File Id="fil11CED202AA6418EA7176358E1C252F36" KeyPath="yes" Source="$(var.FF2.TargetDir)\SharpDX.Direct2D1.dll" />
+						</Component>
+						<Component Id="cmp96693D139278BFE3F7EE54F74564E539" Guid="{EBB44D1E-1664-4654-A1D4-61C81EA51D55}">
+							<File Id="fil04366C27EB642291CA15E6EF079BAAA2" KeyPath="yes" Source="$(var.FF2.TargetDir)\SharpDX.Direct3D9.dll" />
+						</Component>
+						<Component Id="cmpDB925C663B0D245DF3D2B8051329AF4C" Guid="{B68469D5-2499-4D28-956B-0925A9E5D734}">
+							<File Id="filEFBB46888F00BD93D213B829CD65FBEF" KeyPath="yes" Source="$(var.FF2.TargetDir)\SharpDX.Direct3D10.dll" />
+						</Component>
+						<Component Id="cmp0F3C999A4C87E2B69675955995FE6444" Guid="{FB78D0B4-CE61-46CB-A4A7-A71E2BABA783}">
+							<File Id="fil3F4DE602803D54D0514CFBE18DB1964B" KeyPath="yes" Source="$(var.FF2.TargetDir)\SharpDX.dll" />
+						</Component>
+						<Component Id="cmp7AFBAA491F0F734589222D4E331C9607" Guid="{2A280178-33D8-4889-B122-59979696C7C8}">
+							<File Id="fil2CBABDEA200C97E57171D3C697D9B27E" KeyPath="yes" Source="$(var.FF2.TargetDir)\SharpDX.DXGI.dll" />
+						</Component>
+						<Component Id="cmpBDFAD94B61871B6459FD5A4EB3CCF61B" Guid="{DACAAA5D-0E10-4DF8-98FC-3FF8D2B41275}">
+							<File Id="fil539125A837E1A2106C679EEDE7D9B794" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Controls.Chart.Direct2D.dll" />
+						</Component>
+						<Component Id="cmpE9CC596E6CC3F992FC0889E95B9FB549" Guid="{4D05EF18-EDD1-4499-A4FB-9B638AD7DF91}">
+							<File Id="fil445C42CD6DC4BE9765710979F0DDA915" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Controls.Chart.Direct2D.xml" />
+						</Component>
+						<Component Id="cmp31BBE551D0121CD0E09D4B5793671B45" Guid="{100B4449-5890-482C-8C92-5A172709D57B}">
+							<File Id="filD2B46E92964CE067F8389529111A3246" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Controls.Chart.dll" />
+						</Component>
+						<Component Id="cmp977FC4B1499B1DE0C3E69625F3A6F10D" Guid="{7C737502-0A6D-4AB4-A137-C40885A8DE08}">
+							<File Id="filD7F86EBCF172F757DBCC47903E7929BE" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Controls.Chart.xml" />
+						</Component>
+						<Component Id="cmp3A041B2C3F56772AF1CA47C7DD4CC235" Guid="{98582A48-7FAE-4351-9251-AB95CC1C497F}">
+							<File Id="filEAF63FB900C6014F91E7D0E28FBB43C6" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Controls.Charting.dll" />
+						</Component>
+						<Component Id="cmp0AD2231693981713A6A7051C961771A3" Guid="{AEA0FF0C-43E4-4BCF-8FDA-605FB7A5EF5A}">
+							<File Id="fil62815E885C50E80E3E48EEBD28C98C9C" KeyPath="yes" Source="$(var.FF2.TargetDir)\Telerik.Windows.Controls.Charting.xml" />
+						</Component>
+						<Component Id="CopyAircraftFile" Guid="{F85C6B24-2CD6-4969-974E-A4428C85E8EF}">
+              <CreateFolder/>
+							<CopyFile Id="CopyAircraftFile" FileId="filBC52B4D2E2FC2B35CA91A7D5C6DF869D" DestinationDirectory="AircraftDir" />
+						</Component>          
+        </DirectoryRef>
+		</Fragment>
+	
+		<Fragment>
+				<ComponentGroup Id="ProductComponents">
+						<ComponentRef Id="cmp11FBBCDEE2B72E9081ABA7C8AEAC1DE2" />
+						<ComponentRef Id="cmp7772007F800A91FE5C42C3B2EF91E1A1" />
+						<ComponentRef Id="cmpD0EE60907EB4B4E3BB555B3183C8D649" />
+						<ComponentRef Id="cmp16BD149D6E2F41FCDF96E8AE88293B45" />
+						<ComponentRef Id="cmp038D93B34D071A1DFF1D38F9CA43E08B" />
+						<ComponentRef Id="cmp4B261E41865D3022AF16870797CEDBEF" />
+						<ComponentRef Id="cmpEC6DD4C4913FE9F63F6582CCA5FE52DF" />
+						<ComponentRef Id="cmpE37360329026988923085D610D6575D7" />
+						<ComponentRef Id="cmp8DFD9C50125D7D5792815E82F096B195" />
+						<ComponentRef Id="cmp6B3044BEB67639498610CEAD4A46F128" />
+						<ComponentRef Id="cmp1194DB712315A6C1E6823E7450165DCB" />
+						<ComponentRef Id="cmp20ED4402E5B8090991F9D33A847433D0" />
+						<ComponentRef Id="cmp133CA30FBC892EA40D7A3EAAE20C121A" />
+            <ComponentRef Id="FAARFIELDjobxFileAssociationID" />
+						<ComponentRef Id="cmp39CB17DC0511F1F81B1E3310F47B70A7" />
+						<ComponentRef Id="cmp9598EDA213EB928EBCB782667033B69A" />
+						<ComponentRef Id="cmpCCC2E42BE79997A01FF7863052AF1D7A" />
+						<ComponentRef Id="cmp10E6CFFC9E3B3299B0DADFE2F342450C" />
+						<ComponentRef Id="cmp0AC436FBA8BB7343C3AFF82B0FAF2892" />
+						<ComponentRef Id="cmp1DE0B23F7942D4E47B62522F774F3C76" />
+						<ComponentRef Id="cmp93004A2A70CA6CC5550444DB6A0BB24B" />
+						<ComponentRef Id="cmpDEF6086D824919941D29C6078E5B23B6" />
+						<ComponentRef Id="cmp66BB2810FAF62119181E4A831822C143" />
+						<ComponentRef Id="cmp227B2F253D6CB8A27087F47F70A62459" />
+						<ComponentRef Id="cmpC2107C307F76E546D2A4A5EAD4DA36D7" />
+            <ComponentRef Id="cmp831dc641fad7cdc22d3f38d80bd27c12" />
+						<ComponentRef Id="cmp83fa4790f70907613acc189457bd6332" />
+						<ComponentRef Id="cmpc0baf4d0a0a03d0089857c9506d846f0" />
+						<ComponentRef Id="cmp017BFB3832A5B110A2B3A350E13F2A5C" />
+						<ComponentRef Id="cmp278E62245C5B0A0B8A6A38F03AFAF157" />
+						<ComponentRef Id="cmp11C8820ECB0CB2D86F64F2996509DCA7" />
+						<ComponentRef Id="cmpAF56AE510EB3BDF893C5B06C6ABA7BDD" />
+						<ComponentRef Id="cmp981B52B264ACCDC26BB772393FF2DF9C" />
+						<ComponentRef Id="cmp21BF690CF842B5194CB2028F73189055" />
+						<ComponentRef Id="cmp4CBD77EFA337CFC3401C374F65E29BAA" />
+						<ComponentRef Id="cmpBBA2EA4FDA3C5AA2693FAC9589038964" />
+						<ComponentRef Id="cmp92AE6AD1C56764FC0C2F256343677A9F" />
+						<ComponentRef Id="cmp9A38A7702001D2F986CA1B7A1E3EC82F" />
+						<ComponentRef Id="cmp6D2D3CF1892BE8594F95F18F1621BC17" />
+						<ComponentRef Id="cmpD4F96F8456CA51A0505F7EC4B9879DD3" />
+						<ComponentRef Id="cmp67D06C6A3614FCAA3686018A4D82593A" />
+						<ComponentRef Id="cmpCD235197A0E4A6BCD3DEB46A5728EB4F" />
+						<ComponentRef Id="cmp7F07F6231918203727082BB6A28CC75F" />
+						<ComponentRef Id="cmp79D2A2A1E15703178DFD2ADAD190439F" />          
+						<ComponentRef Id="cmp79D2A2A1E15703178DFD2ADAD1901610" />
+						<ComponentRef Id="cmpE136E0AA6D99964949B98577B56121F4" />
+						<ComponentRef Id="cmp5BB66CFF1BF73FDFBFE55A1F8E31EDF2" />
+						<ComponentRef Id="cmpA098C9CCD89C6AF50EAD75A01EC28A77" />
+						<ComponentRef Id="cmpB1C7CC737640FB00030D62AF9D5F5609" />
+						<ComponentRef Id="cmp210C8002C29A713CE930FC1DC1E29CDB" />
+						<ComponentRef Id="cmp071D444179467D3B65F6CFBD999FC464" />
+						<ComponentRef Id="cmp9CE2F1050B2BBAC95F3ED6CD09A4937B" />
+						<ComponentRef Id="cmpF67B8397296A71E6EF80CB272DF2C273" />
+						<ComponentRef Id="cmpDA743A3A71FE8D7BC832EF01DCA97513" />
+						<ComponentRef Id="cmp73A23FFA55375A3618D08E438F0F99D1" />
+						<ComponentRef Id="cmpC1AD82CA43B22E038E98DA7C54E0EF76" />
+						<ComponentRef Id="cmp4381FDE340B8CA6AE9A75DB6F69B44DA" />
+						<ComponentRef Id="cmp2208DEB882704B3F6620FE5BA495BBDC" />
+						<ComponentRef Id="cmpBED08C93C163343826487E2B324C5613" />
+						<ComponentRef Id="cmpE48F43794D6736FB75680BD8173222D6" />
+						<ComponentRef Id="cmpB2A609D1B5BAA64CA54E0F6E41514D26" />
+						<ComponentRef Id="cmpB4FDBE99426E0D9E1EB3F4951C5B2910" />
+						<ComponentRef Id="cmpB04F20DC29EB7E5D3311DC8A202AECB4" />
+						<ComponentRef Id="cmp5329B43F35E21257BF22BF43F37579D7" />
+						<ComponentRef Id="cmp02DEB41BFC19BDEA395CA21F4102E2A1" />
+						<ComponentRef Id="cmpF88376E7C2607168AD0520CFB440D101" />
+						<ComponentRef Id="cmp8404445A3FC793608DD8EF10B5133958" />
+						<ComponentRef Id="cmpA963117B58FB311B951F9B4E64198E8D" />
+						<ComponentRef Id="cmpAB5490122D6D25A8CD50025DD20BABBF" />
+						<ComponentRef Id="cmp05D9462A53C53B61BA13D7A4A2044136" />
+						<ComponentRef Id="cmp714597588191E80209570C5A99521740" />
+						<ComponentRef Id="cmp3A683C8D1EEDBBE55430C8D16407CF22" />
+						<ComponentRef Id="cmp8252EB6E9029C87F61B24EDCDEF31898" />
+						<ComponentRef Id="cmp0BCF55EEBEF1550235E3DE54D429AE06" />
+						<ComponentRef Id="cmp87E084A374288B89B0873B921570F68F" />
+						<ComponentRef Id="cmpEC744704EEDE1012F0C4C69B3328808C" />
+						<ComponentRef Id="cmp96693D139278BFE3F7EE54F74564E539" />
+						<ComponentRef Id="cmpDB925C663B0D245DF3D2B8051329AF4C" />
+						<ComponentRef Id="cmp0F3C999A4C87E2B69675955995FE6444" />
+						<ComponentRef Id="cmp7AFBAA491F0F734589222D4E331C9607" />
+						<ComponentRef Id="cmpBDFAD94B61871B6459FD5A4EB3CCF61B" />
+						<ComponentRef Id="cmpE9CC596E6CC3F992FC0889E95B9FB549" />
+						<ComponentRef Id="cmp31BBE551D0121CD0E09D4B5793671B45" />
+						<ComponentRef Id="cmp977FC4B1499B1DE0C3E69625F3A6F10D" />
+						<ComponentRef Id="cmp3A041B2C3F56772AF1CA47C7DD4CC235" />
+						<ComponentRef Id="cmp0AD2231693981713A6A7051C961771A3" />
+						
+						<ComponentRef Id="ApplicationShortcut" />          
+						<ComponentRef Id="CopyAircraftFile" />
+        
+				</ComponentGroup>
+		</Fragment>
+</Wix>
