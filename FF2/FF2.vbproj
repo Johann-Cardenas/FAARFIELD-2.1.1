@@ -1,0 +1,542 @@
+﻿<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7EC5190D-9418-40C8-80DA-8F684BDC8150}</ProjectGuid>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{F184B08F-C81C-45F6-A57F-5ABD9991F28F}</ProjectTypeGuids>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>FF2</RootNamespace>
+    <AssemblyName>FF2</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <MyType>Custom</MyType>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>false</MapFileExtensions>
+    <ApplicationRevision>2</ApplicationRevision>
+    <ApplicationVersion>0.1.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <IncrementalBuild>true</IncrementalBuild>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DocumentationFile>FF2.xml</DocumentationFile>
+    <NoWarn>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036,42314</NoWarn>
+    <Prefer32Bit>true</Prefer32Bit>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <IncrementalBuild>false</IncrementalBuild>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DocumentationFile>FF2.xml</DocumentationFile>
+    <NoWarn>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036,42314</NoWarn>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionExplicit>On</OptionExplicit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionCompare>Binary</OptionCompare>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionStrict>Off</OptionStrict>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionInfer>On</OptionInfer>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Resources\BackC.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetZone>LocalIntranet</TargetZone>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateManifests>true</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>My Project\app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestCertificateThumbprint>E07D2489E90F6517CA8F135ACFB7C631B153974A</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestKeyFile>FF2_TemporaryKey.pfx</ManifestKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>false</SignManifests>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="itextsharp, Version=5.5.13.1, Culture=neutral, PublicKeyToken=8354ae6d2174ddca, processorArchitecture=MSIL">
+      <HintPath>..\packages\iTextSharp.5.5.13.1\lib\itextsharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Expression.Interactions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Windows.Interactivity.WPF.2.0.20525\lib\net40\Microsoft.Expression.Interactions.dll</HintPath>
+    </Reference>
+    <Reference Include="Select.HtmlToPdf, Version=20.1.0.0, Culture=neutral, PublicKeyToken=e0ae9f6e27a97018, processorArchitecture=MSIL">
+      <HintPath>..\packages\Select.HtmlToPdf.20.1.0\lib\net40\Select.HtmlToPdf.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX, Version=2.5.0.0, Culture=neutral, PublicKeyToken=627a3d6d1956f55a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\SharpDX\SharpDX.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.Direct2D1">
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\SharpDX\SharpDX.Direct2D1.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.Direct3D10">
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\SharpDX\SharpDX.Direct3D10.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.Direct3D9, Version=2.5.0.0, Culture=neutral, PublicKeyToken=627a3d6d1956f55a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\SharpDX\SharpDX.Direct3D9.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.DXGI, Version=2.5.0.0, Culture=neutral, PublicKeyToken=627a3d6d1956f55a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\SharpDX\SharpDX.DXGI.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="System.Windows.Interactivity, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Windows.Interactivity.WPF.2.0.20525\lib\net40\System.Windows.Interactivity.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xaml">
+      <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="Telerik.Windows.Controls, Version=2021.3.1109.45, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Controls.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Telerik.Windows.Controls.Chart, Version=2021.3.1109.45, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Controls.Chart.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Telerik.Windows.Controls.Chart.Direct2D, Version=2021.3.1109.45, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Controls.Chart.Direct2D.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Telerik.Windows.Controls.Charting, Version=2021.3.1109.45, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Controls.Charting.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Telerik.Windows.Controls.Docking, Version=2021.3.1109.45, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Controls.Docking.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Telerik.Windows.Controls.FixedDocumentViewers, Version=2021.3.1109.45, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Controls.FixedDocumentViewers.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Telerik.Windows.Controls.GridView, Version=2021.3.1109.45, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Controls.GridView.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Telerik.Windows.Controls.Input, Version=2021.3.1109.45, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Controls.Input.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Telerik.Windows.Controls.Navigation, Version=2021.3.1109.45, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Controls.Navigation.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Telerik.Windows.Data, Version=2021.3.1109.45, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Data.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Telerik.Windows.Documents.Core, Version=2021.3.1109.40, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Documents.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Telerik.Windows.Documents.Fixed, Version=2021.3.1109.40, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Documents.Fixed.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Telerik.Windows.Themes.Office2016">
+      <HintPath>Telerik\Telerik.Windows.Themes.Office2016.dll</HintPath>
+    </Reference>
+    <Reference Include="Telerik.Windows.Themes.Office2016Touch">
+      <HintPath>Telerik\Telerik.Windows.Themes.Office2016Touch.dll</HintPath>
+    </Reference>
+    <Reference Include="Telerik.Windows.Themes.VisualStudio2013">
+      <HintPath>Telerik\Telerik.Windows.Themes.VisualStudio2013.dll</HintPath>
+    </Reference>
+    <Reference Include="Telerik.Windows.Zip, Version=2021.3.1109.40, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\RCWPF\2021.3.1109.45\Telerik.Windows.Zip.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="UIAutomationProvider" />
+    <Reference Include="UIAutomationTypes" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="Application.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Page Include="Views\MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="Application.xaml.vb">
+      <DependentUpon>Application.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Converters\ACRHeader4Changer.vb" />
+    <Compile Include="Converters\ACRHeader3Changer.vb" />
+    <Compile Include="Converters\ACRHeader2Changer.vb" />
+    <Compile Include="Converters\ACRVisibility3Converter.vb" />
+    <Compile Include="Converters\ACRVisibility2Converter.vb" />
+    <Compile Include="Converters\AnnualDeparturesConverter.vb" />
+    <Compile Include="Converters\BackgroundColorConverter.vb" />
+    <Compile Include="Converters\BooleanToIndexConverter.vb" />
+    <Compile Include="Converters\BrowserBehavior.vb" />
+    <Compile Include="Converters\CbrConverter.vb" />
+    <Compile Include="Converters\CdfuSciConverter.vb" />
+    <Compile Include="Converters\DoubleBackgroundColorConverter.vb" />
+    <Compile Include="Converters\DoubleReadOnlyConverter.vb" />
+    <Compile Include="Converters\FlexibleVisibilityConverter.vb" />
+    <Compile Include="Converters\MeasurementSystemAverageFrost.vb" />
+    <Compile Include="Converters\MeasurementSystemDualSpacing.vb" />
+    <Compile Include="Converters\MeasurementSystemEvalX.vb" />
+    <Compile Include="Converters\MeasurementSystemEvalY.vb" />
+    <Compile Include="Converters\MeasurementSystemGrossWeight.vb" />
+    <Compile Include="Converters\MeasurementSystemLabelCrackPropogation.vb" />
+    <Compile Include="Converters\MeasurementSystemUpdateThickness.vb" />
+    <Compile Include="Converters\MeasurementSystemUpdateRupture.vb" />
+    <Compile Include="Converters\MeasurementSystemUpdateKvalue.vb" />
+    <Compile Include="Converters\MeasurementSystemUpdateModulus.vb" />
+    <Compile Include="Converters\MeasurementSystemModulus.vb" />
+    <Compile Include="Converters\MeasurementSystemModulusOfRupture.vb" />
+    <Compile Include="Converters\MeasurementSystemSubgradeReaction.vb" />
+    <Compile Include="Converters\MeasurementSystemTandemTire.vb" />
+    <Compile Include="Converters\MeasurementSystemThickness.vb" />
+    <Compile Include="Converters\ACRHeader1Changer.vb" />
+    <Compile Include="Converters\MeasurementSystemTireArea.vb" />
+    <Compile Include="Converters\MeasurementSystemACRThick.vb" />
+    <Compile Include="Converters\MeasurementSystemTireLength.vb" />
+    <Compile Include="Converters\MeasurementSystemTirePressure.vb" />
+    <Compile Include="Converters\MeasurementSystemTireWidth.vb" />
+    <Compile Include="Converters\MeasurementSystemTireX.vb" />
+    <Compile Include="Converters\MeasurementSystemTireY.vb" />
+    <Compile Include="Converters\MeasurementSystemToIndexConverter.vb" />
+    <Compile Include="Converters\MeasurementSystemWarningCrackPropogation.vb" />
+    <Compile Include="Converters\MeasurementSystemWarningFrostDepth.vb" />
+    <Compile Include="Converters\ModulusConverter.vb" />
+    <Compile Include="Converters\ModulusEnabledConverter.vb" />
+    <Compile Include="Converters\ModulusForegroundColorConverter.vb" />
+    <Compile Include="Converters\NonTransparentWindowsGeneratedItemsFactory.vb" />
+    <Compile Include="Converters\PressureConverter.vb" />
+    <Compile Include="Converters\ACRVisibility1Converter.vb" />
+    <Compile Include="Converters\PtoTCRatioConverter.vb" />
+    <Compile Include="Converters\ReadOnlyConverter.vb" />
+    <Compile Include="Converters\RigidVisibilityConverter.vb" />
+    <Compile Include="Converters\SubgradeReactionConverter.vb" />
+    <Compile Include="Converters\ThicknessBackgroundColorConverter.vb" />
+    <Compile Include="Converters\ThicknessConverter.vb" />
+    <Compile Include="Converters\ThicknessForegroundColorConverter.vb" />
+    <Compile Include="Converters\ThicknessVisibilityConverter.vb" />
+    <Compile Include="Converters\WeightConverter.vb" />
+    <Compile Include="Libs\AircraftLibrary.vb" />
+    <Compile Include="Libs\HtmlUtils.vb" />
+    <Compile Include="Libs\MaterialLibrary.vb" />
+    <Compile Include="Libs\ModuleDrawProfile.vb" />
+    <Compile Include="Models\CDFGraphItem.vb" />
+    <Compile Include="Models\PCRGraphItem.vb" />
+    <Compile Include="Libs\ProgramDefaults.vb" />
+    <Compile Include="Models\AircraftList.vb" />
+    <Compile Include="Settings.vb" />
+    <Compile Include="Utilities\DOM.vb" />
+    <Compile Include="Utilities\ListBoxCopyDragDropBehavior.vb" />
+    <Compile Include="Models\RunAnalysis.vb" />
+    <Compile Include="Converters\BooleanToVisibilityConverter.vb" />
+    <Compile Include="Utilities\DelegateCommand.vb" />
+    <Compile Include="Utilities\EventToCommandBehavior.vb" />
+    <Compile Include="Utilities\UpdateManager.vb" />
+    <Compile Include="Utilities\ViewModelBase.vb" />
+    <Compile Include="ValidationRules\AnnualDepartureValidationRule.vb" />
+    <Compile Include="ValidationRules\GrossWeightValidationRule.vb" />
+    <Compile Include="ValidationRules\GroupBoxValidationRules.vb" />
+    <Compile Include="ValidationRules\SubgradeRowValidationRule.vb" />
+    <Compile Include="ViewModels\AirplaneByManufacturerViewModel.vb" />
+    <Compile Include="ViewModels\AirplaneGroupViewModel.vb" />
+    <Compile Include="ViewModels\CDFGraphViewModel.vb" />
+    <Compile Include="ViewModels\DesignOptionsViewModel.vb" />
+    <Compile Include="ViewModels\Form5010.vb" />
+    <Compile Include="ViewModels\GlobalDOMViewModel.vb" />
+    <Compile Include="ViewModels\GraphPCN.vb" />
+    <Compile Include="ViewModels\IListBoxItemViewModel.vb" />
+    <Compile Include="ViewModels\ITreeViewItemViewModel.vb" />
+    <Compile Include="ViewModels\JobInformationReportViewModel.vb" />
+    <Compile Include="ViewModels\JobInformationViewModel.vb" />
+    <Compile Include="ViewModels\JobViewModel.vb" />
+    <Compile Include="ViewModels\MainWindowViewModel.vb" />
+    <Compile Include="ViewModels\MaterialCategoryViewModel.vb" />
+    <Compile Include="ViewModels\MaterialViewModel.vb" />
+    <Compile Include="ViewModels\ObservalbleCollection.vb" />
+    <Compile Include="ViewModels\PCRReportViewModel.vb" />
+    <Compile Include="ViewModels\ReportFolderViewModel.vb" />
+    <Compile Include="ViewModels\ReportViewModel.vb" />
+    <Compile Include="ViewModels\SectionFolderViewModel.vb" />
+    <Compile Include="ViewModels\SectionViewModel.vb" />
+    <Compile Include="ViewModels\SummaryReportViewModel.vb" />
+    <Compile Include="Views\MainWindow.xaml.vb">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Import Include="System.Threading.Tasks" />
+    <Import Include="System.Linq" />
+    <Import Include="System.Xml.Linq" />
+    <Import Include="Microsoft.VisualBasic" />
+    <Import Include="System" />
+    <Import Include="System.Collections" />
+    <Import Include="System.Collections.Generic" />
+    <Import Include="System.Diagnostics" />
+    <Import Include="System.Windows" />
+    <Import Include="System.Windows.Controls" />
+    <Import Include="System.Windows.Data" />
+    <Import Include="System.Windows.Documents" />
+    <Import Include="System.Windows.Input" />
+    <Import Include="System.Windows.Shapes" />
+    <Import Include="System.Windows.Media" />
+    <Import Include="System.Windows.Media.Imaging" />
+    <Import Include="System.Windows.Navigation" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="My Project\AssemblyInfo.vb">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="My Project\MyExtensions\MyWpfExtension.vb">
+      <VBMyExtensionTemplateID>Microsoft.VisualBasic.WPF.MyExtension</VBMyExtensionTemplateID>
+      <VBMyExtensionTemplateVersion>1.0.0.0</VBMyExtensionTemplateVersion>
+    </Compile>
+    <Compile Include="My Project\Resources.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="My Project\Settings.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <EmbeddedResource Include="Resources\BuildDate.txt" />
+    <Content Include="Resources\FAARFIELD.chm">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Resource Include="Resources\ic_paveair_actions.png" />
+    <Resource Include="Resources\ic_deselect_all.png" />
+    <Resource Include="Resources\ic_select_all.png" />
+    <EmbeddedResource Include="Resources\Reports.css" />
+    <EmbeddedResource Include="My Project\Resources.resx">
+      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+      <CustomToolNamespace>My.Resources</CustomToolNamespace>
+    </EmbeddedResource>
+    <Content Include="Defaults\Aircraft\aircraft.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <None Include="FF2_TemporaryKey.pfx" />
+    <None Include="My Project\app.manifest" />
+    <None Include="My Project\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.vb</LastGenOutput>
+    </None>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Airplane.ico" />
+    <Resource Include="Resources\cancel.png" />
+    <Resource Include="Resources\explorer.ico" />
+    <Resource Include="Resources\ic_add_circle_outline_black_48dp.png" />
+    <Resource Include="Resources\ic_add_location_black_48dp.png" />
+    <Resource Include="Resources\ic_close_black_48dp.png" />
+    <Resource Include="Resources\ic_file_download_black_48dp.png" />
+    <Resource Include="Resources\ic_file_upload_black_48dp.png" />
+    <Resource Include="Resources\ic_folder_open_black_48dp.png" />
+    <Resource Include="Resources\ic_help_outline_black_48dp.png" />
+    <Resource Include="Resources\ic_rotate_left_black_48dp.png" />
+    <Resource Include="Resources\ic_save_all_black_48dp.png" />
+    <Resource Include="Resources\ic_save_as_black_48dp.png" />
+    <Resource Include="Resources\ic_save_black_48dp.png" />
+    <Resource Include="Resources\ic_undo_black_48dp.png" />
+    <Resource Include="Resources\stone.ico" />
+    <Content Include="Defaults\Aircraft\aircraft.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\DesignOptions.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\Aggregate.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\AggregateCr-Hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\AggregateUnCr-Hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\General.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\Hatch1\AggregateCr-Hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\Hatch1\AggregateUnCr-Hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\Hatch1\HMA-Hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\Hatch1\PCC-Hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\Hatch1\Stabilized-Hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\Hatch1\Subgrade-Hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\Hatch1\User defined hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\HMA-Hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\HMA.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\PCC-Hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\PCC.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\Stabilized-Hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\Stabilized.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\Subgrade-Hatch.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\UserDefined.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Materials\UserDefined2.JPG">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\Readme.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Defaults\TextFile1.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Resource Include="Resources\BackC.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ACClassLib\ACClassLib.vbproj">
+      <Project>{81be712b-13b6-4018-a274-5759e45be2c0}</Project>
+      <Name>ACClassLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ACNClassLib\ACRClassLib.vbproj">
+      <Project>{dee608ea-d0e4-49c8-bc9e-a0503bf25717}</Project>
+      <Name>ACRClassLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\AMClassLib\AMClassLib.vbproj">
+      <Project>{a6106882-f23e-4ee6-814d-2d7a45a6e2dd}</Project>
+      <Name>AMClassLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FAAMeshClassLib\FAAMeshClassLib.vbproj">
+      <Project>{25f8c881-0ff8-43d7-90eb-903ccb066943}</Project>
+      <Name>FAAMeshClassLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FaarFieldAnalysis\FaarFieldAnalysis.vbproj">
+      <Project>{BC3720B2-C019-4216-8DF1-9A6FF91C7397}</Project>
+      <Name>FaarFieldAnalysis</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FaarFieldModel\FaarFieldModel.vbproj">
+      <Project>{F9D10D5E-DCFB-4393-B95B-EF6B57CE54FC}</Project>
+      <Name>FaarFieldModel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FEMClassLib\FEMClassLib.vbproj">
+      <Project>{8c23cbf8-9c32-47f3-a5ae-3672b935c486}</Project>
+      <Name>FEMClassLib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.7.2 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>echo %25date%25 %25time%25 &gt; "$(ProjectDir)\Resources\BuildDate.txt"</PreBuildEvent>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,288 @@
+﻿<Application x:Class="Application"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:FF2"
+    xmlns:vm="clr-namespace:FF2.ViewModels"
+    xmlns:converters="clr-namespace:FF2.Converters"
+    xmlns:validation="clr-namespace:FF2.ValidationRules">
+
+    <Application.Resources>
+
+        <ResourceDictionary>
+
+            <vm:MainWindowViewModel x:Key="MainWindowViewModel"/>
+
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:BoolToIndexConverter x:Key="BoolToIndexConverter" />
+            <converters:MeasurementSystemToIndexConverter x:Key="MeasurementSystemToIndexConverter" />
+            <converters:ThicknessConverter x:Key="ThicknessConverter" />
+            <converters:WeightConverter x:Key="WeightConverter" />
+            <converters:PressureConverter x:Key="PressureConverter" />
+            <converters:ModulusConverter x:Key="ModulusConverter" />
+            <converters:SubgradeReactionConverter x:Key="SubgradeReactionConverter" />
+            <converters:CbrConverter x:Key="CbrConverter" />
+            <converters:AnnualDeparturesConverter x:Key="AnnualDeparturesConverter" />
+            <converters:MeasurementSystemLabelCrackPropogation x:Key="CrackPropogationLabel" />
+            <converters:MeasurementSystemWarningCrackPropogation x:Key="CrackPropogationWarning" />
+            <converters:MeasurementSystemWarningFrostDepth x:Key="FrostPenetrationWarning" />
+            <converters:MeasurementSystemDualSpacing x:Key="MeasurementSystemDualSpacing" />
+            <converters:MeasurementSystemGrossWeight x:Key="MeasurementSystemGrossWeight" />
+            <converters:MeasurementSystemModulus x:Key="MeasurementSystemModulus" />
+            <converters:MeasurementSystemSubgradeReaction x:Key="MeasurementSystemSubgradeReaction" />
+            <converters:MeasurementSystemModulusOfRupture x:Key="MeasurementSystemModulusOfRupture" />
+            <converters:MeasurementSystemThickness x:Key="MeasurementSystemThickness" />
+            <converters:MeasurementSystemTireX x:Key="MeasurementSystemTireX" />
+            <converters:MeasurementSystemTireY x:Key="MeasurementSystemTireY" />
+            <converters:MeasurementSystemEvalX x:Key="MeasurementSystemEvalX" />
+            <converters:MeasurementSystemEvalY x:Key="MeasurementSystemEvalY" />
+            <converters:MeasurementSystemTirePressure x:Key="MeasurementSystemTirePressure" />
+            <converters:MeasurementSystemTandemTire  x:Key="MeasurementSystemTandemTire" />
+            <converters:MeasurementSystemTireWidth  x:Key="MeasurementSystemTireWidth" />
+            <converters:MeasurementSystemTireLength  x:Key="MeasurementSystemTireLength" />
+            <converters:MeasurementSystemACRThick  x:Key="MeasurementSystemACRThick" />
+            <converters:MeasurementSystemTireArea  x:Key="MeasurementSystemTireArea" />
+            <converters:MeasurementSystemUpdateThickness  x:Key="MeasurementSystemUpdateThickness" />
+            <converters:MeasurementSystemUpdateModulus  x:Key="MeasurementSystemUpdateModulus" />
+            <converters:MeasurementSystemUpdateRupture  x:Key="MeasurementSystemUpdateRupture" />
+            <converters:MeasurementSystemUpdateKvalue  x:Key="MeasurementSystemUpdateKvalue" />
+            <converters:ACRHeader1Changer  x:Key="ACRHeader1Changer" />
+            <converters:ACRHeader2Changer  x:Key="ACRHeader2Changer" />
+            <converters:ACRHeader3Changer  x:Key="ACRHeader3Changer" />
+            <converters:ACRHeader4Changer  x:Key="ACRHeader4Changer" />
+            <converters:MeasurementSystemAverageFrost  x:Key="MeasurementSystemAverageFrost" />
+            <converters:ReadOnlyConverter  x:Key="ReadOnlyConverter" />
+            <converters:BackgroundColorConverter  x:Key="BackgroundColorConverter" />
+            <converters:DoubleBackgroundColorConverter  x:Key="DoubleBackgroundColorConverter" />
+            <converters:DoubleReadOnlyConverter  x:Key="DoubleReadOnlyConverter" />
+            <converters:FlexibleVisibilityConverter  x:Key="FlexibleVisibilityConverter" />
+            <converters:RigidVisibilityConverter x:Key="RigidVisibilityConverter" />
+            <converters:ACRVisibility1Converter x:Key="ACRVisibility1Converter" />
+            <converters:ACRVisibility2Converter x:Key="ACRVisibility2Converter" />
+            <converters:ACRVisibility3Converter x:Key="ACRVisibility3Converter" />
+            <converters:ThicknessVisibilityConverter  x:Key="ThicknessVisibilityConverter" />
+            <converters:ThicknessBackgroundColorConverter  x:Key="ThicknessBackgroundColorConverter" />
+            <converters:ThicknessForegroundColorConverter  x:Key="ThicknessForegroundColorConverter" />
+            <converters:ModulusEnabledConverter x:Key="ModulusEnabledConverter" />
+            <converters:ModulusForegroundColorConverter x:Key="ModulusForegroundColorConverter" />
+            <converters:CdfuSciConverter x:Key="CdfuSciConverter" />
+            <converters:PtoTCRatioConverter x:Key="PtoTCRatioConverter" />
+            <converters:BrowserBehavior x:Key="BrowserBehavior" />
+            <converters:NonTransparentWindowsGeneratedItemsFactory x:Key="NonTransparentWindowsGeneratedItemsFactory" />
+
+            <validation:SubgradRowValidationRule x:Key="SubgradRowValidationRule" />
+            <validation:GroupBoxValidationRules x:Key="GroupBoxValidationRules" />
+
+            <DataTemplate x:Key="MaterialTemplate">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="Resources/stone.ico"
+                           Width="16"
+                           Height="16" IsEnabled="False" />
+                    <TextBlock Text="{Binding}" />
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate x:Key="AircraftTemplate">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="Resources\Airplane.ico"
+                           Width="16"
+                           Height="16" />
+                    <TextBlock Text="{Binding}" />
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ExplorerTemplate">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="Resources\explorer.ico"
+                           Width="16"
+                           Height="16" />
+                    <TextBlock Text="{Binding}" />
+                </StackPanel>
+            </DataTemplate>
+
+            <StackPanel x:Key="NewJobButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_add_location_black_48dp.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="New Job"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Key="OpenJobButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_folder_open_black_48dp.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="Open Job"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Key="NewSectionButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_add_circle_outline_black_48dp.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="New Structure"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Key="SaveJobButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_save_black_48dp.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="Save Job"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Key="SaveAsJobButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_save_as_black_48dp.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="Save As"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Key="SaveAllJobButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_save_all_black_48dp.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="Save All"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Key="CloseJobButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_close_black_48dp.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="Close Job"
+                           VerticalAlignment="Center" />
+            </StackPanel>                  
+
+            <StackPanel x:Key="ImportButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_file_download_black_48dp.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="Create"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Key="ExportButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_file_upload_black_48dp.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="Edit"
+                           VerticalAlignment="Bottom" />
+            </StackPanel>
+
+            <StackPanel x:Key="ExitButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_close_black_48dp.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="Exit"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Key="ResetButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_undo_black_48dp.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="Reset"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Key="HelpButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_help_outline_black_48dp.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="Help"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Key="SelectAllButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_select_all.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="Select All"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Key="DeSelectAllButton"
+                        Orientation="Horizontal">
+                <Image Source="Resources\ic_deselect_all.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="DeSelect All"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Key="PaveAirActionsButton" 
+                        Orientation="Horizontal" >
+                <Image Source="Resources\ic_paveair_actions.png"
+                       Width="24"
+                       Height="24" />
+                <TextBlock Text="PAVEAIR Access"
+                           VerticalAlignment="Center"  />
+            </StackPanel>
+
+            <StackPanel x:Key="StructureImageButton" 
+                        Orientation="Vertical" >
+                <ItemsControl ItemsSource="{Binding CurrentLayers}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <Button Padding="0" Margin="0" Command="{Binding DataContext.Layer_Button_Command, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Width="{Binding RelativeSource={RelativeSource AncestorType=Grid}, Path=ActualWidth}" Height="{Binding ButtonHeight}" Opacity="100" BorderThickness="0" BorderBrush="Transparent">
+                                    <Button.Style>
+                                        <Style TargetType="{x:Type Button}">
+                                            <Setter Property="Background" Value="#0000"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="{x:Type Button}">
+                                                        <Border Background="{TemplateBinding Background}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#3000"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>                                    
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <DataTemplate x:Key="AirplaneGroup">
+                <TextBlock Text="{Binding Path=Manufacturer}" />
+            </DataTemplate>
+
+            <DataTemplate x:Key="AirplaneByManufacturer">
+                <TextBlock Text="{Binding Path=Name}" />
+            </DataTemplate>
+
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Telerik.Windows.Themes.Office2016Touch;component/Themes/System.Windows.xaml"/>
+                <ResourceDictionary Source="/Telerik.Windows.Themes.Office2016Touch;component/Themes/System.Windows.xaml"/>
+                <ResourceDictionary Source="/Telerik.Windows.Themes.Office2016Touch;component/Themes/Telerik.Windows.Controls.Docking.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+        </ResourceDictionary>
+
+    </Application.Resources>
+
+</Application>

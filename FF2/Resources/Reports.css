@@ -1,0 +1,135 @@
+﻿html {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #fff;
+    width: calc(100% - 2em);
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    margin: 0 1em;
+    padding: 0;
+}
+
+.report {
+    background-color: #2a579a;
+    color: #fff;
+    text-align: center;
+    padding: .4em;
+}
+
+.job {
+    /*background-color: #f2f2f2;*/
+    background-color: #d9d9d9;
+    color: #000;
+    text-align: left;
+    padding: .4em 2em;
+}
+
+.title {
+    text-align: center;
+    padding-top: 1em;
+}
+
+.disclaimer {
+    font-style: italic;
+    font-weight: bold;
+    padding: 1em;
+}
+
+.image {
+    text-align: center;
+    padding-top: 2em;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+    .image image {
+        width: auto;
+        height: auto;
+    }
+
+.no-break {
+    page-break-inside: avoid;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    border-style: hidden;
+    page-break-inside: avoid;
+}
+
+thead {
+    display: table-header-group;
+}
+
+table, th, td {
+    border: 1px solid #d9d9d9;
+    height: .5em;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;    
+}
+
+tr {
+    height: .5em;
+}
+
+td {
+    text-align: left;
+    padding-left: .5em;
+    padding-right: .5em;
+}
+
+    td p {
+        padding: 0;
+        margin: 0;
+    }
+
+th {
+    padding: .5em;
+    text-align: left;
+    background-color: #2a579a;
+    color: white;
+}
+
+table td:first-child {
+    text-align: center;
+}
+
+table th:first-child {
+    text-align: center;
+}
+
+/*  Airport Master Record Custom Table Style */
+
+.AirportMasterRecord {
+    text-align:center;
+}
+    .AirportMasterRecord table {
+        width: 50%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .AirportMasterRecord table td {
+        width:50%;
+    }
+
+/* Reduced Cross Section pages*/
+
+.page-break {
+    background-color: #fff;   
+    height: 20px;
+}
+
+.page {
+    background-color: #f1f1f1;
+    width: calc(100% - 2em);
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    margin: 0 1em;
+    padding: .4em;    
+    page-break-after: always;
+}

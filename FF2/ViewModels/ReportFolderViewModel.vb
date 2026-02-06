@@ -1,0 +1,88 @@
+﻿Imports System.Collections.ObjectModel
+Imports System.ComponentModel
+Imports System.Runtime.CompilerServices
+Imports FF2.Utilities
+Imports FaarFieldModel.Interfaces
+
+Namespace ViewModels
+    Public Class ReportFolderViewModel
+        Inherits ViewModelBase
+        Implements ITreeViewItemViewModel
+
+        ReadOnly _job As IFaarFieldJob
+        Dim _isExpanded As Boolean
+        Dim _isSelected As Boolean
+        Private ReadOnly Property FaarFieldViewModel As MainWindowViewModel
+        Public ReadOnly Property Name As String Implements ITreeViewItemViewModel.Name
+
+        Public Sub New(job As IFaarFieldJob, parentJob As ITreeViewItemViewModel, faarFieldViewModel As MainWindowViewModel)
+            _job = job
+            Parent = parentJob
+            Name = "Reports"
+            Children = New ObservableCollection(Of ITreeViewItemViewModel)()
+            Me.FaarFieldViewModel = faarFieldViewModel
+
+
+            'For Each section In job.Sections
+            '    AddSection(section)
+            'Next
+
+            IsExpanded = True
+            OnPropertyChanged(NameOf(IsExpanded))
+        End Sub
+
+
+        'Public Function AddReport(section As ISection) As SectionViewModel
+        '    Dim reportView = New ReportViewModel(section, Me, FaarFieldViewModel)
+        '    Children.Add(reportView)
+        '    Return sectionView
+        'End Function
+
+
+
+        'Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
+        '' This method is called by the Set accessor of each property.
+        '' The CallerMemberName attribute that is applied to the optional propertyName
+        '' parameter causes the property name of the caller to be substituted as an argument.
+
+        'Private Sub OnPropertyChanged(<CallerMemberName()> Optional ByVal info As String = Nothing)
+        '    RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(info))
+        'End Sub
+
+        Public ReadOnly Property Parent As ITreeViewItemViewModel Implements ITreeViewItemViewModel.Parent
+
+        Public ReadOnly Property Children As ObservableCollection(Of ITreeViewItemViewModel) Implements ITreeViewItemViewModel.Children
+        Public Property IsExpanded As Boolean Implements ITreeViewItemViewModel.IsExpanded
+            Get
+                Return _isExpanded
+            End Get
+            Set
+
+                If Value <> _isExpanded Then
+
+                    _isExpanded = Value
+                    OnPropertyChanged(NameOf(IsExpanded))
+                End If
+
+                ' Expand all the way up to the root.
+                If IsExpanded And Parent IsNot Nothing Then
+                    Parent.IsExpanded = True
+                End If
+            End Set
+
+        End Property
+
+        Public Property IsSelected As Boolean Implements ITreeViewItemViewModel.IsSelected
+            Get
+                Return _isSelected
+            End Get
+            Set
+                If Value <> IsSelected Then
+                    _isSelected = Value
+                    OnPropertyChanged(NameOf(IsSelected))
+                End If
+            End Set
+        End Property
+    End Class
+End Namespace
+
