@@ -97,6 +97,10 @@ Preserve comments like `'ikawa`, `'YGC 061113`, `'kairat replace tandem`. These 
 - **FaarFieldModel:** Domain model with factory pattern. New types must implement matching `I*` interface and use `FaarFieldModelFactory`.
 - **FaarFieldAnalysis:** Procedural modules with shared `Public` module-level variables representing global state. Be aware that these variables are mutated across the entire analysis pipeline.
 
+### Comments
+
+Use comments sparingly. Only comment complex code -- do not add obvious or redundant comments, docstrings, or XML documentation to code you didn't write.
+
 ### Known Intentional Quirks
 
 - `IMeasurmentSystem` interface is intentionally misspelled -- do not rename.
