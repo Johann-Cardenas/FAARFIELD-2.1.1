@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NanoFlex — Airfield Pavement Design</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark bg-navy">
+    <div class="container-fluid">
+        <span class="navbar-brand">
+            <i class="fas fa-road"></i> NanoFlex
+            <small class="text-muted ms-2">Airfield Flexible Pavement Design</small>
+        </span>
+        <div class="d-flex align-items-center gap-3">
+            <div class="btn-group btn-group-sm" role="group">
+                <input type="radio" class="btn-check" name="units" id="unitUS" checked onchange="setUnits('US')">
+                <label class="btn btn-outline-light btn-sm" for="unitUS">US</label>
+                <input type="radio" class="btn-check" name="units" id="unitMetric" onchange="setUnits('Metric')">
+                <label class="btn btn-outline-light btn-sm" for="unitMetric">Metric</label>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid mt-3">
+
+    <!-- Main Panels -->
+    <div class="row g-3">
+
+        <!-- Structure Panel -->
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="fas fa-layer-group me-1"></i> Pavement Structure
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-7">
+                            <label class="form-label fw-bold">Analysis Type</label>
+                            <select id="analysisType" class="form-select form-select-sm" onchange="onAnalysisTypeChange()">
+                                <option>New Flexible</option>
+                                <option>HMA on Aggregate</option>
+                                <option>HMA Overlay on Flexible</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-bold">Design Life</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" id="designLife" class="form-control" value="20" min="1" max="40">
+                                <span class="input-group-text">years</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered layer-table" id="layerTable">
+                            <thead>
+                                <tr>
+                                    <th style="width:35%">Material</th>
+                                    <th style="width:18%">Thick (<span class="unit-t">in</span>)</th>
+                                    <th style="width:22%">Modulus (<span class="unit-e">psi</span>)</th>
+                                    <th style="width:10%">&nu;</th>
+                                    <th style="width:15%"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="layerBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="addLayer()">
+                            <i class="fas fa-plus"></i> Add Layer
+                        </button>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Subgrade CBR (%)</label>
+                            <input type="number" id="cbrInput" class="form-control form-control-sm"
+                                   value="10.0" min="1" max="100" step="0.1"
+                                   onchange="onCBRChange()">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Subgrade E (<span class="unit-e">psi</span>)</label>
+                            <input type="number" id="subgradeE" class="form-control form-control-sm"
+                                   value="15000" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Traffic Panel -->
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="fas fa-plane me-1"></i> Traffic Mix
+                </div>
+                <div class="card-body">
+                    <div class="mb-3 position-relative">
+                        <label class="form-label fw-bold">Search Aircraft Library</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="acSearch" class="form-control"
+                                   placeholder="Type aircraft name (e.g. B737, A320)..."
+                                   oninput="debounceSearch()" onkeydown="onSearchKey(event)">
+                            <button class="btn btn-outline-secondary" onclick="searchAircraft()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div id="searchResults" class="search-results d-none"></div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered" id="trafficTable">
+                            <thead>
+                                <tr>
+                                    <th>Aircraft</th>
+                                    <th>GW (<span class="unit-w">lbs</span>)</th>
+                                    <th>Deps/yr</th>
+                                    <th>Growth %</th>
+                                    <th>Wheels</th>
+                                    <th>TP (<span class="unit-p">psi</span>)</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="trafficBody">
+                                <tr id="noTrafficRow">
+                                    <td colspan="7" class="text-muted text-center py-3">
+                                        <i class="fas fa-info-circle"></i>
+                                        Search and add aircraft above
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body py-2">
+                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                        <button id="btnDesign" class="btn btn-primary" onclick="runDesign()">
+                            <i class="fas fa-drafting-compass"></i> Design
+                        </button>
+                        <button id="btnLife" class="btn btn-success" onclick="runLife()">
+                            <i class="fas fa-hourglass-half"></i> Life
+                        </button>
+                        <button id="btnACR" class="btn btn-info text-white" onclick="runACR()">
+                            <i class="fas fa-chart-bar"></i> ACR
+                        </button>
+                        <button id="btnPCR" class="btn btn-warning" onclick="runPCR()">
+                            <i class="fas fa-chart-line"></i> PCR
+                        </button>
+                        <div class="vr mx-1"></div>
+                        <span id="statusText" class="text-muted small">Ready</span>
+                        <div id="spinner" class="spinner-border spinner-border-sm text-primary d-none" role="status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Area -->
+    <div class="row mt-3 mb-4" id="resultsArea" style="display:none">
+        <div class="col-lg-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="fas fa-bars-staggered me-1"></i> Cross Section
+                </div>
+                <div class="card-body p-2 d-flex align-items-center justify-content-center">
+                    <canvas id="crossSectionCanvas" width="280" height="360"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-9">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="fas fa-clipboard-check me-1"></i> Results
+                </div>
+                <div class="card-body" id="resultsContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay d-none">
+    <div class="loading-content">
+        <div class="spinner-border text-primary mb-3" style="width:3rem;height:3rem;" role="status"></div>
+        <p id="loadingText" class="mb-0">Computing...</p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const state = {
+    layers: [],
+    traffic: [],
+    analysisType: 'New Flexible',
+    units: 'US',
+    materials: {},
+};
+
+let _searchHits = [];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Unit Conversion
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const UF = {
+    US:     { t:1,    e:1,          p:1,       w:1,        tL:'in',  eL:'psi', pL:'psi', wL:'lbs', tD:1, eD:0, pD:0, wD:0 },
+    Metric: { t:25.4, e:0.00689476, p:6.89476, w:0.453592, tL:'mm',  eL:'MPa', pL:'kPa', wL:'kg',  tD:0, eD:1, pD:0, wD:0 },
+};
+
+function toDisp(val, type)   { return val * UF[state.units][type]; }
+function toInternal(val,type){ return val / UF[state.units][type]; }
+function fmt(val, type) {
+    const u = UF[state.units];
+    return (val * u[type]).toFixed(u[type+'D']);
+}
+
+function setUnits(u) {
+    state.units = u;
+    document.querySelectorAll('.unit-t').forEach(el => el.textContent = UF[u].tL);
+    document.querySelectorAll('.unit-e').forEach(el => el.textContent = UF[u].eL);
+    document.querySelectorAll('.unit-p').forEach(el => el.textContent = UF[u].pL);
+    document.querySelectorAll('.unit-w').forEach(el => el.textContent = UF[u].wL);
+    renderLayers();
+    renderTraffic();
+    updateCBRDisplay();
+    drawCrossSection();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Materials
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function loadMaterials() {
+    const res = await fetch('/api/materials');
+    const data = await res.json();
+    data.forEach(m => { state.materials[m.name] = m; });
+}
+
+function materialOptions(selected) {
+    return Object.values(state.materials)
+        .map(m => '<option value="'+esc(m.name)+'"'+(m.name===selected?' selected':'')+'>'+esc(m.name)+'</option>')
+        .join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Layer Management
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function renderLayers() {
+    const tbody = document.getElementById('layerBody');
+    tbody.innerHTML = '';
+    state.layers.forEach((layer, idx) => {
+        const isSub = layer.layer_code === 4;
+        const tr = document.createElement('tr');
+        if (isSub) tr.className = 'table-secondary';
+        tr.innerHTML =
+            '<td><select class="form-select form-select-sm" onchange="onMaterialChange('+idx+',this.value)"'
+                +(isSub?' disabled':'')+'>'+materialOptions(layer.material_name)+'</select></td>'
+            +'<td>'+(isSub
+                ? '<span class="text-muted fw-bold">&infin;</span>'
+                : '<input type="number" class="form-control form-control-sm" value="'+fmt(layer.thickness,'t')+'" onchange="onThickChange('+idx+',this.value)" min="0" step="0.1">')
+            +'</td>'
+            +'<td><input type="number" class="form-control form-control-sm" value="'+fmt(layer.modulus,'e')+'" onchange="onModChange('+idx+',this.value)"'+(isSub?' readonly':'')+'></td>'
+            +'<td class="text-center">'+(layer.poisson!=null?layer.poisson.toFixed(2):'-')+'</td>'
+            +'<td class="text-center">'
+                +((!isSub && idx > 0) ? '<button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="removeLayer('+idx+')"><i class="fas fa-times"></i></button>' : '')
+                +((!isSub && idx > 0) ? ' <button class="btn btn-sm btn-outline-secondary py-0 px-1" title="Move up" onclick="moveLayerUp('+idx+')"><i class="fas fa-arrow-up"></i></button>' : '')
+            +'</td>';
+        tbody.appendChild(tr);
+    });
+}
+
+async function loadStack(type) {
+    const res = await fetch('/api/stack/'+encodeURIComponent(type));
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    state.layers = data.layers;
+    renderLayers();
+    updateCBRDisplay();
+    drawCrossSection();
+}
+
+function onAnalysisTypeChange() {
+    state.analysisType = document.getElementById('analysisType').value;
+    loadStack(state.analysisType);
+}
+
+function onMaterialChange(idx, name) {
+    const m = state.materials[name];
+    if (!m) return;
+    state.layers[idx].material_name = name;
+    state.layers[idx].layer_code = m.layer_code;
+    state.layers[idx].poisson = m.default_poisson;
+    state.layers[idx].modulus = m.default_modulus;
+    if (!state.layers[idx].thickness || state.layers[idx].thickness <= 0)
+        state.layers[idx].thickness = m.default_thickness;
+    renderLayers();
+    drawCrossSection();
+}
+
+function onThickChange(idx, val) {
+    state.layers[idx].thickness = toInternal(parseFloat(val)||0, 't');
+    drawCrossSection();
+}
+function onModChange(idx, val) {
+    state.layers[idx].modulus = toInternal(parseFloat(val)||0, 'e');
+}
+
+function addLayer() {
+    const subIdx = state.layers.findIndex(l => l.layer_code === 4);
+    const nl = {
+        material_name: 'P-209 Crushed Aggregate',
+        thickness: 6, modulus: 75000, poisson: 0.35, layer_code: 6,
+    };
+    if (subIdx >= 0) state.layers.splice(subIdx, 0, nl);
+    else state.layers.push(nl);
+    renderLayers();
+    drawCrossSection();
+}
+
+function removeLayer(idx) {
+    if (state.layers[idx].layer_code === 4) return;
+    state.layers.splice(idx, 1);
+    renderLayers();
+    drawCrossSection();
+}
+
+function moveLayerUp(idx) {
+    if (idx <= 0) return;
+    [state.layers[idx-1], state.layers[idx]] = [state.layers[idx], state.layers[idx-1]];
+    renderLayers();
+    drawCrossSection();
+}
+
+function onCBRChange() {
+    const cbr = parseFloat(document.getElementById('cbrInput').value) || 10;
+    const e = cbr * 1500;
+    const sgIdx = state.layers.findIndex(l => l.layer_code === 4);
+    if (sgIdx >= 0) state.layers[sgIdx].modulus = e;
+    document.getElementById('subgradeE').value = Math.round(toDisp(e, 'e'));
+    renderLayers();
+}
+
+function updateCBRDisplay() {
+    const sgIdx = state.layers.findIndex(l => l.layer_code === 4);
+    if (sgIdx >= 0) {
+        const e = state.layers[sgIdx].modulus;
+        document.getElementById('cbrInput').value = (e / 1500).toFixed(1);
+        document.getElementById('subgradeE').value = Math.round(toDisp(e, 'e'));
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Aircraft Search & Traffic
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _searchTimeout = null;
+function debounceSearch() {
+    clearTimeout(_searchTimeout);
+    _searchTimeout = setTimeout(searchAircraft, 300);
+}
+
+async function searchAircraft() {
+    const q = document.getElementById('acSearch').value.trim();
+    const box = document.getElementById('searchResults');
+    if (q.length < 2) { box.classList.add('d-none'); return; }
+    const res = await fetch('/api/aircraft/search?q='+encodeURIComponent(q));
+    const hits = await res.json();
+    _searchHits = hits;
+    if (!hits.length) {
+        box.innerHTML = '<div class="p-2 text-muted">No aircraft found</div>';
+        box.classList.remove('d-none');
+        return;
+    }
+    box.innerHTML = hits.map((ac,i) =>
+        '<div class="search-item" onclick="addAircraft('+i+')">'
+        +'<span class="fw-bold">'+esc(ac.display_name)+'</span>'
+        +'<span class="text-muted ms-2">'+ac.n_wheels+'W, '
+        +Math.round(ac.gross_weight).toLocaleString()+' lbs</span>'
+        +'</div>'
+    ).join('');
+    box.classList.remove('d-none');
+}
+
+function onSearchKey(e) {
+    if (e.key === 'Escape') document.getElementById('searchResults').classList.add('d-none');
+}
+
+function addAircraft(hitIdx) {
+    const ac = _searchHits[hitIdx];
+    state.traffic.push({
+        name: ac.name,
+        gross_weight: ac.gross_weight,
+        mg_percent: ac.mg_percent,
+        tire_pressure: ac.tire_pressure,
+        n_wheels: ac.n_wheels,
+        wheel_x: ac.wheel_x,
+        wheel_y: ac.wheel_y,
+        eval_x: ac.eval_x,
+        eval_y: ac.eval_y,
+        annual_departures: 1200,
+        annual_growth: 0.0,
+        gear_type: ac.gear_type,
+        gear_orientation: ac.gear_orientation || 0,
+    });
+    document.getElementById('searchResults').classList.add('d-none');
+    document.getElementById('acSearch').value = '';
+    renderTraffic();
+}
+
+function removeAircraft(idx) {
+    state.traffic.splice(idx, 1);
+    renderTraffic();
+}
+
+function renderTraffic() {
+    const tbody = document.getElementById('trafficBody');
+    if (!state.traffic.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-3">'
+            +'<i class="fas fa-info-circle"></i> Search and add aircraft above</td></tr>';
+        return;
+    }
+    tbody.innerHTML = state.traffic.map((ac, i) =>
+        '<tr>'
+        +'<td class="fw-bold">'+esc(ac.name)+'</td>'
+        +'<td><input type="number" class="form-control form-control-sm" value="'
+            +Math.round(toDisp(ac.gross_weight,'w'))+'" onchange="onTrafGW('+i+',this.value)"></td>'
+        +'<td><input type="number" class="form-control form-control-sm" value="'
+            +ac.annual_departures+'" onchange="onTrafDeps('+i+',this.value)" min="0"></td>'
+        +'<td><input type="number" class="form-control form-control-sm" value="'
+            +ac.annual_growth+'" onchange="onTrafGrowth('+i+',this.value)" min="0" step="0.1"></td>'
+        +'<td class="text-center">'+ac.n_wheels+'</td>'
+        +'<td>'+Math.round(toDisp(ac.tire_pressure,'p'))+'</td>'
+        +'<td class="text-center"><button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="removeAircraft('+i+')">'
+            +'<i class="fas fa-times"></i></button></td>'
+        +'</tr>'
+    ).join('');
+}
+
+function onTrafGW(i,v)     { state.traffic[i].gross_weight = toInternal(parseFloat(v)||0,'w'); }
+function onTrafDeps(i,v)   { state.traffic[i].annual_departures = parseInt(v)||0; }
+function onTrafGrowth(i,v) { state.traffic[i].annual_growth = parseFloat(v)||0; }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Build section JSON for API calls
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function buildSectionJSON() {
+    return {
+        name: 'Section',
+        layers: state.layers,
+        traffic: state.traffic,
+        design_life: parseInt(document.getElementById('designLife').value) || 20,
+        analysis_type: state.analysisType,
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Computation
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function showLoading(text) {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+    document.getElementById('loadingText').textContent = text;
+    document.getElementById('spinner').classList.remove('d-none');
+    document.getElementById('statusText').textContent = text;
+}
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('d-none');
+    document.getElementById('spinner').classList.add('d-none');
+}
+
+function validate() {
+    if (state.layers.length < 2) { alert('Add at least 2 layers (surface + subgrade).'); return false; }
+    if (!state.traffic.length) { alert('Add at least 1 aircraft to the traffic mix.'); return false; }
+    return true;
+}
+
+async function runDesign() {
+    if (!validate()) return;
+    showLoading('Running thickness design...');
+    try {
+        const res = await fetch('/api/design', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(buildSectionJSON()),
+        });
+        const data = await res.json();
+        hideLoading();
+        if (data.error) { showError(data.error); return; }
+        data.layer_thicknesses.forEach((t,i) => {
+            if (i < state.layers.length) state.layers[i].thickness = t;
+        });
+        renderLayers();
+        showDesignResults(data);
+    } catch(e) { hideLoading(); showError(e.message); }
+}
+
+async function runLife() {
+    if (!validate()) return;
+    showLoading('Computing structural life...');
+    try {
+        const res = await fetch('/api/life', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(buildSectionJSON()),
+        });
+        const data = await res.json();
+        hideLoading();
+        if (data.error) { showError(data.error); return; }
+        showLifeResults(data);
+    } catch(e) { hideLoading(); showError(e.message); }
+}
+
+async function runACR() {
+    if (!state.traffic.length) { alert('Add at least 1 aircraft.'); return; }
+    showLoading('Computing ACR (all categories)...');
+    try {
+        const ac = state.traffic[0];
+        const res = await fetch('/api/acr', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ aircraft: ac }),
+        });
+        const data = await res.json();
+        hideLoading();
+        if (data.error) { showError(data.error); return; }
+        showACRResults(data);
+    } catch(e) { hideLoading(); showError(e.message); }
+}
+
+async function runPCR() {
+    if (!validate()) return;
+    showLoading('Computing PCR (this may take a while)...');
+    try {
+        const res = await fetch('/api/pcr', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(buildSectionJSON()),
+        });
+        const data = await res.json();
+        hideLoading();
+        if (data.error) { showError(data.error); return; }
+        showPCRResults(data);
+    } catch(e) { hideLoading(); showError(e.message); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Results Display
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function showError(msg) {
+    document.getElementById('resultsArea').style.display = '';
+    document.getElementById('resultsContent').innerHTML =
+        '<div class="alert alert-danger mb-0">'
+        +'<i class="fas fa-exclamation-triangle"></i> <strong>Error</strong>'
+        +'<pre class="mt-2 mb-0" style="white-space:pre-wrap;font-size:0.82em;max-height:300px;overflow:auto">'+esc(msg)+'</pre>'
+        +'</div>';
+    document.getElementById('statusText').textContent = 'Error';
+    drawCrossSection();
+}
+
+function showDesignResults(data) {
+    const u = UF[state.units];
+    document.getElementById('resultsArea').style.display = '';
+    drawCrossSection();
+
+    const badge = data.converged
+        ? '<span class="badge bg-success">Converged</span>'
+        : '<span class="badge bg-warning text-dark">Not converged</span>';
+
+    const totalThick = state.layers.filter(l=>l.layer_code!==4).reduce((s,l)=>s+l.thickness,0);
+
+    let perAc = '';
+    if (data.subgrade_strain && data.subgrade_strain.length) {
+        perAc = '<h6 class="mt-3">Per-Aircraft Detail (Subgrade)</h6>'
+            +'<table class="table table-sm table-bordered"><thead><tr>'
+            +'<th>Aircraft</th><th>Max Strain</th><th>N<sub>fail</sub></th></tr></thead><tbody>'
+            +state.traffic.map((ac,i) =>
+                '<tr><td>'+esc(ac.name)+'</td>'
+                +'<td>'+(data.subgrade_strain[i]!=null ? data.subgrade_strain[i].toExponential(3) : '-')+'</td>'
+                +'<td>'+(data.n_to_fail_subgrade[i]!=null ? data.n_to_fail_subgrade[i].toExponential(3) : '-')+'</td></tr>'
+            ).join('')+'</tbody></table>';
+    }
+
+    document.getElementById('resultsContent').innerHTML =
+        '<div class="row"><div class="col-md-6">'
+        +'<h6>'+badge+' '+esc(data.message)+'</h6>'
+        +'<table class="table table-sm mb-0">'
+        +'<tr><td class="fw-bold">Iterations</td><td>'+data.iterations+'</td></tr>'
+        +'<tr><td class="fw-bold">CDF Subgrade</td><td>'+data.cdf_subgrade.toFixed(4)+'</td></tr>'
+        +'<tr><td class="fw-bold">CDF Asphalt</td><td>'+(data.cdf_asphalt!=null?data.cdf_asphalt.toFixed(4):'N/A')+'</td></tr>'
+        +'<tr><td class="fw-bold">Total Thickness</td><td>'+fmt(totalThick,'t')+' '+u.tL+'</td></tr>'
+        +'</table></div>'
+        +'<div class="col-md-6"><h6>Layer Thicknesses</h6>'
+        +'<table class="table table-sm table-bordered"><thead><tr><th>Layer</th><th>Thickness ('+u.tL+')</th></tr></thead><tbody>'
+        +state.layers.filter(l=>l.layer_code!==4).map(l =>
+            '<tr><td>'+esc(l.material_name)+'</td><td>'+fmt(l.thickness,'t')+'</td></tr>'
+        ).join('')+'</tbody></table></div></div>'+perAc;
+
+    document.getElementById('statusText').textContent = data.message;
+}
+
+function showLifeResults(data) {
+    document.getElementById('resultsArea').style.display = '';
+    drawCrossSection();
+    document.getElementById('resultsContent').innerHTML =
+        '<div class="text-center py-4">'
+        +'<h4><i class="fas fa-hourglass-half text-success"></i> Structural Life</h4>'
+        +'<p class="display-4 fw-bold text-success">'+data.life_years.toFixed(1)+' years</p>'
+        +'</div>';
+    document.getElementById('statusText').textContent = 'Life = '+data.life_years.toFixed(1)+' years';
+}
+
+function showACRResults(data) {
+    document.getElementById('resultsArea').style.display = '';
+    drawCrossSection();
+    const u = UF[state.units];
+    document.getElementById('resultsContent').innerHTML =
+        '<h5><i class="fas fa-chart-bar text-info"></i> ACR: '+esc(data.aircraft_name)+'</h5>'
+        +'<table class="table table-sm table-bordered"><thead><tr>'
+        +'<th>Subgrade</th><th>ACR</th><th>DSWL ('+u.wL+')</th><th>Ref Base ('+u.tL+')</th></tr></thead><tbody>'
+        +['A','B','C','D'].filter(c=>data.acr[c]!=null).map(c =>
+            '<tr><td class="fw-bold text-center">'+c+'</td>'
+            +'<td>'+data.acr[c].toFixed(1)+'</td>'
+            +'<td>'+Math.round(toDisp(data.dswl_lbs[c],'w')).toLocaleString()+'</td>'
+            +'<td>'+fmt(data.reference_thickness[c],'t')+'</td></tr>'
+        ).join('')+'</tbody></table>';
+    document.getElementById('statusText').textContent = 'ACR computed for '+data.aircraft_name;
+}
+
+function showPCRResults(data) {
+    document.getElementById('resultsArea').style.display = '';
+    drawCrossSection();
+    const u = UF[state.units];
+    document.getElementById('resultsContent').innerHTML =
+        '<div class="text-center py-3">'
+        +'<h4><i class="fas fa-chart-line text-warning"></i> Pavement Classification Rating</h4>'
+        +'<p class="display-4 fw-bold text-warning">'+data.pcr.toFixed(1)+'</p>'
+        +'<table class="table table-sm w-75 mx-auto text-start">'
+        +'<tr><td class="fw-bold">Critical Aircraft</td><td>'+esc(data.critical_aircraft)+'</td></tr>'
+        +'<tr><td class="fw-bold">Max Gross Weight</td><td>'+Math.round(toDisp(data.max_gross_weight,'w')).toLocaleString()+' '+u.wL+'</td></tr>'
+        +'<tr><td class="fw-bold">Subgrade Category</td><td>'+data.subgrade_category+'</td></tr>'
+        +'<tr><td class="fw-bold">Structural Life</td><td>'+data.life_years.toFixed(1)+' years</td></tr>'
+        +'</table></div>';
+    document.getElementById('statusText').textContent = 'PCR = '+data.pcr.toFixed(1);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Cross-Section Visualisation
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const LAYER_COLORS = {
+    1:'#2d2d2d', 10:'#3d3d3d', 14:'#4d4d4d',
+    6:'#c4a14f', 18:'#b89545', 8:'#a8b84f', 19:'#c4aa6f', 21:'#d4c48f',
+    5:'#9e9e9e', 11:'#aaa', 12:'#aaa', 13:'#aaa',
+    15:'#8b6914', 16:'#b07820', 17:'#c8a050', 9:'#7a6040', 7:'#6a5030',
+    4:'#6b3a1f', 0:'#777',
+};
+const LIGHT_TEXT_CODES = new Set([1,10,14,15,9,7,4,0]);
+
+function drawCrossSection() {
+    const canvas = document.getElementById('crossSectionCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const W = 280, H = 360;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W+'px'; canvas.style.height = H+'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    if (!state.layers.length) return;
+    const finite = state.layers.filter(l => l.layer_code !== 4);
+    const totalT = finite.reduce((s,l) => s+l.thickness, 0);
+    if (totalT <= 0) return;
+
+    const pad = 12, subH = 45;
+    const barW = W - pad*2 - 105;
+    const usableH = H - pad*2 - subH;
+    const scale = usableH / totalT;
+    let y = pad;
+    const u = UF[state.units];
+
+    state.layers.forEach(layer => {
+        const isSub = layer.layer_code === 4;
+        const h = isSub ? subH : Math.max(layer.thickness * scale, 14);
+        const color = LAYER_COLORS[layer.layer_code] || '#777';
+
+        ctx.fillStyle = color;
+        ctx.fillRect(pad, y, barW, h);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 0.7;
+        ctx.strokeRect(pad, y, barW, h);
+
+        // Label inside bar
+        if (h >= 16) {
+            ctx.fillStyle = LIGHT_TEXT_CODES.has(layer.layer_code) ? '#fff' : '#222';
+            ctx.font = '10px system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            let sn = layer.material_name;
+            if (sn.length > 16) sn = sn.substring(0, 14)+'…';
+            ctx.fillText(sn, pad + barW/2, y + h/2);
+        }
+
+        // Right-side label
+        ctx.fillStyle = '#2d3748';
+        ctx.textAlign = 'start';
+        ctx.textBaseline = 'middle';
+        const thk = isSub ? '∞' : fmt(layer.thickness,'t')+' '+u.tL;
+        ctx.font = 'bold 11px system-ui, sans-serif';
+        ctx.fillText(thk, pad + barW + 8, y + h/2);
+
+        y += h;
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Utility
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function init() {
+    await loadMaterials();
+    await loadStack(state.analysisType);
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#acSearch') && !e.target.closest('#searchResults'))
+            document.getElementById('searchResults').classList.add('d-none');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
