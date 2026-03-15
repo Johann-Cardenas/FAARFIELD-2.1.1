@@ -120,6 +120,8 @@ FAARFIELD-2.1.1/
 │   ├── Converters/                      52 UI value converters
 │   ├── Models/RunAnalysis.vb            Analysis execution model
 │   ├── Libs/AircraftLibrary.vb          Aircraft database manager
+│   ├── Libs/HtmlUtils.vb               HTML/PDF report generation helpers
+│   ├── Resources/Reports.css            Embedded CSS for all reports
 │   └── Defaults/Aircraft/aircraft.xml   Aircraft library (1.9 MB, XML)
 │
 │  ── Supporting ─────────────────────────────────────────────────
@@ -377,6 +379,33 @@ The **Detailed Computation Report** is a comprehensive technical report that doc
 - **Section L — ACR vs. Damage Per Departure:** Chart relating ACR to normalized CDF per departure; bubble size proportional to annual departures.
 
 The report data is captured during analysis by `clsDetailedReportData` (in `FaarFieldAnalysis/clsDetailedReportData.vb`) and rendered in `MainWindowViewModel.refreshDetailedReport()`.
+
+**Rendering architecture:**
+
+The report is generated as a self-contained HTML string with inline base64-encoded PNG charts. The pipeline is:
+
+1. **Data capture** — During thickness design or life analysis, intermediate computational values are stored in `clsDetailedReportData` (aircraft strains, CDF arrays, iteration logs, ACR/PCR results).
+2. **HTML generation** — `refreshDetailedReport()` in `MainWindowViewModel.vb` (~line 8336) builds the complete HTML document using `HtmlUtils` helper methods (`wrap_p`, `wrap_table`, `wrap_bmp_img`, etc.).
+3. **Chart rendering** — 12 private GDI+ drawing functions produce `System.Drawing.Bitmap` objects at 2x or 3x resolution via `ScaleTransform()`, then downscale with bicubic interpolation (`SupersampleBitmap()`). Each bitmap is PNG-encoded to base64 and embedded inline.
+4. **Styling** — `Reports.css` (embedded resource) provides all styling including dashboard cards, table-of-contents, section headers, equation boxes, and chart containers.
+5. **Display** — The HTML string is bound to a WPF `WebBrowser` control via `BrowserBehavior` (attached behavior). PDF export uses SelectPdf's `HtmlToPdf` converter.
+
+**Chart functions** (all in `MainWindowViewModel.vb`):
+
+| Function | Description |
+|----------|-------------|
+| `DrawEquationImage()` | Equation text as styled bitmap (3x supersample, Cambria Math font) |
+| `DrawSingleAircraftCDFChart()` | CDF vs. lateral offset for one aircraft |
+| `DrawCompositeCDFChart()` | All aircraft CDF curves + cumulative CDF overlay |
+| `DrawPavementCrossSection()` | Layer stack diagram + tire stress projection |
+| `DrawFatigueCurve()` | Log-log strain vs. allowable repetitions with model curve |
+| `DrawConvergencePlot()` | Dual-axis convergence history (error + thickness vs. iteration) |
+| `DrawCoveragePlot()` | C/P ratio distribution for all aircraft |
+| `DrawCoverageConceptDiagram()` | 4-panel educational diagram on Gaussian wander C/P computation |
+| `DrawWheelCPVisualization()` | Per-aircraft C/P with inferred wheel-level contributions |
+| `DrawACRDamageChart()` | ACR vs. CDF-per-departure bubble chart |
+| `DrawCDFContributionChart()` | Horizontal bar chart of CDF % contribution per aircraft |
+| `DrawLifeRatioChart()` | Diverging bar chart of fatigue life reserve ratio |
 
 ---
 

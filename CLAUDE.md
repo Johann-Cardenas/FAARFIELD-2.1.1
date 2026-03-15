@@ -163,3 +163,150 @@ The following summarizes the core algorithms implemented in the VB.NET source. S
 
 - **ACR:** For each subgrade category (A/B/C/D), design reference base thickness with subject aircraft traffic, then find DSWL (Design Single Wheel Load) producing 36,500 coverages. ACR = 2 × DSWL_kg / 100.
 - **PCR:** Elimination algorithm — each round finds critical aircraft, computes MGW (CDF=1.0), then ACR at MGW. Early exit when critical aircraft has max ACR.
+
+## Detailed Computation Report — architecture reference
+
+The Detailed Computation Report is a custom HTML report rendered inside the WPF WebBrowser control. It documents the full computational trace of a flexible pavement thickness design. This section maps every file, function, and class involved so you can quickly locate and modify any part.
+
+### Data flow
+
+```
+Analysis Engine (FaarFieldAnalysis/)
+  └─► clsDetailedReportData  (captures intermediate values during computation)
+        └─► MainWindowViewModel.refreshDetailedReport()  (generates HTML string)
+              ├─► HtmlUtils  (HTML element wrappers)
+              ├─► DrawXxxChart()  (GDI+ bitmap rendering, 12 functions)
+              ├─► Reports.css  (embedded stylesheet)
+              └─► BrowserBehavior  (injects HTML into WebBrowser)
+                    └─► SelectPdf HtmlToPdf  (PDF export)
+```
+
+### Files involved
+
+| File | Role |
+|------|------|
+| `FaarFieldAnalysis/clsDetailedReportData.vb` | Data collection classes populated during analysis |
+| `FF2/ViewModels/MainWindowViewModel.vb` | Report HTML generation (`refreshDetailedReport`) and all chart functions |
+| `FF2/Libs/HtmlUtils.vb` | HTML helper class (wrap_p, wrap_div, wrap_table, wrap_bmp_img, CreateHtmlPage, HtmltoPdf) |
+| `FF2/Resources/Reports.css` | Embedded CSS resource for all report styling |
+| `FF2/Converters/BrowserBehavior.vb` | Attached behavior that binds `DetailedReportHtml` string to WebBrowser |
+| `FF2/Views/MainWindow.xaml` | Contains the WebBrowser control |
+| `FF2/ViewModels/DetailedReportViewModel.vb` | Tree view item that triggers report generation |
+
+### Data classes (`clsDetailedReportData.vb`)
+
+| Class | Purpose |
+|-------|---------|
+| `clsDetailedReportData` | Top-level container: AircraftDetails(), Iterations, CDFSweep, SublayerData, ACRDetails, PCRRounds |
+| `clsAircraftDetail` | Per-aircraft: strain, NtoFail, CDF, C/P, gear params, CDFByOffset(NOFF), CtoPByOffset(NOFF) |
+| `clsIterationRecord` | Per-iteration: Thickness, CDFMAX, CDFErr, DELT, Factor, SubLayered |
+| `clsCDFSweepData` | Full sweep: CDFPerAircraftPerOffset(nac,noff), CDFTotalPerOffset(noff), CtoPPerAircraftPerOffset(nac,noff) |
+| `clsSublayerData` | DesignLayers, ExpandedSublayers (List of clsLayerInfo), EvalDepthSubgrade |
+| `clsLayerInfo` | Thickness, Modulus, LCode |
+| `clsACRDetail` | ACName, SubgradeCategory, ReferenceStructure, DSWLIterations, FinalDSWL, FinalACR |
+| `clsPCRRound` | RoundNumber, CriticalAircraftName, CriticalAircraftCDF, MGWIterations, FinalMGW, RoundPCR |
+
+### Report HTML generation — `refreshDetailedReport()` (line ~8336)
+
+This function builds the full HTML string. It reads from `FEDFAA1.gDetailedReportData` (the global report data object populated during analysis). Structure:
+
+1. **Header** — report title, job name, section name, timestamp
+2. **Summary Dashboard** — 6 cards (Max CDF, Design Thickness, Aircraft Count, Critical Offset, Subgrade Modulus, Converged/Iterations). Uses CSS classes `.dashboard`, `.dash-card`, `.dash-card-value`.
+3. **Table of Contents** — styled list (`.toc`, `.toc-list`, `.toc-section-num`). Sections J/K/L conditional on ACR/PCR data availability.
+4. **Section A** — Design layers table + expanded sublayers table + evaluation depth summary box.
+5. **Section B** — 4 equation images rendered via `DrawEquationImage()`: subgrade failure model, CDF formula, C/P Gaussian integral, convergence criterion. Each embedded as base64 PNG in a `.math-block` div.
+6. **Section C** — `DrawCoverageConceptDiagram()` — educational 4-panel diagram (Gaussian wander, C/P curve, 41-strip visualization, multi-wheel superposition).
+7. **Section D** — `DrawFatigueCurve()` + fatigue parameters table + `DrawLifeRatioChart()`.
+8. **Section E** — Per-aircraft loop: `DrawPavementCrossSection()`, gear parameters table, `DrawSingleAircraftCDFChart()`, `DrawWheelCPVisualization()`, step-by-step computation walkthrough (`.step-list` with CSS counters).
+9. **Section F** — `DrawCoveragePlot()` (C/P distribution for all aircraft).
+10. **Section G** — Full CDF sweep table (41 offsets × all aircraft). Critical offset highlighted.
+11. **Section H** — `DrawCompositeCDFChart()` + `DrawCDFContributionChart()`.
+12. **Section I** — `DrawConvergencePlot()` + iteration log table + convergence summary box.
+13. **Section J** (conditional) — ACR details: reference structure, DSWL iterations, final ACR per subgrade.
+14. **Section K** (conditional) — PCR elimination rounds: critical aircraft, MGW iterations, round PCR.
+15. **Section L** (conditional) — `DrawACRDamageChart()` + summary table.
+
+### Chart functions (all in `MainWindowViewModel.vb`)
+
+All charts use 2x supersampling via `ScaleTransform(2,2)` + `SupersampleBitmap()` downscale (except `DrawEquationImage` which uses 3x). Images are encoded as base64 PNG via `HtmlUtils.encodeTobase64()` and embedded inline.
+
+| Function | Line | Size (px) | Purpose |
+|----------|------|-----------|---------|
+| `DrawEquationImage` | ~9729 | 750×auto | Renders equation text as bitmap (3x supersample, gradient bg, left accent stripe) |
+| `DrawSingleAircraftCDFChart` | ~9305 | 750×450 | CDF vs offset for one aircraft with tire width band, critical offset marker |
+| `DrawCompositeCDFChart` | ~9536 | 900×550 | All aircraft CDF curves + cumulative CDF, filled area, critical offset |
+| `DrawPavementCrossSection` | ~9836 | 900×600 | Layer stack (left) + tire stress projection diagram (right) |
+| `DrawFatigueCurve` | ~10009 | 900×550 | Log-log strain vs N_fail with fatigue model curve + aircraft scatter |
+| `DrawConvergencePlot` | ~10254 | 850×450 | Dual-axis: |ln(CDF)| (log, left) + thickness (linear, right) vs iteration |
+| `DrawCoveragePlot` | ~10438 | 850×450 | C/P ratio vs offset for all aircraft |
+| `DrawCoverageConceptDiagram` | ~10614 | 950×1000 | 4-panel educational diagram (Gaussian wander, C/P curve, strips, superposition) |
+| `DrawWheelCPVisualization` | ~10855 | 900×520 | Per-aircraft C/P with inferred wheel contributions + gear schematic |
+| `DrawACRDamageChart` | ~11116 | 850×500 | ACR vs CDF-per-departure bubble chart |
+| `DrawCDFContributionChart` | ~11272 | 800×dynamic | Horizontal bar chart — % CDF contribution per aircraft at critical offset |
+| `DrawLifeRatioChart` | ~11380 | 800×dynamic | Diverging bar chart — N_fail/Repetitions ratio (green=reserve, red=overstressed) |
+
+Helper functions:
+- `SupersampleBitmap()` (line ~11256) — bicubic downscale from high-res bitmap
+- `NormalCDF()` (line ~10589) — polynomial approx of standard normal CDF
+- `GaussAreaCalc()` (line ~10601) — Gaussian area between limits (mirrors `modCDF.GaussArea`)
+
+### Standardized font sizes (current)
+
+All chart functions use a consistent set of font sizes:
+
+| Role | Font | Size |
+|------|------|------|
+| Chart title | Segoe UI Bold | 10pt |
+| Axis label | Segoe UI | 8.5pt |
+| Axis tick values | Segoe UI | 7.5pt |
+| Legend text | Segoe UI | 7.0pt |
+| Small annotations | Segoe UI | 6.5pt |
+| Equation title (3x) | Segoe UI Bold | 8.5pt (×3 = 25.5 render) |
+| Equation body (3x) | Cambria Math / Consolas | 9.0pt (×3 = 27 render) |
+| Concept diagram title | Segoe UI Bold | 10pt |
+| Concept diagram headings | Segoe UI Bold | 8pt |
+| Concept diagram text | Segoe UI | 7pt |
+| Concept diagram small | Segoe UI | 6.5pt |
+| Concept diagram math | Consolas | 7pt |
+
+### CSS classes (in `Reports.css`)
+
+Report-specific classes added beyond the base report styles:
+
+| Class | Purpose |
+|-------|---------|
+| `.dashboard`, `.dash-card`, `.dash-card-label`, `.dash-card-value`, `.dash-card-unit` | Summary dashboard cards |
+| `.toc`, `.toc-list`, `.toc-section-num` | Table of contents |
+| `.section-header-left`, `.section-number` | Left-aligned section headers with blue number badge |
+| `.math-block`, `.math-block img` | Equation image containers |
+| `.summary-box` | Highlighted summary boxes (blue border) |
+| `.note-box`, `.warning-box` | Callout boxes (blue/amber left border) |
+| `.step-list` | Numbered step walkthrough with CSS counter circles |
+| `.detailed-table` | Compact table variant (smaller font/padding) |
+| `.highlight-row` | Yellow-highlighted table row |
+| `.param-grid`, `.param-grid-row`, `.param-grid-label`, `.param-grid-value` | Two-column parameter layout |
+| `.chart-container`, `.chart-container-wide` | Chart wrapper with border |
+| `.diagram-container` | Cross-section/diagram wrapper |
+
+### Image pipeline
+
+```
+Bitmap (GDI+, System.Drawing)
+  → rendered at 2x/3x with ScaleTransform()
+  → SupersampleBitmap() downscales with HighQualityBicubic
+  → HtmlUtils.encodeTobase64() saves as PNG to MemoryStream, converts to base64
+  → HtmlUtils.wrap_bmp_img() wraps in <image src='data:image/png;base64,...'>
+  → embedded inline in HTML string
+  → HtmlUtils.CreateHtmlPage() wraps with <!DOCTYPE>, <head>, Reports.css, <body>
+  → DetailedReportHtml property set → BrowserBehavior navigates WebBrowser
+  → PDF: HtmlUtils.HtmltoPdf() uses SelectPdf (Letter, Portrait, 1024px web width)
+```
+
+### Key design decisions
+
+- **GDI+ over WPF rendering:** Charts use `System.Drawing.Graphics` (GDI+) because they are rendered to bitmaps for HTML embedding, not displayed in WPF visual tree.
+- **Supersampling:** 2x for charts, 3x for equations. Higher multipliers produce crisper text at the cost of memory. The `ScaleTransform()` approach means all coordinates in the drawing code remain in logical (1x) units.
+- **PNG encoding:** `ImageFormat.Png` with MIME type `image/png`. Previously was BMP (huge files); fixed.
+- **Legend positioning:** Legends use dynamic width (measured via `MeasureString`) and are positioned to avoid overlapping data — typically bottom-right or bottom-left of plot area.
+- **Label collision avoidance:** `DrawFatigueCurve` implements a simple vertical shift algorithm for aircraft labels (6 attempts, shifting down by label height).
+- **Concept diagram pxPerInch:** 2.8 px/inch for the Gaussian wander visualization. Controls how wide sigma annotations spread horizontally.
