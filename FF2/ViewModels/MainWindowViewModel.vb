@@ -10613,7 +10613,7 @@ Namespace ViewModels
         ''' </summary>
         Private Function DrawCoverageConceptDiagram() As Bitmap
             Dim chartWidth As Integer = 950
-            Dim chartHeight As Integer = 1000
+            Dim chartHeight As Integer = 720
             Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
 
             Using g As Graphics = Graphics.FromImage(bmpHi)
@@ -10663,11 +10663,14 @@ Namespace ViewModels
                 ' Axis line
                 g.DrawLine(Pens.Black, 50, axisY, chartWidth - 50, axisY)
 
-                ' Tire rectangle at nominal position (center)
+                ' Tire rectangle at nominal position (center) — high contrast
                 Dim twPx As Single = CSng(exTW * pxPerInch)
                 Dim tireLeft As Single = axisMidX - twPx / 2
-                g.FillRectangle(New SolidBrush(Color.FromArgb(180, 50, 50, 50)), tireLeft, axisY + 2, twPx, 16)
-                g.DrawString("Tire (TW=" & Format(exTW, "0") & """)", smallFont, Brushes.White, tireLeft + 2, axisY + 3)
+                g.FillRectangle(New SolidBrush(Color.FromArgb(255, 30, 30, 30)), tireLeft, axisY + 2, twPx, 18)
+                g.DrawRectangle(New Pen(Color.FromArgb(80, 80, 80)), tireLeft, axisY + 2, twPx, 18)
+                Dim tireLabel As String = "Tire (TW=" & Format(exTW, "0") & """)"
+                Dim tireLblSize = g.MeasureString(tireLabel, smallFont)
+                g.DrawString(tireLabel, smallFont, New SolidBrush(Color.FromArgb(255, 240, 200, 50)), tireLeft + (twPx - tireLblSize.Width) / 2, axisY + 4)
 
                 ' sigma annotations
                 For s As Integer = 1 To 3
@@ -10679,16 +10682,18 @@ Namespace ViewModels
                     g.DrawString(s.ToString() & ChrW(&H03C3), smallFont, Brushes.Gray, axisMidX + sPx - 6, axisY + 7)
                     dimPen.Dispose()
                 Next
-                g.DrawString(ChrW(&H03C3) & " = 30.435""  (wander std. dev.)", smallFont, New SolidBrush(faaBlue), axisMidX + 15, panelAY + 50)
-                g.DrawString("0", smallFont, Brushes.Black, axisMidX - 3, axisY + 20)
-                g.DrawString("Nominal wheel path centerline", smallFont, Brushes.DarkGray, axisMidX - 60, axisY + 30)
+                ' Sigma label — positioned on the LEFT side of the bell to avoid overlapping eval strip
+                Dim sigmaLblX As Single = CSng(axisMidX - 1.5 * sigma * pxPerInch)
+                g.DrawString(ChrW(&H03C3) & " = 30.435""  (wander std. dev.)", smallFont, New SolidBrush(faaBlue), sigmaLblX, panelAY + 50)
+                g.DrawString("0", smallFont, Brushes.Black, axisMidX - 3, axisY + 22)
+                g.DrawString("Nominal wheel path centerline", smallFont, Brushes.Black, axisMidX - 60, axisY + 32)
 
                 ' Show evaluation point and shaded C/P area
                 Dim evalOff As Double = 30 ' example offset
                 Dim evalPx As Single = CSng(axisMidX + evalOff * pxPerInch)
                 Dim evalPen As New Pen(Color.Red, 1.5F)
                 evalPen.DashStyle = Drawing2D.DashStyle.Dash
-                g.DrawLine(evalPen, evalPx, panelAY + 50, evalPx, axisY + 18)
+                g.DrawLine(evalPen, evalPx, panelAY + 50, evalPx, axisY + 20)
                 g.DrawString("Evaluation strip", smallFont, Brushes.Red, evalPx + 4, panelAY + 50)
                 g.DrawString("at offset = " & Format(evalOff, "0") & """", smallFont, Brushes.Red, evalPx + 4, panelAY + 60)
 
@@ -10732,13 +10737,19 @@ Namespace ViewModels
                 Dim cpXMax As Double = 200
                 Dim cpPxPerInch2 As Single = CSng(cpPlotW / cpXMax)
 
-                ' Compute and draw single wheel C/P curve
-                Dim maxCP_single As Double = 0
+                ' Dual wheel spacing (declared here so Y-scale computation can use it)
+                Dim dualSpacing As Double = 40
+
+                ' Compute max C/P across BOTH single and dual curves for proper Y scaling
+                Dim maxCP_any As Double = 0
                 For i As Integer = 0 To 200
-                    Dim cp As Double = GaussAreaCalc(i - exTW / 2, i + exTW / 2, sigma)
-                    If cp > maxCP_single Then maxCP_single = cp
+                    Dim cpSingle As Double = GaussAreaCalc(i - exTW / 2, i + exTW / 2, sigma)
+                    If cpSingle > maxCP_any Then maxCP_any = cpSingle
+                    Dim cpDual1 As Double = GaussAreaCalc(i + dualSpacing / 2 - exTW / 2, i + dualSpacing / 2 + exTW / 2, sigma)
+                    Dim cpDual2 As Double = GaussAreaCalc(i - dualSpacing / 2 - exTW / 2, i - dualSpacing / 2 + exTW / 2, sigma)
+                    If (cpDual1 + cpDual2) > maxCP_any Then maxCP_any = cpDual1 + cpDual2
                 Next
-                Dim cpYScale As Single = CSng(cpPlotH * 0.85 / Math.Max(maxCP_single, 0.001))
+                Dim cpYScale As Single = CSng(cpPlotH * 0.85 / Math.Max(maxCP_any, 0.001))
 
                 ' Single wheel curve (blue)
                 Dim singlePts As New List(Of PointF)
@@ -10749,7 +10760,6 @@ Namespace ViewModels
                 g.DrawLines(New Pen(faaBlue, 2), singlePts.ToArray())
 
                 ' Dual wheel curve (orange) — wheels at ±20" (example 40" dual spacing)
-                Dim dualSpacing As Double = 40
                 Dim dualPts As New List(Of PointF)
                 For i As Integer = 0 To 200
                     ' Wheel 1 at -dualSpacing/2, wheel 2 at +dualSpacing/2
