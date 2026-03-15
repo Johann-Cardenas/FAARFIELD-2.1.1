@@ -10017,18 +10017,20 @@ Namespace ViewModels
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
+                Dim faaBlue As Color = Color.FromArgb(46, 94, 168)
                 Dim marginLeft As Integer = 90
                 Dim marginRight As Integer = 40
-                Dim marginTop As Integer = 50
-                Dim marginBottom As Integer = 70
+                Dim marginTop As Integer = 55
+                Dim marginBottom As Integer = 65
                 Dim plotWidth As Integer = chartWidth - marginLeft - marginRight
                 Dim plotHeight As Integer = chartHeight - marginTop - marginBottom
 
-                ' Title
+                ' Title — single centered line
                 Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
-                Dim titleText = "Subgrade Fatigue Model: Strain vs. Allowable Coverages"
+                Dim subtitleFont As New Font("Segoe UI", 7.5F)
+                Dim titleText = "Subgrade Fatigue Model: Vertical Strain vs. Allowable Repetitions"
                 Dim titleSize = g.MeasureString(titleText, titleFont)
-                g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 10)
+                g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 12)
 
                 ' Get subgrade modulus from last layer
                 Dim subMod As Double = 15000 ' default
@@ -10088,8 +10090,8 @@ Namespace ViewModels
                 ' Grid lines
                 Dim gridPen As New Pen(Color.FromArgb(230, 230, 230), 1)
                 gridPen.DashStyle = Drawing2D.DashStyle.Dot
-                Dim axisFont As New Font("Segoe UI", 7.5F)
-                Dim labelFont As New Font("Segoe UI", 8.5F)
+                Dim axisFont As New Font("Segoe UI", 7.0F)
+                Dim labelFont As New Font("Segoe UI", 8.0F)
 
                 ' X-axis grid (strain)
                 For logV As Integer = CInt(logMinS) To CInt(logMaxS)
@@ -10115,11 +10117,11 @@ Namespace ViewModels
                 Next
 
                 ' Axis labels
-                Dim xAxisLabel = "Vertical Strain (microstrain)"
+                Dim xAxisLabel = "Vertical Strain (" & ChrW(&H03BC) & ChrW(&H03B5) & ")"
                 Dim xAxisSize = g.MeasureString(xAxisLabel, labelFont)
-                g.DrawString(xAxisLabel, labelFont, Brushes.Black, CSng(marginLeft + (plotWidth - xAxisSize.Width) / 2), chartHeight - 22)
+                g.DrawString(xAxisLabel, labelFont, Brushes.Black, CSng(marginLeft + (plotWidth - xAxisSize.Width) / 2), chartHeight - 20)
 
-                g.TranslateTransform(14, CSng(marginTop + plotHeight / 2))
+                g.TranslateTransform(12, CSng(marginTop + plotHeight / 2))
                 g.RotateTransform(-90)
                 Dim yAxisLabel = "Allowable Repetitions (N)"
                 Dim yAxisSize = g.MeasureString(yAxisLabel, labelFont)
@@ -10127,7 +10129,7 @@ Namespace ViewModels
                 g.ResetTransform()
 
                 ' Draw fatigue model curve
-                Dim curvePen As New Pen(Color.FromArgb(46, 94, 168), 2.5F)
+                Dim curvePen As New Pen(faaBlue, 2.5F)
                 Dim curvePoints As New List(Of PointF)
                 Dim nSteps As Integer = 200
                 For i As Integer = 0 To nSteps
@@ -10140,16 +10142,65 @@ Namespace ViewModels
                         curvePoints.Add(New PointF(xScale(logS), yScale(logNF)))
                     End If
                 Next
+
+                ' Subtle fill under the fatigue curve
+                If curvePoints.Count > 1 Then
+                    Dim curveFillPts As New List(Of PointF)
+                    curveFillPts.Add(New PointF(curvePoints(0).X, CSng(marginTop + plotHeight)))
+                    curveFillPts.AddRange(curvePoints)
+                    curveFillPts.Add(New PointF(curvePoints(curvePoints.Count - 1).X, CSng(marginTop + plotHeight)))
+                    g.FillPolygon(New SolidBrush(Color.FromArgb(15, faaBlue.R, faaBlue.G, faaBlue.B)), curveFillPts.ToArray())
+                End If
                 If curvePoints.Count > 1 Then g.DrawLines(curvePen, curvePoints.ToArray())
 
-                ' Label the curve
-                Dim curveLblFont As New Font("Segoe UI", 6.5F, FontStyle.Italic)
-                g.DrawString("N = 10000" & ChrW(&H00D7) & "(AA/" & ChrW(&H03B5) & ")^BB", curveLblFont, New SolidBrush(Color.FromArgb(46, 94, 168)), marginLeft + plotWidth - 160, marginTop + 8)
+                ' Combined equation + parameters box — upper-left inside plot area
+                Dim eqBoxFont As New Font("Consolas", 8.0F, FontStyle.Bold)
+                Dim paramBoxFont As New Font("Segoe UI", 7.5F)
+                Dim eqText As String = "N = 10,000 " & ChrW(&H00D7) & " (AA / " & ChrW(&H03B5) & "v)^BB"
+                Dim paramLine1 As String = "E_subgrade = " & Format(subMod, "#,##0") & " psi"
+                Dim paramLine2 As String = "AA = " & Format(modelAA, "0.000000") & "    BB = " & Format(modelBB, "0.000")
+
+                Dim eqSize = g.MeasureString(eqText, eqBoxFont)
+                Dim p1Size = g.MeasureString(paramLine1, paramBoxFont)
+                Dim p2Size = g.MeasureString(paramLine2, paramBoxFont)
+                Dim infoW As Single = Math.Max(eqSize.Width, Math.Max(p1Size.Width, p2Size.Width)) + 16
+                Dim infoH As Single = eqSize.Height + p1Size.Height + p2Size.Height + 14
+
+                Dim infoX As Single = marginLeft + 10
+                Dim infoY As Single = marginTop + 8
+                Dim infoRect As New RectangleF(infoX, infoY, infoW, infoH)
+                g.FillRectangle(New SolidBrush(Color.FromArgb(240, 255, 255, 255)), infoRect)
+                g.DrawRectangle(New Pen(Color.FromArgb(100, faaBlue.R, faaBlue.G, faaBlue.B), 1.0F), infoRect.X, infoRect.Y, infoRect.Width, infoRect.Height)
+
+                Dim infoTxtY As Single = infoY + 4
+                g.DrawString(eqText, eqBoxFont, New SolidBrush(faaBlue), infoX + 8, infoTxtY)
+                infoTxtY += eqSize.Height + 2
+                g.DrawString(paramLine1, paramBoxFont, New SolidBrush(Color.FromArgb(80, 80, 80)), infoX + 8, infoTxtY)
+                infoTxtY += p1Size.Height + 1
+                g.DrawString(paramLine2, paramBoxFont, New SolidBrush(Color.FromArgb(80, 80, 80)), infoX + 8, infoTxtY)
 
                 ' Draw aircraft scatter points and repetition lines
-                ' Collect label positions for collision avoidance
+                ' Collect label positions for collision avoidance (includes legend + info box areas)
                 Dim labelPositions As New List(Of RectangleF)
-                Dim ptFont As New Font("Segoe UI", 6.5F)
+                ' Reserve info box area so scatter labels avoid it
+                labelPositions.Add(infoRect)
+                Dim ptFont As New Font("Segoe UI", 7.5F)
+                Dim ptFontBold As New Font("Segoe UI", 7.5F, FontStyle.Bold)
+
+                ' Pre-reserve legend area so scatter labels avoid it
+                Dim legendFont As New Font("Segoe UI", 7.5F)
+                Dim legendLineH As Integer = 16
+                Dim legendH As Integer = (acPoints.Count + 2) * legendLineH + 10
+                Dim maxLegendEntryW As Single = 0
+                For Each pt In acPoints
+                    Dim ew = g.MeasureString(pt.Item4 & " (N_fail)", legendFont)
+                    If ew.Width > maxLegendEntryW Then maxLegendEntryW = ew.Width
+                Next
+                Dim legendW As Integer = CInt(maxLegendEntryW) + 42
+                Dim legendX As Integer = marginLeft + plotWidth - legendW - 8
+                Dim legendY As Integer = marginTop + plotHeight - legendH - 8
+                ' Reserve legend space for label collision
+                labelPositions.Add(New RectangleF(legendX, legendY, legendW, legendH))
 
                 For Each pt In acPoints
                     Dim strainMicro = pt.Item1
@@ -10163,83 +10214,113 @@ Namespace ViewModels
                     Dim xPx = xScale(logS)
                     Dim yPx = yScale(logNF)
 
-                    ' Draw N_fail point (filled circle) — smaller
-                    g.FillEllipse(New SolidBrush(acColor), xPx - 5, yPx - 5, 10, 10)
-                    g.DrawEllipse(New Pen(Color.Black, 0.8F), xPx - 5, yPx - 5, 10, 10)
+                    ' White halo behind the scatter point for visibility over gridlines
+                    g.FillEllipse(Brushes.White, xPx - 8, yPx - 8, 16, 16)
+                    ' Draw N_fail point (filled circle)
+                    g.FillEllipse(New SolidBrush(acColor), xPx - 7, yPx - 7, 14, 14)
+                    g.DrawEllipse(New Pen(Color.FromArgb(60, 0, 0, 0), 0.8F), xPx - 7, yPx - 7, 14, 14)
 
-                    ' Draw repetitions horizontal dashed line
+                    ' Draw repetitions horizontal dashed line (thinner, more subtle)
                     If totalReps > 0 Then
                         Dim logReps = Math.Log10(totalReps)
                         If logReps >= logMinN AndAlso logReps <= logMaxN Then
                             Dim repsYPx = yScale(logReps)
-                            Dim repsPen As New Pen(acColor, 0.8F)
+                            Dim repsPen As New Pen(Color.FromArgb(120, acColor.R, acColor.G, acColor.B), 0.7F)
                             repsPen.DashStyle = Drawing2D.DashStyle.Dash
-                            g.DrawLine(repsPen, marginLeft, repsYPx, marginLeft + plotWidth, repsYPx)
-
-                            ' Small triangle at right edge
-                            Dim triPts() As PointF = {
-                                New PointF(marginLeft + plotWidth + 2, repsYPx),
-                                New PointF(marginLeft + plotWidth + 7, repsYPx - 3),
-                                New PointF(marginLeft + plotWidth + 7, repsYPx + 3)
-                            }
-                            g.FillPolygon(New SolidBrush(acColor), triPts)
+                            ' Only draw from left edge to the strain x-position (not full width)
+                            g.DrawLine(repsPen, marginLeft, repsYPx, xPx, repsYPx)
+                            ' Vertical connector from reps line down/up to the N_fail point
+                            Dim connPen As New Pen(Color.FromArgb(80, acColor.R, acColor.G, acColor.B), 0.6F)
+                            connPen.DashStyle = Drawing2D.DashStyle.Dot
+                            g.DrawLine(connPen, xPx, repsYPx, xPx, yPx)
+                            connPen.Dispose()
                             repsPen.Dispose()
                         End If
                     End If
 
-                    ' Label with collision avoidance
+                    ' Label with collision avoidance — try right, then left, then below
                     Dim lblSize = g.MeasureString(acName, ptFont)
-                    Dim lblX As Single = xPx + 7
-                    Dim lblY As Single = yPx - 10
+                    Dim lblX As Single = xPx + 8
+                    Dim lblY As Single = yPx - lblSize.Height / 2
                     Dim lblRect As New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
 
-                    ' Check overlap with existing labels and shift down if needed
-                    Dim maxShiftAttempts As Integer = 6
-                    For attempt As Integer = 0 To maxShiftAttempts - 1
+                    ' Try placement: right of point, then shift down, then try left of point
+                    Dim placed As Boolean = False
+                    ' Right side attempts
+                    For attempt As Integer = 0 To 4
                         Dim overlaps As Boolean = False
                         For Each existing In labelPositions
-                            If lblRect.IntersectsWith(existing) Then
-                                overlaps = True
-                                Exit For
-                            End If
+                            If lblRect.IntersectsWith(existing) Then overlaps = True : Exit For
                         Next
-                        If Not overlaps Then Exit For
+                        If Not overlaps Then placed = True : Exit For
                         lblY += lblSize.Height + 1
                         lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
                     Next
+                    ' If still overlapping, try left side
+                    If Not placed Then
+                        lblX = xPx - lblSize.Width - 8
+                        lblY = yPx - lblSize.Height / 2
+                        lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
+                        For attempt As Integer = 0 To 3
+                            Dim overlaps As Boolean = False
+                            For Each existing In labelPositions
+                                If lblRect.IntersectsWith(existing) Then overlaps = True : Exit For
+                            Next
+                            If Not overlaps Then placed = True : Exit For
+                            lblY += lblSize.Height + 1
+                            lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
+                        Next
+                    End If
                     labelPositions.Add(lblRect)
+
+                    ' Draw a thin leader line from point to label
+                    Dim leaderPen As New Pen(Color.FromArgb(100, acColor.R, acColor.G, acColor.B), 0.6F)
+                    g.DrawLine(leaderPen, xPx, yPx, lblX + If(lblX > xPx, 0, lblSize.Width), lblY + lblSize.Height / 2)
+                    leaderPen.Dispose()
+
+                    ' Draw label with a white halo for readability
+                    Dim haloBrush As New SolidBrush(Color.FromArgb(200, 255, 255, 255))
+                    Dim haloRect As New RectangleF(lblX - 1, lblY - 1, lblSize.Width + 2, lblSize.Height + 1)
+                    g.FillRectangle(haloBrush, haloRect)
+                    haloBrush.Dispose()
                     g.DrawString(acName, ptFont, New SolidBrush(acColor), lblX, lblY)
                 Next
                 ptFont.Dispose()
+                ptFontBold.Dispose()
 
                 ' Legend — positioned at bottom-left, inside plot area
-                Dim legendFont As New Font("Segoe UI", 7.0F)
-                Dim legendLineH As Integer = 14
-                Dim legendH As Integer = acPoints.Count * legendLineH + legendLineH + 8
-                Dim legendW As Integer = 160
-                Dim legendX As Integer = marginLeft + 10
-                Dim legendY As Integer = marginTop + plotHeight - legendH - 8
-                g.FillRectangle(New SolidBrush(Color.FromArgb(240, 245, 245, 245)), legendX, legendY, legendW, legendH)
-                g.DrawRectangle(Pens.LightGray, legendX, legendY, legendW, legendH)
+                g.FillRectangle(New SolidBrush(Color.FromArgb(235, 255, 255, 255)), legendX, legendY, legendW, legendH)
+                g.DrawRectangle(New Pen(Color.FromArgb(180, 180, 180), 0.8F), legendX, legendY, legendW, legendH)
 
                 ' Curve entry
-                Dim lly As Integer = legendY + 4
-                g.DrawLine(curvePen, legendX + 6, lly + 5, legendX + 22, lly + 5)
-                g.DrawString("Fatigue model", legendFont, Brushes.Black, legendX + 26, lly)
-                Dim lIdx As Integer = 1
+                Dim lly As Integer = legendY + 5
+                g.DrawLine(curvePen, legendX + 6, lly + 7, legendX + 24, lly + 7)
+                g.DrawString("Fatigue model", legendFont, Brushes.Black, legendX + 28, lly)
+                lly += legendLineH
+
+                ' Dashed line entry (repetitions)
+                Dim repLegPen As New Pen(Color.FromArgb(120, 120, 120), 0.7F)
+                repLegPen.DashStyle = Drawing2D.DashStyle.Dash
+                g.DrawLine(repLegPen, legendX + 6, lly + 7, legendX + 24, lly + 7)
+                g.DrawString("Total repetitions", legendFont, Brushes.Black, legendX + 28, lly)
+                repLegPen.Dispose()
+
+                Dim lIdx As Integer = 2
                 For Each pt In acPoints
-                    Dim ly = legendY + 4 + lIdx * legendLineH
-                    g.FillEllipse(New SolidBrush(pt.Item5), legendX + 11, ly + 2, 7, 7)
-                    g.DrawString(pt.Item4, legendFont, Brushes.Black, legendX + 26, ly)
+                    Dim ly = legendY + 5 + lIdx * legendLineH
+                    g.FillEllipse(New SolidBrush(pt.Item5), legendX + 10, ly + 2, 9, 9)
+                    g.DrawString(pt.Item4, legendFont, Brushes.Black, legendX + 28, ly)
                     lIdx += 1
                 Next
 
                 ' Cleanup
                 titleFont.Dispose()
+                subtitleFont.Dispose()
                 axisFont.Dispose()
                 labelFont.Dispose()
                 legendFont.Dispose()
-                curveLblFont.Dispose()
+                eqBoxFont.Dispose()
+                paramBoxFont.Dispose()
                 gridPen.Dispose()
                 curvePen.Dispose()
             End Using
