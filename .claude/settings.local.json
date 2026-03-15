@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(cmd.exe /c \"where msbuild 2>nul\")",
+      "Bash(cmd.exe /c \"dir /s /b \"\"C:\\\\Program Files\\\\MSBuild.exe\"\" 2>nul\")",
+      "Read(//c/Windows/Microsoft.NET/Framework/v4.0.30319/**)",
+      "Bash(\"C:\\\\Program Files \\(x86\\)\\\\Microsoft Visual Studio\\\\2022\\\\BuildTools\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"C:\\\\Users\\\\johan\\\\Box\\\\05 Repositories\\\\FAARFIELD-2.1.1\\\\FAARFIELD.sln\" -p:Configuration=Debug -verbosity:minimal 2>&1 | tail -30)",
+      "Bash(\"C:\\\\Program Files \\(x86\\)\\\\Microsoft Visual Studio\\\\2022\\\\BuildTools\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"C:\\\\Users\\\\johan\\\\Box\\\\05 Repositories\\\\FAARFIELD-2.1.1\\\\FAARFIELD.sln\" -p:Configuration=Debug -verbosity:minimal 2>&1 | grep -E \"error|Build succeeded|Build FAILED\")",
+      "Bash(\"C:\\\\Program Files \\(x86\\)\\\\Microsoft Visual Studio\\\\2022\\\\BuildTools\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"C:\\\\Users\\\\johan\\\\Box\\\\05 Repositories\\\\FAARFIELD-2.1.1\\\\FAARFIELD.sln\" -p:Configuration=Debug -verbosity:normal 2>&1 | grep -i \"Build succeeded\")",
+      "Bash(where msbuild:*)"
     ]
   }
 }

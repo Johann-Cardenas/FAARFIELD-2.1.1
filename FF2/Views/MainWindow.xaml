@@ -84,10 +84,10 @@
             <telerik:RadDocking.DocumentHost>
 
                 <!-- DOCK TOP CENTER MAIN CONTAINER -->
-                <telerik:RadSplitContainer telerik:RadDocking.FloatingSize="1050,640" BorderBrush="Red" BorderThickness="{Binding JobViewBorderThickness}" telerik:RadDocking.SerializationTag="MainContainerTag">
-                    <telerik:RadPaneGroup BorderBrush="Red" telerik:RadDocking.SerializationTag="MainGroupTag">
+                <telerik:RadSplitContainer telerik:RadDocking.FloatingSize="1050,640" BorderThickness="{Binding JobViewBorderThickness}" telerik:RadDocking.SerializationTag="MainContainerTag">
+                    <telerik:RadPaneGroup telerik:RadDocking.SerializationTag="MainGroupTag">
 
-                        <telerik:RadPane Header="Job Information"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Job Information"
                                         IsHidden="{Binding JobInformationIsHidden,  Mode=TwoWay}"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="JobInformation">
@@ -269,7 +269,7 @@
 
                         </telerik:RadPane>
 
-                        <telerik:RadPane Header="Structure"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Structure"
 										Name="SectionScreen"
 										IsHidden="{Binding SectionIsHidden,  Mode=TwoWay}"
 										DataContext="{StaticResource MainWindowViewModel}"
@@ -285,7 +285,7 @@
 
                                     <!-- SECTION CONTAINER -->
                                     <telerik:RadPaneGroup telerik:ProportionalStackPanel.RelativeSize="1000, 700" telerik:RadDocking.SerializationTag="StructureGroup" DataContext="{StaticResource MainWindowViewModel}">
-                                        <telerik:RadPane Header="Structure"
+                                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Structure"
                                                          telerik:RadDocking.SerializationTag="Section" DataContext="{StaticResource MainWindowViewModel}"
                                                          IsHidden="{Binding InnerSectionIsHidden,  Mode=TwoWay}" >
                                             
@@ -332,7 +332,6 @@
                                                             Height="30"
                                                             Canvas.Top="5"
                                                             Canvas.Left="520"
-                                                            Background="LightGray"
                                                             Content="{Binding RunButtonText}"
                                                             Command="{Binding RunButton_Command}" >
                                                     </Button>
@@ -899,8 +898,7 @@
                                                                          IsReadOnly="True"
                                                                          Height="30"
                                                                          Width="75" />
-                                                                <Button Background="Azure"
-                                                                        Padding="0"
+                                                                <Button Padding="0"
                                                                         Height="28"
                                                                         Width="160"
                                                                         Margin="0,495,0,0"
@@ -924,8 +922,7 @@
 
                                                                     <ContentPresenter Content="{StaticResource StructureImageButton}" Margin="{Binding StructureListView_Margin}"></ContentPresenter>
 
-                                                                    <Button Background="Azure"
-													                    Padding="0"
+                                                                    <Button Padding="0"
 													                    Height="28"
 													                    Width="190"
 													                    Margin="0,640,0,0"
@@ -947,7 +944,7 @@
 
                                     <!-- TRAFFIC CONTAINER -->
                                     <telerik:RadPaneGroup telerik:ProportionalStackPanel.RelativeSize="1000, 300" telerik:RadDocking.SerializationTag="TrafficGroup" >
-                                        <telerik:RadPane Header="Traffic"
+                                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Traffic"
 									                     IsHidden="{Binding AirplanesIsHidden, Mode=TwoWay}"
 									                     DataContext="{StaticResource MainWindowViewModel}"
 									                     telerik:RadDocking.SerializationTag="Airplanes" >
@@ -1439,7 +1436,7 @@
 
                         </telerik:RadPane>
 
-                        <telerik:RadPane Header="PAVEAIR Access"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="PAVEAIR Access"
                                         Name="PAVEAIRScreen"
                                         IsHidden="{Binding ComboBoxWindowIsHidden, Mode=TwoWay}"
                                         DataContext="{StaticResource MainWindowViewModel}"
@@ -1538,7 +1535,7 @@
                             </ScrollViewer>
                         </telerik:RadPane>
 
-                        <telerik:RadPane Header="Vehicle Edit" Name="VehicleEdit"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Vehicle Edit" Name="VehicleEdit"
                                         IsHidden="{Binding VehicleEditIsHidden, Mode=TwoWay}"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="VehicleEdit" >
@@ -1563,8 +1560,7 @@
 
                                             <Label  Canvas.Top="2"
                                             Canvas.Left="65"
-                                            FontSize="16"
-                                            FontWeight="Bold">Select Aircraft Name:</Label>
+                                            Style="{StaticResource TypeTitle}">Select Aircraft Name:</Label>
 
                                             <ComboBox Canvas.Top="3"
                                                 Name="ExternalLibraryAircrfats"
@@ -1650,19 +1646,15 @@
                                             
                                             <Button Canvas.Top="570"
                                             Canvas.Left="820"
-                                            Background="LightGray"
                                             Command="{Binding UpdateUDAGearImage_Command}">Update Gear Image</Button>
                                             <Button Canvas.Top="570"
                                             Canvas.Left="1050"
-                                            Background="LightGray"
                                             Command="{Binding OnSaveEdittedUserDefinedAircraft}">Update User Defined Aircraft</Button>
                                             <Button Canvas.Top="570"
                                             Canvas.Left="120"
-                                            Background="LightGray"
                                             Command="{Binding DeleteCurrentWheel}">Delete Tire</Button>
                                             <Button Canvas.Top="570"
                                             Canvas.Left="400"
-                                            Background="LightGray"
                                             Command="{Binding DeleteCurrentEval}">Delete Eval. Point</Button>
 
                                         </Canvas>
@@ -1677,8 +1669,7 @@
                                         <Canvas>
                                             <Label  Canvas.Top="2"
                                             Canvas.Left="65"
-                                            FontSize="16"
-                                            FontWeight="Bold">New User Defined Aircraft:</Label>
+                                            Style="{StaticResource TypeTitle}">New User Defined Aircraft:</Label>
                                             <TextBox Name="UD_Name"
                                                 Width="200"
                                                 Height="35"
@@ -1765,19 +1756,15 @@
 
                                             <Button Canvas.Top="570"
                                             Canvas.Left="820"
-                                            Background="LightGray"
                                             Command="{Binding UpdateUDAGearImage_Command}">Update Gear Image</Button>
                                             <Button Canvas.Top="570"
                                             Canvas.Left="1050"
-                                            Background="LightGray"
                                             Command="{Binding OnSaveNewUserDefinedAircraft}">Save New User Defined Aircraft</Button>
                                             <Button Canvas.Top="570"
                                             Canvas.Left="120"
-                                            Background="LightGray"
                                             Command="{Binding DeleteCurrentWheel}">Delete Tire</Button>
                                             <Button Canvas.Top="570"
                                             Canvas.Left="400"
-                                            Background="LightGray"
                                             Command="{Binding DeleteCurrentEval}">Delete Eval. Point</Button>
                                         </Canvas>
                                     </GroupBox>
@@ -1948,7 +1935,7 @@
                             </ScrollViewer>
                         </telerik:RadPane>
 
-                        <telerik:RadPane Header="Summary Report"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Summary Report"
                                         IsHidden="{Binding SummaryReportIsHidden,  Mode=TwoWay}"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="SummaryReport">
@@ -1971,7 +1958,7 @@
                             </Grid>
                         </telerik:RadPane>
 
-                        <telerik:RadPane Header="Structure Report"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Structure Report"
                                         IsHidden="{Binding SectionReportIsHidden,  Mode=TwoWay}"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="SectionReport">
@@ -1995,7 +1982,7 @@
                             </Grid>
                         </telerik:RadPane>
 
-                        <telerik:RadPane Header="CDF Graph"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="CDF Graph"
                                         IsHidden="{Binding CDFGraphIsHidden,  Mode=TwoWay}"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="CDFGraph">
@@ -2020,7 +2007,7 @@
 
                         </telerik:RadPane>
 
-                        <telerik:RadPane Header="PCR Report"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="PCR Report"
                                         IsHidden="{Binding PCRReportIsHidden,  Mode=TwoWay}"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="PCRReport">
@@ -2044,7 +2031,7 @@
                             </Grid>
                         </telerik:RadPane>
 
-                        <telerik:RadPane Header="PCR Graph"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="PCR Graph"
                                         IsHidden="{Binding PCRGraphIsHidden,  Mode=TwoWay}"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="PCRGraph">
@@ -2070,7 +2057,7 @@
                             </Grid>
                         </telerik:RadPane>
 
-                        <telerik:RadPane Header="Airport Master Record"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Airport Master Record"
                                         IsHidden="{Binding AirportMasterRecordIsHidden,  Mode=TwoWay}"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="AirportMasterRecord">
@@ -2096,6 +2083,32 @@
 
                         </telerik:RadPane>
 
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Detailed Computation Report"
+                                        IsHidden="{Binding DetailedReportIsHidden,  Mode=TwoWay}"
+                                        DataContext="{StaticResource MainWindowViewModel}"
+                                        telerik:RadDocking.SerializationTag="DetailedReport">
+
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="40" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <WebBrowser Grid.Row="1"
+                                            converters:BrowserBehavior.Html="{Binding DetailedReportHtml}" />
+                                <Button Grid.Row="0"
+                                    Content="Save As PDF"
+                                    Width="100"
+                                    Height="40"
+                                    Command="{Binding OnSectionReportCreatePdf}"
+                                    CommandParameter="DetailedRpt" />
+                            </Grid>
+
+                        </telerik:RadPane>
+
                     </telerik:RadPaneGroup>
                 </telerik:RadSplitContainer>
 
@@ -2106,7 +2119,7 @@
             <telerik:RadSplitContainer InitialPosition="DockedLeft" Width="250">
                 <telerik:RadPaneGroup SelectedIndex="{Binding SelectedTree, UpdateSourceTrigger=PropertyChanged}">
 
-                    <telerik:RadPane Header="Explorer"
+                    <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Explorer"
                                     telerik:RadDocking.SerializationTag="Explorer"
                                     HeaderTemplate="{StaticResource ExplorerTemplate}"
                                     CanUserClose="False"
@@ -2173,7 +2186,7 @@
                         </telerik:RadTreeView>
                     </telerik:RadPane>
 
-                    <telerik:RadPane Header="Aircraft"
+                    <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Aircraft"
                                     telerik:RadDocking.SerializationTag="Aircraft"
                                     HeaderTemplate="{StaticResource AircraftTemplate}"
                                     CanUserClose="False">
@@ -2189,8 +2202,7 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
-                                <Label Background="LightGray"
-                                    Content="FAARFIELD Aircraft Group"
+                                <Label Content="FAARFIELD Aircraft Group"
                                     VerticalAlignment="Top" />
 
                                 <ListBox Grid.Row="1"
@@ -2219,8 +2231,7 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
-                                <Label Background="LightGray"
-                                    Content="FAARFIELD Aircraft Library" />
+                                <Label Content="FAARFIELD Aircraft Library" />
 
                                 <ListBox Grid.Row="1"
                                          ItemsSource="{Binding AirplaneByManufacturer}"
@@ -2255,7 +2266,7 @@
 
                     </telerik:RadPane>
 
-                    <telerik:RadPane Header="Material"
+                    <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Material"
                                     telerik:RadDocking.SerializationTag="Material"
                                     HeaderTemplate="{StaticResource MaterialTemplate}"
                                     CanUserClose="False">
@@ -2302,7 +2313,7 @@
             <telerik:RadSplitContainer InitialPosition="DockedRight" Width="280">
                 <telerik:RadPaneGroup>
 
-                    <telerik:RadPane Header="Design Options"
+                    <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Design Options"
                                     IsHidden="{Binding DesignOptionsIsHidden,  Mode=TwoWay}"
                                     DataContext="{StaticResource MainWindowViewModel}"
                                     telerik:RadDocking.SerializationTag="DesignOptions">
@@ -2712,7 +2723,7 @@
                         </ScrollViewer>
                     </telerik:RadPane>
 
-                    <telerik:RadPane Header="Notes"
+                    <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Notes"
                                     IsHidden="{Binding NotesIsHidden,  Mode=TwoWay }"
                                     DataContext="{StaticResource MainWindowViewModel}"
                                     telerik:RadDocking.SerializationTag="Notes">
@@ -2723,7 +2734,7 @@
                                 Text="{Binding Path=CurrentSectionView.Section.Note}" />
                     </telerik:RadPane>
 
-                    <telerik:RadPane Header="User Information"
+                    <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="User Information"
                                     telerik:RadDocking.SerializationTag="UserInformation">
                         <Canvas>
                             <TextBlock Canvas.Top="5" Canvas.Left="15" Text="{Binding Username, StringFormat=Current User: {0}}"/>
@@ -2772,7 +2783,7 @@
                                     InitialPosition="Floatingonly"
                                     Name="MaterialsMenu" >
                 <telerik:RadPaneGroup>
-                    <telerik:RadPane Header="Layer Property"   
+                    <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Layer Property"   
                                  Margin="0,20,0,-9"
                                     CanUserClose="True"
                                      Padding="0"
@@ -2797,13 +2808,12 @@
                                     <RowDefinition Height="120" />
                                     <RowDefinition Height="120" />
                                 </Grid.RowDefinitions>
-                                <GroupBox Header="Materials Menu" FontSize="20" FontWeight="Bold"
+                                <GroupBox Header="Materials Menu" Style="{StaticResource TypeHeadingLarge}"
                                           Grid.RowSpan="5"
                                           Grid.Column="0">
                                     <Canvas>
                                         <Label Content="Aggregate"
-                                    FontWeight="Bold"
-                                    FontSize="15"
+                                    Style="{StaticResource TypeHeadingMedium}"
                                     Margin="305,30,100,100"
                                     Padding="0" />
 
@@ -2851,8 +2861,7 @@
 
 
                                         <Label Content="General"
-                                    FontWeight="Bold"
-                                    FontSize="15"
+                                    Style="{StaticResource TypeHeadingMedium}"
                                     HorizontalAlignment="Left"
                                     Margin="10,30,0,0"
                                     Padding="0"
@@ -2877,8 +2886,7 @@
 
 
                                         <Label Content="P-401/P-403 HMA"
-                                    FontWeight="Bold"
-                                    FontSize="15"
+                                    Style="{StaticResource TypeHeadingMedium}"
                                     HorizontalAlignment="Left"
                                     Margin="11,120,0,0"
                                     VerticalAlignment="Top" />
@@ -2899,8 +2907,7 @@
                                             IsChecked="{Binding HMAOverlayIsChecked}" 
                                             Command="{Binding RBSelectionChanged_Command}" />
                                         <Label Content="P-501 PCC"
-                                    FontWeight="Bold"
-                                    FontSize="15"
+                                    Style="{StaticResource TypeHeadingMedium}"
                                     HorizontalAlignment="Left"
                                     Margin="11,210,0,0"
                                     VerticalAlignment="Top" />
@@ -2932,8 +2939,7 @@
 
 
                                         <Label Content="Stabilized"
-                                    FontWeight="Bold"
-                                    FontSize="15"
+                                    Style="{StaticResource TypeHeadingMedium}"
                                     HorizontalAlignment="Left"
                                     Margin="310,210,0,0"
                                     VerticalAlignment="Top" />
@@ -2988,7 +2994,6 @@
                                             Command="{Binding RBSelectionChanged_Command}" />
 
                                         <Button Content="Add Layer Below"
-                                    Background="AliceBlue"
                                     Command="{Binding AddLayerBelow_Command}"
                                     Name="AddLayerBelow"
                                     HorizontalAlignment="Left"
@@ -2996,7 +3001,6 @@
                                     VerticalAlignment="Top"
                                     Width="130" />
                                         <Button Content="Add Layer Above"
-                                    Background="AliceBlue"
                                     Command="{Binding AddLayerAbove_Command}"
                                     Name="AddLayerAbove"
                                     HorizontalAlignment="Left"
@@ -3004,7 +3008,6 @@
                                     VerticalAlignment="Top"
                                     Width="130" />
                                         <Button Content="OK"
-                                    Background="AliceBlue"
                                     Command="{Binding Replace_Command}"
                                     Name="Replace"
                                     HorizontalAlignment="Left"
@@ -3012,7 +3015,6 @@
                                     VerticalAlignment="Top"
                                     Width="130" />
                                         <Button Content="Delete Layer"
-                                    Background="AliceBlue"
                                     Command="{Binding DeleteLayer_Command}"
                                     Name="DeleteLayer"
                                     HorizontalAlignment="Left"
@@ -3020,7 +3022,6 @@
                                     VerticalAlignment="Top"
                                     Width="130" />
                                         <Button Content="Cancel"
-                                    Background="DarkGray"
                                     Command="{Binding CancelMaterial_Command}"
                                     x:Name="Replace_Copy"
                                     HorizontalAlignment="Left"
@@ -3031,7 +3032,7 @@
                                 </GroupBox>
 
                                 <GroupBox Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem ,Converter={StaticResource MeasurementSystemUpdateThickness}}"
-                                          FontSize="14" FontWeight="Bold"
+                                          Style="{StaticResource TypeHeadingSmall}"
                                           Grid.Row="0"
                                           Grid.Column="1">
                                     <Canvas>
@@ -3068,7 +3069,7 @@
                                 </GroupBox>
 
                                 <GroupBox Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem ,Converter={StaticResource MeasurementSystemUpdateModulus}}"
-                                          FontSize="14" FontWeight="Bold"
+                                          Style="{StaticResource TypeHeadingSmall}"
                                           Grid.Row="1"
                                           Grid.Column="1">
                                     <Canvas>
@@ -3104,7 +3105,7 @@
                                 </GroupBox>
 
                                 <GroupBox Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem ,Converter={StaticResource MeasurementSystemUpdateRupture}}"
-                                          FontSize="14" FontWeight="Bold"
+                                          Style="{StaticResource TypeHeadingSmall}"
                                           Grid.Row="2"
                                           Grid.Column="1">
                                     <Canvas>
@@ -3133,7 +3134,7 @@
 
                                 </GroupBox>
 
-                                <GroupBox Header="Update CBR" FontSize="14" FontWeight="Bold"
+                                <GroupBox Header="Update CBR" Style="{StaticResource TypeHeadingSmall}"
                                           Grid.Row="3"
                                           Grid.Column="1">
                                     <Canvas>
@@ -3165,7 +3166,7 @@
                                 </GroupBox>
 
                                 <GroupBox Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem ,Converter={StaticResource MeasurementSystemUpdateKvalue}}"
-                                          FontSize="14" FontWeight="Bold"
+                                          Style="{StaticResource TypeHeadingSmall}"
                                           Grid.Row="4"
                                           Grid.Column="1">
                                     <Canvas>
@@ -3213,7 +3214,7 @@
             <telerik:RadSplitContainer InitialPosition="FloatingOnly" Name="LoginWindow"
                                        telerik:RadDocking.FloatingLocation="200, 100" telerik:RadDocking.FloatingSize="800,450">
                 <telerik:RadPaneGroup x:Name="radPaneGroup4">
-                    <telerik:RadPane x:Name="radPane4" Header="PAVEAIR Login" CanUserClose="True" CanUserPin="False"
+                    <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" x:Name="radPane4" Header="PAVEAIR Login" CanUserClose="True" CanUserPin="False"
                                      IsHidden="{Binding LoginWindowIsHidden, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      DataContext="{StaticResource MainWindowViewModel}" telerik:RadDocking.SerializationTag="ProgressWindow">
                         <Grid Background="#FFE7E7E7">
@@ -3241,7 +3242,7 @@
             <telerik:RadSplitContainer InitialPosition="FloatingDockable" Name="ProgressWindow"
                                        telerik:RadDocking.FloatingLocation="500, 300" telerik:RadDocking.FloatingSize="250,200">
                 <telerik:RadPaneGroup x:Name="radPaneGroup1">
-                    <telerik:RadPane x:Name="radPane1" Header="Download Status" CanUserClose="False" CanUserPin="False"
+                    <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" x:Name="radPane1" Header="Download Status" CanUserClose="False" CanUserPin="False"
                                      IsHidden="{Binding ProgressBarWindowIsHidden, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      DataContext="{StaticResource MainWindowViewModel}" telerik:RadDocking.SerializationTag="ProgressWindow">
                         <Grid>

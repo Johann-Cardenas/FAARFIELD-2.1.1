@@ -1,4 +1,4 @@
-﻿html {
+html {
     margin: 0;
     padding: 0;
 }
@@ -6,13 +6,14 @@
 body {
     background-color: #fff;
     width: calc(100% - 2em);
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    font-family: "Segoe UI", "Trebuchet MS", Arial, Helvetica, sans-serif;
     margin: 0 1em;
     padding: 0;
+    line-height: 1.5;
 }
 
 .report {
-    background-color: #2a579a;
+    background-color: #2E5EA8;
     color: #fff;
     text-align: center;
     padding: .4em;
@@ -20,7 +21,7 @@ body {
 
 .job {
     /*background-color: #f2f2f2;*/
-    background-color: #d9d9d9;
+    background-color: #E5E7EB;
     color: #000;
     text-align: left;
     padding: .4em 2em;
@@ -66,12 +67,17 @@ thead {
 }
 
 table, th, td {
-    border: 1px solid #d9d9d9;
+    border: 1px solid #E5E7EB;
     height: .5em;
 }
 
 tr:nth-child(even) {
-    background-color: #f2f2f2;    
+    background-color: #F8F9FA;
+}
+
+tr:hover {
+    background-color: #EEF2F8;
+    transition: background-color 0.15s ease;
 }
 
 tr {
@@ -80,8 +86,7 @@ tr {
 
 td {
     text-align: left;
-    padding-left: .5em;
-    padding-right: .5em;
+    padding: .6em .8em;
 }
 
     td p {
@@ -90,9 +95,9 @@ td {
     }
 
 th {
-    padding: .5em;
+    padding: .6em .8em;
     text-align: left;
-    background-color: #2a579a;
+    background-color: #2E5EA8;
     color: white;
 }
 
@@ -121,15 +126,276 @@ table th:first-child {
 /* Reduced Cross Section pages*/
 
 .page-break {
-    background-color: #fff;   
+    background-color: #fff;
     height: 20px;
 }
 
 .page {
     background-color: #f1f1f1;
     width: calc(100% - 2em);
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    font-family: "Segoe UI", "Trebuchet MS", Arial, Helvetica, sans-serif;
     margin: 0 1em;
-    padding: .4em;    
+    padding: .4em;
     page-break-after: always;
+}
+
+/* Detailed Computation Report styles */
+
+.detailed-table {
+    font-size: 0.8em;
+}
+
+.detailed-table td {
+    padding: 2px 4px;
+}
+
+.detailed-table th {
+    padding: 3px 4px;
+    font-size: 0.9em;
+}
+
+.highlight-row {
+    background-color: #ffffcc !important;
+    font-weight: bold;
+}
+
+.equation-box {
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+    padding: 0.5em 1em;
+    margin: 0.5em 0;
+    font-family: "Courier New", Courier, monospace;
+    background-color: #f9f9f9;
+}
+
+.iteration-table td {
+    font-size: 0.85em;
+}
+
+.section-header {
+    color: #1a3a6e;
+    border-bottom: 2px solid #2E5EA8;
+    padding-bottom: 0.3em;
+    margin-top: 1.5em;
+}
+
+.equation-label {
+    font-weight: bold;
+    color: #1a3a6e;
+    margin-bottom: 0.2em;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.chart-container {
+    text-align: center;
+    margin: 1em auto;
+    padding: 0.5em;
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+    background-color: #fafafa;
+    page-break-inside: avoid;
+}
+
+.chart-container image {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.summary-box {
+    border: 2px solid #2E5EA8;
+    border-radius: 6px;
+    padding: 0.8em 1.2em;
+    margin: 0.8em 0;
+    background-color: #EEF2F8;
+    page-break-inside: avoid;
+}
+
+.summary-box p {
+    margin: 0.2em 0;
+}
+
+/* High-quality equation rendering */
+
+.math-block {
+    text-align: center;
+    margin: 0.8em auto;
+    padding: 0.6em 1.2em;
+    page-break-inside: avoid;
+}
+
+.math-block img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.math-inline img {
+    vertical-align: middle;
+    height: 1.2em;
+}
+
+/* Pavement cross-section diagram */
+
+.diagram-container {
+    text-align: center;
+    margin: 1em auto;
+    padding: 0.8em;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    background-color: #fafafa;
+    page-break-inside: avoid;
+}
+
+.diagram-container img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+}
+
+/* Two-column parameter layout */
+
+.param-grid {
+    display: table;
+    width: 100%;
+    margin: 0.5em 0;
+}
+
+.param-grid-row {
+    display: table-row;
+}
+
+.param-grid-label {
+    display: table-cell;
+    width: 55%;
+    padding: 3px 8px;
+    font-weight: 500;
+    color: #374151;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.param-grid-value {
+    display: table-cell;
+    width: 45%;
+    padding: 3px 8px;
+    font-family: "Consolas", "Courier New", monospace;
+    color: #1F2937;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+/* Note/callout boxes */
+
+.note-box {
+    border-left: 4px solid #2E5EA8;
+    background-color: #F0F4FA;
+    padding: 0.6em 1em;
+    margin: 0.8em 0;
+    font-size: 0.92em;
+    page-break-inside: avoid;
+}
+
+.warning-box {
+    border-left: 4px solid #D97706;
+    background-color: #FFFBEB;
+    padding: 0.6em 1em;
+    margin: 0.8em 0;
+    font-size: 0.92em;
+    page-break-inside: avoid;
+}
+
+/* Section numbering in headers */
+
+.section-number {
+    color: #2E5EA8;
+    font-weight: bold;
+    margin-right: 0.3em;
+}
+
+/* Chart caption */
+
+.chart-caption {
+    text-align: center;
+    font-style: italic;
+    color: #6B7280;
+    font-size: 0.88em;
+    margin-top: 0.3em;
+    margin-bottom: 0.5em;
+}
+
+/* Aircraft color swatch in tables */
+
+.color-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+/* Compact two-column table for parameters */
+
+.param-table {
+    width: auto;
+    min-width: 50%;
+    margin: 0.5em auto;
+}
+
+.param-table td:first-child {
+    text-align: right;
+    font-weight: 500;
+    padding-right: 1em;
+    color: #374151;
+    white-space: nowrap;
+}
+
+.param-table td:last-child {
+    text-align: left;
+    font-family: "Consolas", "Courier New", monospace;
+}
+
+/* Legend items in report text */
+
+.legend-item {
+    display: inline-block;
+    margin-right: 1.5em;
+    font-size: 0.9em;
+}
+
+.legend-line {
+    display: inline-block;
+    width: 20px;
+    height: 3px;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+/* Wider chart container for complex plots */
+
+.chart-container-wide {
+    text-align: center;
+    margin: 1em auto;
+    padding: 0.5em;
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+    background-color: #fafafa;
+    page-break-inside: avoid;
+}
+
+.chart-container-wide img {
+    display: block;
+    margin: 0 auto;
+    width: 95%;
+    height: auto;
 }

@@ -667,6 +667,44 @@ FAILURELAW:
             Next IA
             ' Jia 08/04/03 <
 
+            ' Capture CDF sweep and per-aircraft data for detailed report
+            Try
+                gDetailedReportData.CDFSweep.Capture(NAC, NOFF, lclCDF, CDFFlexVal, CtoP, IControl)
+
+                If gDetailedReportData.AircraftDetails Is Nothing OrElse gDetailedReportData.AircraftDetails.Length < NAC + 1 Then
+                    ReDim gDetailedReportData.AircraftDetails(NAC)
+                End If
+                For IA = 1 To NAC
+                    Dim det As New clsAircraftDetail()
+                    det.ACName = ACName(IA)
+                    LI = LibIndex(IA)
+                    det.GearType = AC(LI).libGear
+                    det.GrossLoad = GL(IA)
+                    det.TireWidth = TW(IA)
+                    det.TirePressure = WT(IA)
+                    det.AnnualDepartures = RepsAnnual(IA)
+                    det.TotalRepetitions = Reps(IA)
+                    det.VerticalStrain = gSTRAIN(IA)
+                    det.NtoFail = gNtoFail(IA)
+                    det.MaxCDF = jobCDFacrftMaxtable(ISect, IA)
+                    det.CDFAtCriticalOffset = lclCDF(IA, IControl)
+                    det.MaxCtoP = jobCtoPtable(ISect, IA)
+                    det.ProjectedTireWidthAtSubgrade = TW(IA) + 2 * Depth
+                    det.SubgradeModelUsed = If(CBool(StraightLineModel), If(gBleasdaleModel, "Bleasdale", "Straight-Line"), "Standard")
+                    det.AsphaltModelUsed = If(Asphalt AndAlso DesigningP209DrawStructure, If(gRDEC, "RDEC", "AI"), "N/A")
+                    det.NGearLoads = If(AC(LI).libGear = "WFBF" Or AC(LI).libGear = "WFBN", 2, If(AC(LI).libGear = "X", AC(LI).libNGroups, 1))
+
+                    ' Capture per-offset data
+                    For IOFF = 1 To NOFF
+                        det.CDFByOffset(IOFF) = lclCDF(IA, IOFF)
+                        det.CtoPByOffset(IOFF) = CtoP(IA, IOFF)
+                    Next
+                    gDetailedReportData.AircraftDetails(IA) = det
+                Next IA
+            Catch ex As Exception
+                ' Non-critical reporting; do not interrupt computation
+            End Try
+
             '  For IOFF = 1 To NOFF
             '    OFFSET = (IOFF - 1) * 10!
             '    Debug.Print LPad$(6, Format(OFFSET, "0.0"));

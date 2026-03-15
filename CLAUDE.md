@@ -131,3 +131,35 @@ FaarFieldAnalysis --> AMClassLib, ACNClassLib, LEAFClassLib, FEMClassLib
 FF2               --> FaarFieldModel
 FAARFIELDUnitTests--> FaarFieldModel
 ```
+
+## Computation details (reference)
+
+The following summarizes the core algorithms implemented in the VB.NET source. See FAA technical reports and the source code for authoritative definitions.
+
+### LEAF (Layered Elastic Analysis)
+
+- **Mathematical basis:** Hankel transform over a multi-layer elastic half-space. Response at (r,z) is an integral of the form ∫ K(α,z)·J_n(α·r)·α dα.
+- **Numerical integration:** 500-point Gauss-Laguerre quadrature. Origin shifts stabilise exponentials; layer coefficients from a (4N-2)×(4N-2) linear system (continuity at interfaces).
+- **Load model:** Each tire = uniform circular pressure; contact radius a = √(W_wheel/(π·p_tire)). Superposition across tires.
+- **Dummy top layer:** A 1-inch dummy layer of surface material is inserted at the top for numerical stability (matches `ComputeResponse`).
+- **Constants:** `NOFF = 41` lateral offsets, `NNodesLong = 1800` longitudinal nodes for tandem CDF.
+
+### CDF (Cumulative Damage Factor)
+
+- **Subgrade damage models:** Standard (AA/BB from E_subgrade), Straight-Line (dual-branch), Bleasdale (three-parameter).
+- **Asphalt damage:** AI (Asphalt Institute) and RDEC (Rate of Dissipated Energy Change) fatigue models.
+- **Coverage-to-pass:** Gaussian lateral wander (σ ≈ 30.435 in, 70-in wander width). General gear uses tandem multipliers and bottom-row wheel grouping.
+- **Tandem CDF (gTandemFnew):** Two-pass LEAF — Pass 1 finds critical X-offset; Pass 2 generates 1800 longitudinal strain points. Peak/valley scanning accumulates signed damage (valleys add, peaks subtract).
+- **CDF sweep:** 41 offsets (0–400 in, 10-in steps); max CDF across offsets is the controlling value.
+
+### Flexible thickness design
+
+- **Algorithm:** Newton-Raphson on design layer thickness targeting CDF = 1.0. Convergence: |ln(CDF)| < 0.005.
+- **Aggregate sublayers:** WES formula for modulus refinement; sublayer counts frozen when |ln(CDF)| < 0.483.
+- **Overflow:** If strains < 1e-8, halve thickness and retry.
+- **Life computation:** Secant method on design life until CDF = 1.0.
+
+### ACR / PCR
+
+- **ACR:** For each subgrade category (A/B/C/D), design reference base thickness with subject aircraft traffic, then find DSWL (Design Single Wheel Load) producing 36,500 coverages. ACR = 2 × DSWL_kg / 100.
+- **PCR:** Elimination algorithm — each round finds critical aircraft, computes MGW (CDF=1.0), then ACR at MGW. Early exit when critical aircraft has max ACR.

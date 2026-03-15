@@ -21,6 +21,7 @@
   - [Failure models — rigid pavement](#failure-models--rigid-pavement-faarfieldanalysis)
 - [Domain model & factories](#domain-model--factories-faarfieldmodel)
 - [User interfaces](#user-interfaces)
+- [Reports](#reports)
 - [Software stack](#software-stack)
 - [Quick start (build)](#quick-start-build)
 - [Unit tests](#unit-tests)
@@ -83,6 +84,7 @@ FAARFIELD-2.1.1/
 │
 │  ── Application layer ─────────────────────────────────────────
 ├── FaarFieldAnalysis/                   Windows Forms analysis host
+│   ├── clsDetailedReportData.vb         Data structures for Detailed Computation Report
 │   ├── modCDF.vb                        CDF calculations (flexible & rigid)
 │   ├── modStrDesignFlex.vb              Flexible pavement design
 │   ├── modStrDesign13.vb                Structural design method 13
@@ -162,6 +164,8 @@ The LEAF solver computes the pavement response (deflections, strains, stresses) 
 
 **Constants:** `NOFF = 41` offsets for CDF calculations, `NNodesLong = 1800` longitudinal nodes for tandem analysis, `OFFSETINC = 10.0` inches between offsets.
 
+**Mathematical basis:** The solver uses the Hankel transform over a multi-layer elastic half-space. Response at radial distance *r* and depth *z* takes the form ∫ K(α,z)·J_n(α·r)·α dα, evaluated via 500-point Gauss-Laguerre quadrature. A 1-inch dummy top layer of surface material is inserted for numerical stability. Each tire is modelled as uniform circular pressure with contact radius a = √(W_wheel/(π·p_tire)); superposition handles multiple tires.
+
 ---
 
 ### ACR — Aircraft Classification Rating (`ACNClassLib/`)
@@ -181,6 +185,8 @@ Computes Aircraft Classification Ratings (ACR/ACN) for flexible and rigid paveme
 | Function | Location | Description |
 |----------|----------|-------------|
 | `Z_Evaluation_Loop999()` | [clsACR.vb:3541](ACNClassLib/clsACR.vb#L3541) | Main evaluation loop — iterates over depth zones for a given `PavementType` (Flexible or Rigid) and accumulates damage. |
+
+**ACR/PCR algorithms:** ACR — for each subgrade category (A/B/C/D), design reference base thickness with subject aircraft traffic, then find DSWL (Design Single Wheel Load) producing 36,500 coverages; ACR = 2×DSWL_kg/100. PCR — elimination algorithm: each round finds critical aircraft, computes MGW (CDF=1.0), then ACR at MGW; early exit when critical aircraft has max ACR.
 
 **Design-type constants** (defined at the top of [clsACR.vb](ACNClassLib/clsACR.vb)):
 
@@ -251,6 +257,8 @@ Computes cumulative damage factors for flexible, rigid, and overlay pavements un
 | `FAAModulus()` | [modCDF.vb:1083](FaarFieldAnalysis/modCDF.vb#L1083) | Sets layer moduli following FAA standards. |
 | `CompforStab()` | [modCDF.vb:706](FaarFieldAnalysis/modCDF.vb#L706) | Computes F-slope for stabilised layers. |
 
+**Damage models:** Subgrade — Standard (AA/BB from E_subgrade), Straight-Line (dual-branch), Bleasdale (three-parameter). Asphalt — AI (Asphalt Institute) and RDEC fatigue models. **Tandem CDF (gTandemFnew):** Two-pass LEAF finds critical lateral offset, then 1800 longitudinal strain points; peak/valley scanning accumulates signed damage. CDF is swept over 41 lateral offsets (0–400 in, 10-in steps).
+
 ---
 
 ### Thickness design (`FaarFieldAnalysis/`)
@@ -260,7 +268,7 @@ Iterative pavement thickness design routines that drive LEAF and FEM to converge
 | File | Key function(s) | Description |
 |------|-----------------|-------------|
 | [modPCN_ThicknessDesign.vb](FaarFieldAnalysis/modPCN_ThicknessDesign.vb) | `ThicknessDesign()` (line 13), `InitVar()` (line 448) | Top-level iterative thickness optimiser; sets up the section and calls the appropriate design sub for flexible or rigid. |
-| [modStrDesignFlex.vb](FaarFieldAnalysis/modStrDesignFlex.vb) | `LeafDesignFlex()` (line 57), `LeafDesignFlex2()` (line 63), `LeafDesignFlexOFlex()` (line 770) | Flexible pavement design — iterates HMA surface thickness until the CDF target is met. Also handles flex-on-flex overlay. |
+| [modStrDesignFlex.vb](FaarFieldAnalysis/modStrDesignFlex.vb) | `LeafDesignFlex()` (line 57), `LeafDesignFlex2()` (line 63), `LeafDesignFlexOFlex()` (line 770) | Flexible pavement design — Newton-Raphson on design layer thickness targeting CDF = 1.0 (convergence |ln(CDF)| < 0.005). Aggregate sublayer modulus refinement (WES formula); sublayer counts frozen near convergence. Also handles flex-on-flex overlay. |
 | [modDesignRigid_Adj.vb](FaarFieldAnalysis/modDesignRigid_Adj.vb) | `pre_DesignRigid_NP()` (line 69), `pre_DesignRigidOverlay_NP()` (line 502), `pre_LifeTotal_PCConRigid2014()` (line 815) | Rigid pavement and overlay thickness design with 2014 fatigue model. |
 | [modDesignP209.vb](FaarFieldAnalysis/modDesignP209.vb) | `SetData_DesignBase_SubgadeCBR20_4Layers()` (line 73), `CheckMinThickness()` (line 15) | P-209 crushed-aggregate base design data and minimum-thickness checks. |
 | [modFAILURE_MODEL_NP.vb](FaarFieldAnalysis/modFAILURE_MODEL_NP.vb) | `DesignRigid_NP()` (line 554), `DesignRigidOverlay_NP()` (line 39), `LifeTotal_PCConRigid2014()` (line 1204), `NtoFail1()` (line 3022) | Rigid pavement failure models — PCC fatigue life, HMA-on-rigid life, and the general `NtoFail` allowable-repetitions function. |
@@ -331,6 +339,44 @@ The **FF2** (WPF) project is the primary user interface and includes:
 - 52 value converters in `Converters/` for unit systems, visibility, and validation
 - An embedded aircraft library at `Defaults/Aircraft/aircraft.xml` (1.9 MB)
 - Material imagery in `Defaults/Materials/`
+- Multiple report types (Structure, CDF Graph, PCR, Airport Master Record, Summary, and **Detailed Computation Report**)
+
+---
+
+## Reports
+
+FAARFIELD generates several report types, accessible from the section tree in the FF2 UI. Each report can be viewed in the built-in HTML viewer and exported to PDF.
+
+| Report | Description |
+|--------|-------------|
+| **Summary Report** | Job-level overview of all structures and design results |
+| **Structure Report** | Pavement cross-section, layer properties, and analysis summary per structure |
+| **CDF Graph** | Cumulative damage factor vs. lateral offset visualization |
+| **PCR Report** | Pavement Classification Rating results and aircraft-by-aircraft breakdown |
+| **PCR Graph** | PCR vs. aircraft chart |
+| **Airport Master Record** | ICAO-compliant pavement strength record |
+| **Detailed Computation Report** | Full computational trace for flexible pavement design (see below) |
+
+### Detailed Computation Report
+
+The **Detailed Computation Report** is a comprehensive technical report that documents the full computational workflow of thickness design, CDF accumulation, and ACR/PCR analysis. It is populated automatically when you run **Thickness Design** or **Life Analysis** on a flexible pavement section. Access it from the section tree under **Reports → Detailed Computation Report**.
+
+**Key features:**
+
+- **Section A — Pavement Structure Summary:** Design layers and expanded sublayer structure (after modulus adjustment), evaluation depth at subgrade.
+- **Section B — Design Equations:** Rendered equations for the subgrade strain failure model (AA, BB, N_fail), CDF formula, coverage-to-pass (Gaussian wander model), and convergence criterion.
+- **Section C — Coverage-to-Pass (C/P) Concept:** Educational diagram explaining how C/P is computed from Gaussian lateral wander (σ = 30.435 in.), multi-wheel superposition, and the 41 evaluation strips.
+- **Section D — Fatigue Characterization:** Subgrade fatigue curve plot with aircraft operating points, N_fail, repetitions, and model parameters.
+- **Section E — Per-Aircraft Detailed Breakdown:** For each aircraft: pavement cross-section with tire projection, gear parameters (load, tire pressure, contact area, tandem spacing), CDF vs. offset chart, wheel-level C/P decomposition, and a step-by-step computation walkthrough.
+- **Section F — C/P Distribution:** C/P ratio vs. lateral offset for all aircraft.
+- **Section G — CDF Sweep Table:** Full 41-offset table of C/P and CDF per aircraft and total CDF; critical offset identification.
+- **Section H — CDF Distribution Across Pavement Width:** Composite CDF chart and contribution summary at the critical strip.
+- **Section I — Newton-Raphson Convergence:** Dual-axis convergence plot (|ln(CDF)| and thickness vs. iteration), iteration log, and convergence summary.
+- **Section J — ACR Details:** Reference structure, designed base thickness, DSWL iteration log, and final ACR per subgrade category.
+- **Section K — PCR Elimination Rounds:** Critical aircraft per round, MGW iteration, round PCR, and early-exit flag.
+- **Section L — ACR vs. Damage Per Departure:** Chart relating ACR to normalized CDF per departure; bubble size proportional to annual departures.
+
+The report data is captured during analysis by `clsDetailedReportData` (in `FaarFieldAnalysis/clsDetailedReportData.vb`) and rendered in `MainWindowViewModel.refreshDetailedReport()`.
 
 ---
 

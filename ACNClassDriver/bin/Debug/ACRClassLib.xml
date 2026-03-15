@@ -6,5 +6,16 @@ ACRClassLib
 </name>
 </assembly>
 <members>
+<member name="T:ACRClassLib.clsACR.DSWLIterationLog">
+ <summary>
+ Captures one DSWL iteration step for detailed reporting.
+ </summary>
+</member>
+<member name="F:ACRClassLib.clsACR.DSWLLog">
+ <summary>
+ DSWL iteration history populated during Calculate_DSWL_Flex / Calculate_DSWL_Rigid.
+ Read by the calling code after CalculateACR returns.
+ </summary>
+</member>
 </members>
 </doc>

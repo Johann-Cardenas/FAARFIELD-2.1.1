@@ -10,6 +10,13 @@
 
         <ResourceDictionary>
 
+            <!-- Implicit Window style must be at app level, not in a merged dictionary -->
+            <Style TargetType="Window">
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Background" Value="#F5F6F8"/>
+            </Style>
+
             <vm:MainWindowViewModel x:Key="MainWindowViewModel"/>
 
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -279,6 +286,7 @@
                 <ResourceDictionary Source="/Telerik.Windows.Themes.Office2016Touch;component/Themes/System.Windows.xaml"/>
                 <ResourceDictionary Source="/Telerik.Windows.Themes.Office2016Touch;component/Themes/System.Windows.xaml"/>
                 <ResourceDictionary Source="/Telerik.Windows.Themes.Office2016Touch;component/Themes/Telerik.Windows.Controls.Docking.xaml"/>
+                <ResourceDictionary Source="Themes/ModernTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
         </ResourceDictionary>

@@ -17,6 +17,7 @@ Public Module FEDFAA1
         Return DateTime.Now.ToString("yyyy-MM-dd HH;mm;ss") 'ik2020.03
     End Function
 
+    Public gDetailedReportData As New clsDetailedReportData()
     Public ReducedCrossSectionRunChecker As Boolean = False
     Public gOutputDirName As String 'ik2020.03
 
@@ -1926,6 +1927,20 @@ Table1:
 
                 'Call PrintResults002(Me) '9999999999
 
+                ' Capture PCR round data for detailed report
+                Try
+                    Dim pcrRound As New clsPCRRound()
+                    pcrRound.RoundNumber = ik
+                    If ind2maxACxM(ik) >= 1 AndAlso ind2maxACxM(ik) <= NAC_noGear Then
+                        pcrRound.CriticalAircraftName = gNewACName(ik)
+                    End If
+                    pcrRound.CriticalAircraftCDF = CDFPic
+                    pcrRound.FinalMGW = gMGW(ind2maxACxM(ik))
+                    pcrRound.RoundPCR = gNewPCN(ik)
+                    pcrRound.EarlyExit = (ind2maxACxMSave(ik) = gACRmaxIndex)
+                    gDetailedReportData.PCRRounds.Add(pcrRound)
+                Catch ex As Exception
+                End Try
 
                 If gPCN_report < gNewPCN(ik) Then
                     gPCN_report = gNewPCN(ik)
@@ -2787,6 +2802,33 @@ finish1:
 
 
         End If
+
+        ' Capture ACR details for detailed report
+        Try
+            Dim acrDet As New clsACRDetail()
+            acrDet.ACName = ACName(ind1)
+            If bFlex Then
+                acrDet.SubgradeCategory = "Flexible"
+            Else
+                acrDet.SubgradeCategory = "Rigid"
+            End If
+            acrDet.DesignedBaseThickness = ACNdataFF1.libACRthick(1)
+            acrDet.FinalACR = ACNdataFF1.libACR(1)
+            If RunACNLib1 IsNot Nothing Then
+                acrDet.FinalDSWL = RunACNLib1.DSWLFinalGearLoad
+                For Each entry In RunACNLib1.DSWLLog
+                    Dim dswlIter As New clsDSWLIteration()
+                    dswlIter.IterationNumber = entry.IterationNumber
+                    dswlIter.Load = entry.GearLoad
+                    dswlIter.NtoFail = entry.NtoFail
+                    dswlIter.CovACN = entry.CovACN
+                    dswlIter.Delta = entry.Delta
+                    acrDet.DSWLIterations.Add(dswlIter)
+                Next
+            End If
+            gDetailedReportData.ACRDetails.Add(acrDet)
+        Catch ex As Exception
+        End Try
 
         'gACR(ind2maxAC1) = ACNdataFF1.libACR(1)
         'gACN_Thick(ind2maxAC1) = ACNdataFF1.libACRthick(1)

@@ -56,6 +56,7 @@ Public Module modStrDesign
 
     Public Sub LeafDesignFlex()
         NStrIterations = 0
+        gDetailedReportData.Clear()
         Call LeafDesignFlex2()
     End Sub
 
@@ -209,6 +210,18 @@ StartFlexLoop:
             CDFSUBMAX = lclCDFMAX
             '    Debug.Print "Overflow 1 = "; Overflow
             System.Diagnostics.Debug.WriteLine(ILoop & LayerSwitch & Thick(IL) & EvalDepth(1) & "CDF = " & CDFSUBMAX)
+
+            ' Capture iteration record for detailed report
+            Try
+                Dim iterRec As New clsIterationRecord()
+                iterRec.IterationNumber = ILoop
+                iterRec.Thickness = Thick(IL)
+                iterRec.CDFMAX = CDFSUBMAX
+                iterRec.CDFErr = CSng(System.Math.Abs(System.Math.Log(Math.Max(CDFSUBMAX, 0.000001))))
+                iterRec.SubLayered = SubLayers
+                gDetailedReportData.Iterations.Add(iterRec)
+            Catch ex As Exception
+            End Try
             For I = 1 To NAC
                 '      Debug.Print ACName$(I); " Strain = "; STRNV(I)  '**
             Next I
@@ -524,6 +537,30 @@ StartFlexLoop:
                 '---------------------------------
             End If
         Loop
+
+        ' Capture sublayer data and mark detailed report as populated
+        Try
+            gDetailedReportData.SublayerData = New clsSublayerData()
+            gDetailedReportData.SublayerData.EvalDepthSubgrade = EvalDepth(1)
+            ' Capture design layers
+            For I = 1 To NPLayers
+                Dim dli As New clsLayerInfo()
+                dli.Thickness = Thick(I)
+                dli.Modulus = Modulus(I)
+                dli.LCode = LCode(I)
+                gDetailedReportData.SublayerData.DesignLayers.Add(dli)
+            Next
+            ' Capture expanded sublayers
+            For I = 1 To julNPLayers
+                Dim dli As New clsLayerInfo()
+                dli.Thickness = julThick(I)
+                dli.Modulus = julModulus(I)
+                dli.LCode = julLCode(I)
+                gDetailedReportData.SublayerData.ExpandedSublayers.Add(dli)
+            Next
+            gDetailedReportData.IsPopulated = True
+        Catch ex As Exception
+        End Try
 
         'cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf
         If Not LifeComputation Then

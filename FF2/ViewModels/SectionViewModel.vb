@@ -32,6 +32,7 @@ Namespace ViewModels
         Public ReadOnly Property ReportPCR As ReportPCRViewModel
         Public ReadOnly Property PCRGraph As GraphPCN
         Public ReadOnly Property AirportMasterRecord As AirportMasterRecord
+        Public ReadOnly Property DetailedReport As DetailedReportViewModel
 
         Public ReadOnly Property SummaryReport As SummaryReportViewModel
 
@@ -57,6 +58,9 @@ Namespace ViewModels
 
             AirportMasterRecord = New AirportMasterRecord(section, Me, FaarFieldViewModel)
             Children.Add(AirportMasterRecord)
+
+            DetailedReport = New DetailedReportViewModel(section, Me, FaarFieldViewModel)
+            Children.Add(DetailedReport)
 
             Me.FaarFieldViewModel = FaarFieldViewModel
 

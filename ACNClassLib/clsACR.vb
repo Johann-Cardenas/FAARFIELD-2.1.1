@@ -2,6 +2,7 @@ Option Strict On
 Option Explicit On
 
 Imports System
+Imports System.Collections.Generic
 Imports System.IO
 Imports System.Text
 Imports Microsoft.VisualBasic.FileIO
@@ -148,6 +149,25 @@ Public Class clsACR
         Dim libSubCat() As String
         Dim libSubCatMPa() As String
     End Structure
+
+    ''' <summary>
+    ''' Captures one DSWL iteration step for detailed reporting.
+    ''' </summary>
+    Public Structure DSWLIterationLog
+        Public IterationNumber As Integer
+        Public GearLoad As Double
+        Public NtoFail As Double
+        Public StrainMax As Double
+        Public CovACN As Double
+        Public Delta As Double
+    End Structure
+
+    ''' <summary>
+    ''' DSWL iteration history populated during Calculate_DSWL_Flex / Calculate_DSWL_Rigid.
+    ''' Read by the calling code after CalculateACR returns.
+    ''' </summary>
+    Public DSWLLog As New List(Of DSWLIterationLog)
+    Public DSWLFinalGearLoad As Double
 
 
 
@@ -992,6 +1012,9 @@ finish1:
     Private Sub Calculate_DSWL_Flex()
         Dim SS1, SS2 As Double
         Dim tt1, tt2 As Double
+        Dim dswlIterNum As Integer = 0
+
+        DSWLLog.Clear()
 
         If CovACN = 36500 Then
             CoverageDelta = 1
@@ -1002,6 +1025,17 @@ finish1:
 
         bCalculate_DSWL = True
         Call Calculate_Flex_Coverages()
+
+        ' Log initial state
+        dswlIterNum += 1
+        Dim logEntry0 As New DSWLIterationLog()
+        logEntry0.IterationNumber = dswlIterNum
+        logEntry0.GearLoad = CallAC(1).GearLoad
+        logEntry0.NtoFail = NtoFail
+        logEntry0.StrainMax = StrainMax
+        logEntry0.CovACN = CovACN
+        logEntry0.Delta = Math.Abs(NtoFail - CovACN)
+        DSWLLog.Add(logEntry0)
 
         If Math.Abs(NtoFail - CovACN) > CoverageDelta Then
             If NtoFail < CovACN Then
@@ -1030,6 +1064,15 @@ finish1:
 
                     Call Calculate_Flex_Coverages()
                     tt1 = CallAC(1).GearLoad : SS1 = NtoFail : SS1 = StrainMax
+                    dswlIterNum += 1
+                    Dim logA As New DSWLIterationLog()
+                    logA.IterationNumber = dswlIterNum
+                    logA.GearLoad = CallAC(1).GearLoad
+                    logA.NtoFail = NtoFail
+                    logA.StrainMax = StrainMax
+                    logA.CovACN = CovACN
+                    logA.Delta = Math.Abs(NtoFail - CovACN)
+                    DSWLLog.Add(logA)
                     If CallAC(1).GearLoad = 100 Then Exit Do
                 Loop Until Math.Abs(NtoFail - CovACN) < CoverageDelta Or (NtoFail > CovACN)
             Else
@@ -1038,6 +1081,15 @@ finish1:
                     CallAC(1).GearLoad = CallAC(1).GearLoad + 5000
                     Call Calculate_Flex_Coverages()
                     tt2 = CallAC(1).GearLoad : SS2 = NtoFail : SS2 = StrainMax
+                    dswlIterNum += 1
+                    Dim logB As New DSWLIterationLog()
+                    logB.IterationNumber = dswlIterNum
+                    logB.GearLoad = CallAC(1).GearLoad
+                    logB.NtoFail = NtoFail
+                    logB.StrainMax = StrainMax
+                    logB.CovACN = CovACN
+                    logB.Delta = Math.Abs(NtoFail - CovACN)
+                    DSWLLog.Add(logB)
                 Loop Until Math.Abs(NtoFail - CovACN) < CoverageDelta Or (NtoFail < CovACN)
             End If
         Else
@@ -1090,6 +1142,15 @@ rep1:
         CallAC(1).GearLoad = ttACN
         Call Calculate_Flex_Coverages()
 
+        dswlIterNum += 1
+        Dim logC As New DSWLIterationLog()
+        logC.IterationNumber = dswlIterNum
+        logC.GearLoad = CallAC(1).GearLoad
+        logC.NtoFail = NtoFail
+        logC.StrainMax = StrainMax
+        logC.CovACN = CovACN
+        logC.Delta = Math.Abs(NtoFail - CovACN)
+        DSWLLog.Add(logC)
 
         If StrainMax < StrainACN Then
             tt2 = CallAC(1).GearLoad
@@ -1107,6 +1168,7 @@ finish1:
 
         CovSWL = NtoFail
         StrainMaxSWL = StrainMax
+        DSWLFinalGearLoad = CallAC(1).GearLoad
 
 
 
