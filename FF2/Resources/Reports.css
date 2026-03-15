@@ -399,3 +399,141 @@ table th:first-child {
     width: 95%;
     height: auto;
 }
+
+/* Table of Contents */
+
+.toc {
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    padding: 1em 1.5em;
+    margin: 1em auto;
+    background-color: #FAFBFC;
+    max-width: 700px;
+    page-break-inside: avoid;
+}
+
+.toc h3 {
+    margin-top: 0;
+    color: #1a3a6e;
+    border-bottom: 2px solid #2E5EA8;
+    padding-bottom: 0.3em;
+}
+
+.toc-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.toc-list li {
+    padding: 0.25em 0;
+    border-bottom: 1px dotted #E5E7EB;
+    font-size: 0.92em;
+}
+
+.toc-list li:last-child {
+    border-bottom: none;
+}
+
+.toc-section-num {
+    color: #2E5EA8;
+    font-weight: bold;
+    display: inline-block;
+    width: 3em;
+}
+
+/* Summary dashboard cards */
+
+.dashboard {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8em;
+    margin: 1em 0;
+    page-break-inside: avoid;
+}
+
+.dash-card {
+    flex: 1 1 180px;
+    max-width: 250px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    padding: 0.7em 1em;
+    background-color: #FAFBFC;
+    text-align: center;
+}
+
+.dash-card-label {
+    font-size: 0.78em;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.2em;
+}
+
+.dash-card-value {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #1a3a6e;
+    font-family: "Consolas", "Courier New", monospace;
+}
+
+.dash-card-unit {
+    font-size: 0.75em;
+    color: #9CA3AF;
+    font-weight: normal;
+}
+
+/* Improved section header - left aligned */
+
+.section-header-left {
+    color: #1a3a6e;
+    border-bottom: 2px solid #2E5EA8;
+    padding-bottom: 0.3em;
+    margin-top: 2em;
+    margin-bottom: 0.5em;
+    page-break-after: avoid;
+}
+
+/* Two-column side-by-side chart layout */
+
+.chart-row {
+    display: flex;
+    gap: 1em;
+    margin: 1em 0;
+    page-break-inside: avoid;
+}
+
+.chart-row .chart-container {
+    flex: 1;
+}
+
+/* Stepped list for step-by-step walkthrough */
+
+.step-list {
+    counter-reset: step-counter;
+    padding-left: 0;
+    list-style: none;
+}
+
+.step-list li {
+    counter-increment: step-counter;
+    padding: 0.4em 0 0.4em 2.5em;
+    position: relative;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.step-list li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0.4em;
+    background-color: #2E5EA8;
+    color: white;
+    width: 1.6em;
+    height: 1.6em;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 1.6em;
+    font-size: 0.82em;
+    font-weight: bold;
+}

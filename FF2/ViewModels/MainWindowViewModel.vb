@@ -8416,9 +8416,69 @@ Namespace ViewModels
             Dim computedAA As Double = 0.000247 + 0.000245 * Math.Log10(subgradeMod)
             Dim computedBB As Double = 0.0658 * subgradeMod ^ 0.559
 
+            ' ====== Summary Dashboard ======
+            Dim dashHtml As String = ""
+            ' Card 1: Total CDF
+            If rpt.CDFSweep.MaxCDF > 0 Then
+                dashHtml += "<div class='dash-card'><div class='dash-card-label'>Max Total CDF</div>" &
+                    "<div class='dash-card-value'>" & Format(rpt.CDFSweep.MaxCDF, "0.000000") & "</div></div>"
+            End If
+            ' Card 2: Design Thickness (from last iteration)
+            If rpt.Iterations.Count > 0 Then
+                Dim lastThk = rpt.Iterations(rpt.Iterations.Count - 1).Thickness
+                dashHtml += "<div class='dash-card'><div class='dash-card-label'>Design Thickness</div>" &
+                    "<div class='dash-card-value'>" & Format(lastThk, "0.00") & " <span class='dash-card-unit'>" & Thicknessunit & "</span></div></div>"
+            End If
+            ' Card 3: Number of Aircraft
+            If rpt.AircraftDetails IsNot Nothing Then
+                Dim nAcCount As Integer = 0
+                For ia As Integer = 1 To UBound(rpt.AircraftDetails)
+                    If rpt.AircraftDetails(ia) IsNot Nothing Then nAcCount += 1
+                Next
+                dashHtml += "<div class='dash-card'><div class='dash-card-label'>Aircraft in Mix</div>" &
+                    "<div class='dash-card-value'>" & nAcCount.ToString() & "</div></div>"
+            End If
+            ' Card 4: Critical Offset
+            If rpt.CDFSweep.MaxCDFOffset > 0 Then
+                dashHtml += "<div class='dash-card'><div class='dash-card-label'>Critical Offset</div>" &
+                    "<div class='dash-card-value'>" & Format((rpt.CDFSweep.MaxCDFOffset - 1) * CDF.OFFSETINC, "0") & " <span class='dash-card-unit'>" & LenghtUnit & "</span></div></div>"
+            End If
+            ' Card 5: Subgrade Modulus
+            dashHtml += "<div class='dash-card'><div class='dash-card-label'>Subgrade Modulus</div>" &
+                "<div class='dash-card-value'>" & Format(subgradeMod, "#,##0") & " <span class='dash-card-unit'>" & PressureUnit & "</span></div></div>"
+            ' Card 6: Iterations
+            If rpt.Iterations.Count > 0 Then
+                Dim convergedStr As String = If(rpt.Iterations(rpt.Iterations.Count - 1).CDFErr < CDF.CDFExitErr, "Yes", "No")
+                dashHtml += "<div class='dash-card'><div class='dash-card-label'>Converged / Iterations</div>" &
+                    "<div class='dash-card-value'>" & convergedStr & " / " & rpt.Iterations.Count.ToString() & "</div></div>"
+            End If
+            html += "<div class='dashboard'>" & dashHtml & "</div>"
+
+            ' ====== Table of Contents ======
+            Dim tocHtml As String = "<div class='toc'><h3>Table of Contents</h3><ul class='toc-list'>"
+            tocHtml += "<li><span class='toc-section-num'>A.</span> Pavement Structure Summary</li>"
+            tocHtml += "<li><span class='toc-section-num'>B.</span> Design Equations</li>"
+            tocHtml += "<li><span class='toc-section-num'>C.</span> Understanding Coverage-to-Pass (C/P)</li>"
+            tocHtml += "<li><span class='toc-section-num'>D.</span> Fatigue Characterization</li>"
+            tocHtml += "<li><span class='toc-section-num'>E.</span> Per-Aircraft Detailed Breakdown</li>"
+            tocHtml += "<li><span class='toc-section-num'>F.</span> Coverage-to-Pass (C/P) Distribution</li>"
+            tocHtml += "<li><span class='toc-section-num'>G.</span> CDF Sweep Table (" & CDF.NOFF.ToString() & " offsets)</li>"
+            tocHtml += "<li><span class='toc-section-num'>H.</span> CDF Distribution Across Pavement Width</li>"
+            tocHtml += "<li><span class='toc-section-num'>I.</span> Newton-Raphson Convergence</li>"
+            If rpt.ACRDetails.Count > 0 Then
+                tocHtml += "<li><span class='toc-section-num'>J.</span> ACR Details</li>"
+            End If
+            If rpt.PCRRounds.Count > 0 Then
+                tocHtml += "<li><span class='toc-section-num'>K.</span> PCR Elimination Rounds</li>"
+            End If
+            If rpt.ACRDetails.Count > 0 AndAlso rpt.AircraftDetails IsNot Nothing Then
+                tocHtml += "<li><span class='toc-section-num'>L.</span> ACR vs. Damage Per Departure</li>"
+            End If
+            tocHtml += "</ul></div>"
+            html += tocHtml
+
             ' ====== Section A: Pavement Structure Summary ======
-            tmpdiv = hu.wrap_h3("Section A: Pavement Structure Summary", "section-header")
-            html += hu.wrap_div(tmpdiv, "title")
+            html += hu.wrap_h3("<span class='section-number'>A.</span> Pavement Structure Summary", "section-header-left")
 
             ' Design layers table
             tmpth = hu.wrap_p("Layer #")
@@ -8495,18 +8555,17 @@ Namespace ViewModels
             html += hu.wrap_div(tmpdiv, "summary-box")
 
             ' ====== Section B: Design Equations (rendered as high-quality images) ======
-            tmpdiv = hu.wrap_h3("Section B: Design Equations", "section-header")
-            html += hu.wrap_div(tmpdiv, "title")
+            html += hu.wrap_h3("<span class='section-number'>B.</span> Design Equations", "section-header-left")
 
             ' B.1 Subgrade failure model equation image
             Dim eqLines1() As String = {
-                "AA = 0.000247 + 0.000245 x log10(E_subgrade)",
-                "BB = 0.0658 x E_subgrade^0.559",
-                "N_fail = 10,000 x (AA / " & ChrW(&H03B5) & "v)^BB",
+                "AA  =  0.000247  +  0.000245 " & ChrW(&H00D7) & " log" & ChrW(&H2081) & ChrW(&H2080) & "(E_subgrade)",
+                "BB  =  0.0658 " & ChrW(&H00D7) & " E_subgrade" & ChrW(&H2070) & ChrW(&H00B7) & ChrW(&H2075) & ChrW(&H2075) & ChrW(&H2079),
+                "N_fail  =  10,000 " & ChrW(&H00D7) & " (AA / " & ChrW(&H03B5) & "v)^BB",
                 "",
-                "For this structure (E_subgrade = " & Format(subgradeMod, "#,##0") & " " & PressureUnit & "):",
-                "  AA = " & Format(computedAA, "0.000000"),
-                "  BB = " & Format(computedBB, "0.000")
+                "For this structure  (E_subgrade = " & Format(subgradeMod, "#,##0") & " " & PressureUnit & "):",
+                "   AA = " & Format(computedAA, "0.000000"),
+                "   BB = " & Format(computedBB, "0.000")
             }
             Dim eqImg1 As Bitmap = DrawEquationImage("Subgrade Strain Failure Model (FAA Standard)", eqLines1)
             tmpdiv = hu.wrap_bmp_img(eqImg1)
@@ -8515,9 +8574,9 @@ Namespace ViewModels
 
             ' B.2 CDF formula
             Dim eqLines2() As String = {
-                "CDF_aircraft = Repetitions x (C/P) / N_fail",
+                "CDF_aircraft  =  Repetitions " & ChrW(&H00D7) & " (C/P) / N_fail",
                 "",
-                "CDF_total = Sum of CDF_aircraft  (over all aircraft)",
+                "CDF_total  =  " & ChrW(&H03A3) & " CDF_aircraft     (summed over all aircraft)",
                 "",
                 "where C/P = Coverage-to-Pass ratio from Gaussian",
                 "lateral wander model (" & ChrW(&H03C3) & " = 30.435 in.)"
@@ -8529,12 +8588,12 @@ Namespace ViewModels
 
             ' B.3 Coverage-to-Pass equation
             Dim eqLines3() As String = {
-                "C/P(offset) = integral of G(x; " & ChrW(&H03C3) & ") dx over tire contact width",
+                "C/P(offset)  =  " & ChrW(&H222B) & " G(x; " & ChrW(&H03C3) & ") dx   over tire contact width",
                 "",
-                "G(x; " & ChrW(&H03C3) & ") = [1/(" & ChrW(&H03C3) & " x sqrt(2" & ChrW(&H03C0) & "))] x exp(-x^2 / (2" & ChrW(&H03C3) & "^2))",
+                "G(x; " & ChrW(&H03C3) & ")  =  [1 / (" & ChrW(&H03C3) & ChrW(&H221A) & "(2" & ChrW(&H03C0) & "))]  " & ChrW(&H00D7) & "  exp(" & ChrW(&H2212) & "x" & ChrW(&H00B2) & " / 2" & ChrW(&H03C3) & ChrW(&H00B2) & ")",
                 "",
-                ChrW(&H03C3) & " = 30.435 in. (std. dev. of lateral wander about nominal wheel path centerline)",
-                "Tire contact width projected at depth d: TW_proj = TW + 2d"
+                ChrW(&H03C3) & " = 30.435 in.   (std. dev. of lateral wander)",
+                "Projected tire width at depth d:   TW_proj = TW + 2d"
             }
             Dim eqImg3 As Bitmap = DrawEquationImage("Coverage-to-Pass (Gaussian Wander Model)", eqLines3)
             tmpdiv = hu.wrap_bmp_img(eqImg3)
@@ -8554,8 +8613,7 @@ Namespace ViewModels
             eqImg4.Dispose()
 
             ' ====== Section C: Coverage-to-Pass (C/P) Concept ======
-            tmpdiv = hu.wrap_h3("Section C: Understanding Coverage-to-Pass (C/P)", "section-header")
-            html += hu.wrap_div(tmpdiv, "title")
+            html += hu.wrap_h3("<span class='section-number'>C.</span> Understanding Coverage-to-Pass (C/P)", "section-header-left")
 
             html += hu.wrap_div(hu.wrap_p("The Coverage-to-Pass (C/P) ratio is the probability that a given evaluation " &
                 "strip (10 in. wide) on the pavement surface will be loaded by a passing wheel, accounting for " &
@@ -8577,8 +8635,7 @@ Namespace ViewModels
 
             ' ====== Section D: Fatigue Characterization ======
             If rpt.AircraftDetails IsNot Nothing Then
-                tmpdiv = hu.wrap_h3("Section D: Fatigue Characterization", "section-header")
-                html += hu.wrap_div(tmpdiv, "title")
+                html += hu.wrap_h3("<span class='section-number'>D.</span> Fatigue Characterization", "section-header-left")
 
                 html += hu.wrap_div(hu.wrap_p("The following plot shows the subgrade fatigue model curve (allowable repetitions vs. vertical strain) " &
                     "with each aircraft's computed strain and N_fail plotted as scatter points. Horizontal dashed lines indicate " &
@@ -8634,12 +8691,23 @@ Namespace ViewModels
 
                 tmpdiv = hu.wrap_table(tmptable, "detailed-table")
                 html += hu.wrap_div(tmpdiv)
+
+                ' Fatigue life ratio bar chart
+                Dim lifeRatioPlot As Bitmap = DrawLifeRatioChart(rpt, chartColors)
+                If lifeRatioPlot.Width > 1 Then
+                    tmpdiv = hu.wrap_bmp_img(lifeRatioPlot)
+                    html += hu.wrap_div(tmpdiv, "chart-container-wide")
+                    html += hu.wrap_p("Figure: Fatigue life reserve for each aircraft. Green bars (right of center) indicate " &
+                        "life reserve (N_fail > Repetitions). Red bars (left of center) indicate the aircraft " &
+                        "exceeds its fatigue life at this thickness. The reference line at ratio = 1.0 represents " &
+                        "exact balance between design traffic and allowable repetitions.", "chart-caption")
+                End If
+                lifeRatioPlot.Dispose()
             End If
 
             ' ====== Section E: Per-Aircraft Detailed Breakdown ======
             If rpt.AircraftDetails IsNot Nothing Then
-                tmpdiv = hu.wrap_h3("Section E: Per-Aircraft Detailed Breakdown", "section-header")
-                html += hu.wrap_div(tmpdiv, "title")
+                html += hu.wrap_h3("<span class='section-number'>E.</span> Per-Aircraft Detailed Breakdown", "section-header-left")
 
                 For ia As Integer = 1 To UBound(rpt.AircraftDetails)
                     If rpt.AircraftDetails(ia) Is Nothing Then Continue For
@@ -8758,71 +8826,63 @@ Namespace ViewModels
                         "sum of estimated wheel contributions. Inset shows the gear layout schematic.", "chart-caption")
 
                     ' E.6 Step-by-Step Computation Walkthrough
-                    tmpdiv = hu.wrap_h4("Step-by-Step Computation — " & det.ACName)
+                    tmpdiv = hu.wrap_h4("Step-by-Step Computation " & ChrW(&H2014) & " " & det.ACName)
                     html += hu.wrap_div(tmpdiv)
 
-                    Dim stepNum As Integer = 1
-                    Dim stepsHtml As String = ""
+                    Dim stepsHtml As String = "<ol class='step-list'>"
 
                     ' Step 1: Aircraft loading
-                    stepsHtml += hu.wrap_p("<b>Step " & stepNum & ":</b> Apply gear load of " &
+                    stepsHtml += "<li>Apply gear load of " &
                         Format(det.GrossLoad, "#,##0") & " " & WeightUnit & " with tire pressure " &
                         Format(det.TirePressure, "0.0") & " " & PressureUnit & " and tire contact width " &
-                        Format(det.TireWidth, "0.00") & " " & LenghtUnit & " (" & det.GearType & " gear).")
-                    stepNum += 1
+                        Format(det.TireWidth, "0.00") & " " & LenghtUnit & " (" & det.GearType & " gear).</li>"
 
                     ' Step 2: LEAF analysis
-                    stepsHtml += hu.wrap_p("<b>Step " & stepNum & ":</b> Run LEAF (Layered Elastic Analysis) to compute " &
+                    stepsHtml += "<li>Run LEAF (Layered Elastic Analysis) to compute " &
                         "vertical subgrade strain. Result: " & ChrW(&H03B5) & "v = " &
                         Format(det.VerticalStrain * 1000000, "0.00") & " microstrain at evaluation depth " &
-                        Format(rpt.SublayerData.EvalDepthSubgrade, "0.00") & " " & Thicknessunit & " below the surface.")
-                    stepNum += 1
+                        Format(rpt.SublayerData.EvalDepthSubgrade, "0.00") & " " & Thicknessunit & " below the surface.</li>"
 
                     ' Step 3: Fatigue life
-                    stepsHtml += hu.wrap_p("<b>Step " & stepNum & ":</b> Compute allowable repetitions using subgrade fatigue model (" &
+                    stepsHtml += "<li>Compute allowable repetitions using subgrade fatigue model (" &
                         det.SubgradeModelUsed & "): AA = " & Format(det.NtoFailAA, "0.000000") & ", BB = " &
-                        Format(det.NtoFailBB, "0.000") & ". N_fail = 10,000 x (AA / " & ChrW(&H03B5) & "v)^BB = " &
-                        Format(det.NtoFail, "0.000E+00") & ".")
-                    stepNum += 1
+                        Format(det.NtoFailBB, "0.000") & ". N_fail = 10,000 " & ChrW(&H00D7) & " (AA / " & ChrW(&H03B5) & "v)^BB = " &
+                        Format(det.NtoFail, "0.000E+00") & ".</li>"
 
                     ' Step 4: C/P computation
-                    stepsHtml += hu.wrap_p("<b>Step " & stepNum & ":</b> Compute C/P at each of " & CDF.NOFF.ToString() &
+                    stepsHtml += "<li>Compute C/P at each of " & CDF.NOFF.ToString() &
                         " strips using Gaussian wander (" & ChrW(&H03C3) & " = 30.435 in.). " &
-                        "For each strip at offset X from the nominal wheel path centerline, " &
-                        "C/P = sum of GaussArea(X - wheel_i - TW/2, X - wheel_i + TW/2, " & ChrW(&H03C3) & ") over all wheels. " &
-                        "Peak C/P = " & Format(det.MaxCtoP, "0.00000") & ".")
-                    stepNum += 1
+                        "For each strip at offset X, " &
+                        "C/P = " & ChrW(&H03A3) & " GaussArea(X " & ChrW(&H2212) & " wheel_i " & ChrW(&H2212) & " TW/2, X " & ChrW(&H2212) & " wheel_i + TW/2, " & ChrW(&H03C3) & "). " &
+                        "Peak C/P = " & Format(det.MaxCtoP, "0.00000") & ".</li>"
 
                     ' Step 5: Tire projection
-                    stepsHtml += hu.wrap_p("<b>Step " & stepNum & ":</b> Project tire width to subgrade depth using 45" & ChrW(&H00B0) &
-                        " stress spread: TW_proj = " & Format(det.TireWidth, "0.00") & " + 2 x " &
+                    stepsHtml += "<li>Project tire width to subgrade using 45" & ChrW(&H00B0) &
+                        " stress spread: TW_proj = " & Format(det.TireWidth, "0.00") & " + 2 " & ChrW(&H00D7) & " " &
                         Format(rpt.SublayerData.EvalDepthSubgrade, "0.00") & " = " &
-                        Format(det.ProjectedTireWidthAtSubgrade, "0.00") & " " & LenghtUnit & ".")
-                    stepNum += 1
+                        Format(det.ProjectedTireWidthAtSubgrade, "0.00") & " " & LenghtUnit & ".</li>"
 
                     ' Step 6: Traffic
-                    stepsHtml += hu.wrap_p("<b>Step " & stepNum & ":</b> Compute total repetitions from " &
-                        Format(det.AnnualDepartures, "#,##0") & " annual departures x 20-year design life = " &
-                        Format(det.TotalRepetitions, "#,##0") & " total repetitions.")
-                    stepNum += 1
+                    stepsHtml += "<li>Compute total repetitions: " &
+                        Format(det.AnnualDepartures, "#,##0") & " annual departures " & ChrW(&H00D7) & " 20 years = " &
+                        Format(det.TotalRepetitions, "#,##0") & " total repetitions.</li>"
 
                     ' Step 7: CDF
-                    stepsHtml += hu.wrap_p("<b>Step " & stepNum & ":</b> Compute CDF at each strip: CDF(strip) = " &
-                        "Repetitions x C/P(strip) / N_fail = " & Format(det.TotalRepetitions, "#,##0") &
-                        " x C/P / " & Format(det.NtoFail, "0.000E+00") & ". " &
-                        "Maximum CDF for this aircraft = " & Format(det.MaxCDF, "0.000000") & ". " &
-                        "CDF at the critical strip (offset #" & rpt.CDFSweep.MaxCDFOffset.ToString() & ") = " &
-                        Format(det.CDFAtCriticalOffset, "0.000000") & ".")
-                    stepNum += 1
+                    stepsHtml += "<li>Compute CDF at each strip: CDF(strip) = " &
+                        "Repetitions " & ChrW(&H00D7) & " C/P(strip) / N_fail = " & Format(det.TotalRepetitions, "#,##0") &
+                        " " & ChrW(&H00D7) & " C/P / " & Format(det.NtoFail, "0.000E+00") & ". " &
+                        "Max CDF = " & Format(det.MaxCDF, "0.000000") & ". " &
+                        "CDF at critical strip (#" & rpt.CDFSweep.MaxCDFOffset.ToString() & ") = " &
+                        Format(det.CDFAtCriticalOffset, "0.000000") & ".</li>"
 
                     ' Step 8: Gear adjustment
                     If det.GearAdjusted Then
-                        stepsHtml += hu.wrap_p("<b>Step " & stepNum & ":</b> Multi-gear adjustment applied. " &
-                            "C/P before adjustment = " & Format(det.CtoPBeforeGearAdj, "0.00000") &
-                            ", after adjustment = " & Format(det.CtoPAfterGearAdj, "0.00000") & ".")
-                        stepNum += 1
+                        stepsHtml += "<li>Multi-gear adjustment applied: " &
+                            "C/P before = " & Format(det.CtoPBeforeGearAdj, "0.00000") &
+                            ", after = " & Format(det.CtoPAfterGearAdj, "0.00000") & ".</li>"
                     End If
 
+                    stepsHtml += "</ol>"
                     html += hu.wrap_div(stepsHtml, "note-box")
 
                 Next ia
@@ -8830,8 +8890,7 @@ Namespace ViewModels
 
             ' ====== Section F: Coverage-to-Pass Distribution ======
             If rpt.CDFSweep.NAircraftCaptured > 0 AndAlso rpt.AircraftDetails IsNot Nothing Then
-                tmpdiv = hu.wrap_h3("Section F: Coverage-to-Pass (C/P) Distribution", "section-header")
-                html += hu.wrap_div(tmpdiv, "title")
+                html += hu.wrap_h3("<span class='section-number'>F.</span> Coverage-to-Pass (C/P) Distribution", "section-header-left")
 
                 html += hu.wrap_div(hu.wrap_p("The C/P ratio represents the probability that a point at a given lateral offset " &
                     "from the nominal wheel path centerline will be covered by a passing tire, accounting for Gaussian " &
@@ -8848,8 +8907,7 @@ Namespace ViewModels
 
             ' ====== Section G: CDF Sweep Table (41 offsets) ======
             If rpt.CDFSweep.NAircraftCaptured > 0 Then
-                tmpdiv = hu.wrap_h3("Section G: CDF Sweep Table (" + CDF.NOFF.ToString() + " offsets)", "section-header")
-                html += hu.wrap_div(tmpdiv, "title")
+                html += hu.wrap_h3("<span class='section-number'>G.</span> CDF Sweep Table (" & CDF.NOFF.ToString() & " offsets)", "section-header-left")
 
                 ' Header row
                 tmpth = hu.wrap_p("Offset (" + LenghtUnit + ")")
@@ -8907,8 +8965,7 @@ Namespace ViewModels
 
             ' ====== Section H: CDF Distribution Across Pavement Width ======
             If rpt.CDFSweep.NAircraftCaptured > 0 AndAlso rpt.AircraftDetails IsNot Nothing Then
-                tmpdiv = hu.wrap_h3("Section H: CDF Distribution Across Pavement Width", "section-header")
-                html += hu.wrap_div(tmpdiv, "title")
+                html += hu.wrap_h3("<span class='section-number'>H.</span> CDF Distribution Across Pavement Width", "section-header-left")
 
                 html += hu.wrap_div(hu.wrap_p("This plot superimposes the CDF contribution of each aircraft across all " & CDF.NOFF.ToString() &
                     " lateral offsets (0 to " & Format((CDF.NOFF - 1) * CDF.OFFSETINC, "0") & " " & LenghtUnit &
@@ -8920,6 +8977,16 @@ Namespace ViewModels
                 html += hu.wrap_div(tmpdiv, "chart-container-wide")
                 compositeChart.Dispose()
                 html += hu.wrap_p("Figure: Superposition of all aircraft CDF curves with cumulative CDF and critical strip identification.", "chart-caption")
+
+                ' CDF contribution bar chart
+                Dim contribChart As Bitmap = DrawCDFContributionChart(rpt, chartColors)
+                If contribChart.Width > 1 Then
+                    tmpdiv = hu.wrap_bmp_img(contribChart)
+                    html += hu.wrap_div(tmpdiv, "chart-container-wide")
+                    html += hu.wrap_p("Figure: Percentage CDF contribution of each aircraft at the critical offset. " &
+                        "Bar length is proportional to the fraction of total CDF attributable to each aircraft.", "chart-caption")
+                End If
+                contribChart.Dispose()
 
                 ' CDF contribution summary
                 tmpdiv = hu.wrap_h4("CDF Contribution Summary at Critical Offset")
@@ -8961,8 +9028,7 @@ Namespace ViewModels
 
             ' ====== Section I: Newton-Raphson Convergence ======
             If rpt.Iterations.Count > 0 Then
-                tmpdiv = hu.wrap_h3("Section I: Newton-Raphson Convergence", "section-header")
-                html += hu.wrap_div(tmpdiv, "title")
+                html += hu.wrap_h3("<span class='section-number'>I.</span> Newton-Raphson Convergence", "section-header-left")
 
                 ' H.1 Convergence plot
                 If rpt.Iterations.Count >= 2 Then
@@ -9045,8 +9111,7 @@ Namespace ViewModels
 
             ' ====== Section J: ACR Details ======
             If rpt.ACRDetails.Count > 0 Then
-                tmpdiv = hu.wrap_h3("Section J: ACR Details", "section-header")
-                html += hu.wrap_div(tmpdiv, "title")
+                html += hu.wrap_h3("<span class='section-number'>J.</span> ACR Details", "section-header-left")
 
                 For Each acrDet In rpt.ACRDetails
                     tmpdiv = hu.wrap_h4(acrDet.ACName & " — " & acrDet.SubgradeCategory)
@@ -9102,8 +9167,7 @@ Namespace ViewModels
 
             ' ====== Section K: PCR Details ======
             If rpt.PCRRounds.Count > 0 Then
-                tmpdiv = hu.wrap_h3("Section K: PCR Elimination Rounds", "section-header")
-                html += hu.wrap_div(tmpdiv, "title")
+                html += hu.wrap_h3("<span class='section-number'>K.</span> PCR Elimination Rounds", "section-header-left")
 
                 ' Summary table
                 tmpth = hu.wrap_p("Round")
@@ -9144,8 +9208,7 @@ Namespace ViewModels
 
             ' ====== Section L: ACR vs Damage Analysis ======
             If rpt.ACRDetails.Count > 0 AndAlso rpt.AircraftDetails IsNot Nothing Then
-                tmpdiv = hu.wrap_h3("Section L: ACR vs. Damage Per Departure", "section-header")
-                html += hu.wrap_div(tmpdiv, "title")
+                html += hu.wrap_h3("<span class='section-number'>L.</span> ACR vs. Damage Per Departure", "section-header-left")
 
                 html += hu.wrap_div(hu.wrap_p("This chart plots the Aircraft Classification Rating (ACR) of each aircraft on " &
                     "the X-axis against the normalized CDF contribution per departure on the Y-axis. This shows the " &
@@ -9242,11 +9305,12 @@ Namespace ViewModels
         Private Function DrawSingleAircraftCDFChart(det As clsAircraftDetail, criticalOffset As Integer, maxCDF As Single, title As String, offsetUnit As String, acColor As Color, Optional evalDepth As Double = 0) As Bitmap
             Dim chartWidth As Integer = 750
             Dim chartHeight As Integer = 450
-            Dim bmp As New Bitmap(chartWidth, chartHeight)
+            Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
 
-            Using g As Graphics = Graphics.FromImage(bmp)
+            Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 ' Chart margins
@@ -9361,6 +9425,17 @@ Namespace ViewModels
                     Dim yPx As Single = CSng(marginTop + plotHeight - (det.CDFByOffset(ioff) / yMax) * plotHeight)
                     points(ioff - 1) = New PointF(xPx, yPx)
                 Next
+                ' Fill area under the CDF curve
+                If points.Length > 1 Then
+                    Dim fillPts As New List(Of PointF)
+                    fillPts.Add(New PointF(points(0).X, CSng(marginTop + plotHeight)))
+                    fillPts.AddRange(points)
+                    fillPts.Add(New PointF(points(points.Length - 1).X, CSng(marginTop + plotHeight)))
+                    Dim fillBrush As New SolidBrush(Color.FromArgb(35, acColor.R, acColor.G, acColor.B))
+                    g.FillPolygon(fillBrush, fillPts.ToArray())
+                    fillBrush.Dispose()
+                End If
+
                 If points.Length > 1 Then g.DrawLines(dataPen, points)
 
                 ' Draw critical offset vertical line (red dashed)
@@ -9445,7 +9520,7 @@ Namespace ViewModels
                 critPen.Dispose()
             End Using
 
-            Return bmp
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
         End Function
 
 
@@ -9455,11 +9530,12 @@ Namespace ViewModels
         Private Function DrawCompositeCDFChart(rpt As clsDetailedReportData, offsetUnit As String, chartColors() As Color) As Bitmap
             Dim chartWidth As Integer = 900
             Dim chartHeight As Integer = 550
-            Dim bmp As New Bitmap(chartWidth, chartHeight)
+            Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
 
-            Using g As Graphics = Graphics.FromImage(bmp)
+            Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 ' Chart margins
@@ -9564,6 +9640,17 @@ Namespace ViewModels
                     Dim yPx As Single = CSng(marginTop + plotHeight - (rpt.CDFSweep.CDFTotalPerOffset(ioff) / yMax) * plotHeight)
                     cumPoints(ioff - 1) = New PointF(xPx, yPx)
                 Next
+                ' Fill area under cumulative CDF curve
+                If cumPoints.Length > 1 Then
+                    Dim cumFillPts As New List(Of PointF)
+                    cumFillPts.Add(New PointF(cumPoints(0).X, CSng(marginTop + plotHeight)))
+                    cumFillPts.AddRange(cumPoints)
+                    cumFillPts.Add(New PointF(cumPoints(cumPoints.Length - 1).X, CSng(marginTop + plotHeight)))
+                    Dim cumFillBrush As New SolidBrush(Color.FromArgb(18, 0, 0, 0))
+                    g.FillPolygon(cumFillBrush, cumFillPts.ToArray())
+                    cumFillBrush.Dispose()
+                End If
+
                 If cumPoints.Length > 1 Then g.DrawLines(cumPen, cumPoints)
                 legendEntries.Add(New Tuple(Of String, Color)("Cumulative CDF", Color.Black))
 
@@ -9615,7 +9702,7 @@ Namespace ViewModels
                 critPen.Dispose()
             End Using
 
-            Return bmp
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
         End Function
 
 
@@ -9623,27 +9710,36 @@ Namespace ViewModels
         ''' Renders mathematical equations as a high-quality bitmap using GDI+.
         ''' </summary>
         Private Function DrawEquationImage(title As String, equationLines() As String, Optional width As Integer = 750) As Bitmap
-            Dim scale As Integer = 2 ' render at 2x for crispness
+            Dim scale As Integer = 3 ' render at 3x for extra crispness
             Dim intW As Integer = width * scale
             Dim titleFontSize As Single = 11 * scale
             Dim eqFontSize As Single = 13 * scale
             Dim lineSpacing As Integer = CInt(eqFontSize * 2.0)
             Dim topPad As Integer = 12 * scale
-            Dim leftPad As Integer = 20 * scale
+            Dim leftPad As Integer = 24 * scale
 
             ' Calculate height
-            Dim titleH As Integer = CInt(titleFontSize * 2.2)
+            Dim titleH As Integer = CInt(titleFontSize * 2.4)
             Dim bodyH As Integer = equationLines.Length * lineSpacing + 10 * scale
-            Dim intH As Integer = topPad + titleH + bodyH + 10 * scale
+            Dim intH As Integer = topPad + titleH + bodyH + 14 * scale
 
             Dim bmpHi As New Bitmap(intW, intH)
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
-                g.Clear(Color.FromArgb(249, 249, 251))
+
+                ' Subtle gradient background
+                Using gradBrush As New Drawing2D.LinearGradientBrush(
+                    New Point(0, 0), New Point(0, intH),
+                    Color.FromArgb(252, 252, 254), Color.FromArgb(245, 246, 250))
+                    g.FillRectangle(gradBrush, 0, 0, intW, intH)
+                End Using
+
+                ' Left accent stripe
+                g.FillRectangle(New SolidBrush(Color.FromArgb(46, 94, 168)), 0, 0, 5 * scale, intH)
 
                 ' Border
-                Dim borderPen As New Pen(Color.FromArgb(209, 213, 219), scale)
+                Dim borderPen As New Pen(Color.FromArgb(200, 206, 214), scale)
                 g.DrawRectangle(borderPen, 0, 0, intW - 1, intH - 1)
 
                 ' Title
@@ -9652,8 +9748,8 @@ Namespace ViewModels
                 g.DrawString(title, titleFont, titleBrush, leftPad, topPad)
 
                 ' Underline
-                Dim underY As Integer = topPad + CInt(titleFontSize * 1.8)
-                Dim underPen As New Pen(Color.FromArgb(46, 94, 168), scale)
+                Dim underY As Integer = topPad + CInt(titleFontSize * 1.9)
+                Dim underPen As New Pen(Color.FromArgb(46, 94, 168), CInt(scale * 1.5))
                 g.DrawLine(underPen, leftPad, underY, intW - leftPad, underY)
 
                 ' Equations - try Cambria Math, fall back to Consolas
@@ -9667,11 +9763,19 @@ Namespace ViewModels
                 End Try
 
                 Dim eqFont As New Font(eqFontFamily, eqFontSize, FontStyle.Regular)
+                Dim eqBoldFont As New Font(eqFontFamily, eqFontSize, FontStyle.Bold)
                 Dim eqBrush As New SolidBrush(Color.FromArgb(31, 41, 55))
-                Dim yPos As Integer = underY + 12 * scale
+                Dim computedBrush As New SolidBrush(Color.FromArgb(80, 100, 130))
+                Dim yPos As Integer = underY + 14 * scale
 
                 For Each line In equationLines
-                    g.DrawString(line, eqFont, eqBrush, leftPad + 10 * scale, yPos)
+                    ' Use dimmer color for "For this structure" computed values
+                    Dim brush As SolidBrush = eqBrush
+                    Dim font As Font = eqFont
+                    If line.StartsWith("For this") OrElse line.StartsWith("   ") Then
+                        brush = computedBrush
+                    End If
+                    g.DrawString(line, font, brush, leftPad + 12 * scale, yPos)
                     yPos += lineSpacing
                 Next
 
@@ -9681,7 +9785,9 @@ Namespace ViewModels
                 titleBrush.Dispose()
                 underPen.Dispose()
                 eqFont.Dispose()
+                eqBoldFont.Dispose()
                 eqBrush.Dispose()
+                computedBrush.Dispose()
             End Using
 
             ' Scale down to target size
@@ -9691,6 +9797,7 @@ Namespace ViewModels
             Using g As Graphics = Graphics.FromImage(bmp)
                 g.InterpolationMode = Drawing2D.InterpolationMode.HighQualityBicubic
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.DrawImage(bmpHi, 0, 0, finalW, finalH)
             End Using
             bmpHi.Dispose()
@@ -9704,11 +9811,12 @@ Namespace ViewModels
         Private Function DrawPavementCrossSection(rpt As clsDetailedReportData, det As clsAircraftDetail, thicknessUnit As String, lengthUnit As String) As Bitmap
             Dim chartWidth As Integer = 900
             Dim chartHeight As Integer = 600
-            Dim bmp As New Bitmap(chartWidth, chartHeight)
+            Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
 
-            Using g As Graphics = Graphics.FromImage(bmp)
+            Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 ' Title
@@ -9866,7 +9974,7 @@ Namespace ViewModels
                 gaussPen.Dispose()
             End Using
 
-            Return bmp
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
         End Function
 
 
@@ -9876,11 +9984,12 @@ Namespace ViewModels
         Private Function DrawFatigueCurve(rpt As clsDetailedReportData, chartColors() As Color) As Bitmap
             Dim chartWidth As Integer = 900
             Dim chartHeight As Integer = 550
-            Dim bmp As New Bitmap(chartWidth, chartHeight)
+            Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
 
-            Using g As Graphics = Graphics.FromImage(bmp)
+            Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 Dim marginLeft As Integer = 90
@@ -10084,7 +10193,7 @@ Namespace ViewModels
                 curvePen.Dispose()
             End Using
 
-            Return bmp
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
         End Function
 
 
@@ -10094,13 +10203,15 @@ Namespace ViewModels
         Private Function DrawConvergencePlot(rpt As clsDetailedReportData, thicknessUnit As String) As Bitmap
             Dim chartWidth As Integer = 850
             Dim chartHeight As Integer = 450
-            Dim bmp As New Bitmap(chartWidth, chartHeight)
 
-            If rpt.Iterations.Count < 2 Then Return bmp
+            If rpt.Iterations.Count < 2 Then Return New Bitmap(chartWidth, chartHeight)
 
-            Using g As Graphics = Graphics.FromImage(bmp)
+            Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
+
+            Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 Dim marginLeft As Integer = 80
@@ -10266,7 +10377,7 @@ Namespace ViewModels
                 redPen.Dispose()
             End Using
 
-            Return bmp
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
         End Function
 
 
@@ -10276,11 +10387,12 @@ Namespace ViewModels
         Private Function DrawCoveragePlot(rpt As clsDetailedReportData, offsetUnit As String, chartColors() As Color) As Bitmap
             Dim chartWidth As Integer = 850
             Dim chartHeight As Integer = 450
-            Dim bmp As New Bitmap(chartWidth, chartHeight)
+            Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
 
-            Using g As Graphics = Graphics.FromImage(bmp)
+            Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 Dim marginLeft As Integer = 80
@@ -10409,7 +10521,7 @@ Namespace ViewModels
                 critFont.Dispose()
             End Using
 
-            Return bmp
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
         End Function
 
 
@@ -10444,11 +10556,12 @@ Namespace ViewModels
         Private Function DrawCoverageConceptDiagram() As Bitmap
             Dim chartWidth As Integer = 950
             Dim chartHeight As Integer = 800
-            Dim bmp As New Bitmap(chartWidth, chartHeight)
+            Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
 
-            Using g As Graphics = Graphics.FromImage(bmp)
+            Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 Dim titleFont As New Font("Segoe UI", 12, FontStyle.Bold)
@@ -10673,7 +10786,7 @@ Namespace ViewModels
                 dashPen1.Dispose()
             End Using
 
-            Return bmp
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
         End Function
 
 
@@ -10684,11 +10797,12 @@ Namespace ViewModels
         Private Function DrawWheelCPVisualization(det As clsAircraftDetail) As Bitmap
             Dim chartWidth As Integer = 900
             Dim chartHeight As Integer = 520
-            Dim bmp As New Bitmap(chartWidth, chartHeight)
+            Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
 
-            Using g As Graphics = Graphics.FromImage(bmp)
+            Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 Dim faaBlue As Color = Color.FromArgb(46, 94, 168)
@@ -10911,7 +11025,7 @@ Namespace ViewModels
                 sumPen.Dispose()
             End Using
 
-            Return bmp
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
         End Function
 
 
@@ -10921,11 +11035,12 @@ Namespace ViewModels
         Private Function DrawACRDamageChart(rpt As clsDetailedReportData, chartColors() As Color) As Bitmap
             Dim chartWidth As Integer = 850
             Dim chartHeight As Integer = 500
-            Dim bmp As New Bitmap(chartWidth, chartHeight)
+            Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
 
-            Using g As Graphics = Graphics.FromImage(bmp)
+            Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
@@ -10971,7 +11086,7 @@ Namespace ViewModels
                 If points.Count = 0 Then
                     g.DrawString("No ACR data available. Run ACR computation first.", labelFont, Brushes.Gray, chartWidth \ 2 - 120, chartHeight \ 2)
                     titleFont.Dispose() : labelFont.Dispose() : axisFont.Dispose() : smallFont.Dispose()
-                    Return bmp
+                    Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
                 End If
 
                 ' Determine axis ranges
@@ -11047,7 +11162,270 @@ Namespace ViewModels
                 gridPen.Dispose()
             End Using
 
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
+        End Function
+
+
+        ''' <summary>
+        ''' Scales down a high-resolution bitmap to the target size using bicubic interpolation.
+        ''' Used for 2x supersampled chart rendering.
+        ''' </summary>
+        Private Function SupersampleBitmap(bmpHi As Bitmap, targetWidth As Integer, targetHeight As Integer) As Bitmap
+            Dim bmp As New Bitmap(targetWidth, targetHeight)
+            Using g As Graphics = Graphics.FromImage(bmp)
+                g.InterpolationMode = Drawing2D.InterpolationMode.HighQualityBicubic
+                g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
+                g.DrawImage(bmpHi, 0, 0, targetWidth, targetHeight)
+            End Using
+            bmpHi.Dispose()
             Return bmp
+        End Function
+
+
+        ''' <summary>
+        ''' Draws a horizontal bar chart showing each aircraft's CDF contribution at the critical offset.
+        ''' </summary>
+        Private Function DrawCDFContributionChart(rpt As clsDetailedReportData, chartColors() As Color) As Bitmap
+            Dim nAC As Integer = rpt.CDFSweep.NAircraftCaptured
+            If nAC <= 0 Then Return New Bitmap(1, 1)
+
+            Dim barHeight As Integer = 32
+            Dim spacing As Integer = 8
+            Dim chartWidth As Integer = 800
+            Dim chartHeight As Integer = 70 + (nAC + 1) * (barHeight + spacing) + 20
+            Dim marginLeft As Integer = 180
+            Dim marginRight As Integer = 90
+            Dim marginTop As Integer = 50
+            Dim plotWidth As Integer = chartWidth - marginLeft - marginRight
+
+            Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
+
+            Using g As Graphics = Graphics.FromImage(bmpHi)
+                g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+                g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.ScaleTransform(2, 2)
+                g.Clear(Color.White)
+
+                ' Title
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
+                Dim titleText = "CDF Contribution by Aircraft at Critical Offset"
+                Dim titleSize = g.MeasureString(titleText, titleFont)
+                g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 12)
+
+                ' Border
+                g.DrawRectangle(New Pen(Color.FromArgb(209, 213, 219), 1), 0, 0, chartWidth - 1, chartHeight - 1)
+
+                ' Get CDF values at critical offset
+                Dim critOffset = rpt.CDFSweep.MaxCDFOffset
+                Dim totalCDF As Double = rpt.CDFSweep.CDFTotalPerOffset(critOffset)
+
+                Dim labelFont As New Font("Segoe UI", 8.5F)
+                Dim valueFont As New Font("Segoe UI", 7.5F)
+                Dim pctFont As New Font("Segoe UI", 8, FontStyle.Bold)
+
+                Dim yPos As Integer = marginTop
+                For ia As Integer = 1 To nAC
+                    Dim acName As String = "AC" & ia.ToString()
+                    If rpt.AircraftDetails IsNot Nothing AndAlso ia <= UBound(rpt.AircraftDetails) AndAlso rpt.AircraftDetails(ia) IsNot Nothing Then
+                        acName = rpt.AircraftDetails(ia).ACName
+                    End If
+
+                    Dim acCDF As Double = rpt.CDFSweep.CDFPerAircraftPerOffset(ia, critOffset)
+                    Dim pct As Double = If(totalCDF > 0, acCDF / totalCDF * 100, 0)
+                    Dim barW As Single = CSng(If(totalCDF > 0, acCDF / totalCDF * plotWidth, 0))
+                    Dim acColor As Color = chartColors((ia - 1) Mod chartColors.Length)
+
+                    ' Aircraft name (right-aligned)
+                    Dim nameSize = g.MeasureString(acName, labelFont)
+                    g.DrawString(acName, labelFont, Brushes.Black, marginLeft - nameSize.Width - 8, yPos + (barHeight - nameSize.Height) / 2)
+
+                    ' Bar with rounded corners effect
+                    If barW > 2 Then
+                        Dim barRect As New RectangleF(marginLeft, yPos, barW, barHeight)
+                        g.FillRectangle(New SolidBrush(Color.FromArgb(210, acColor.R, acColor.G, acColor.B)), barRect)
+                        g.DrawRectangle(New Pen(acColor, 1), marginLeft, yPos, barW, barHeight)
+
+                        ' Percentage inside bar if wide enough
+                        Dim valText = Format(pct, "0.0") & "%"
+                        Dim valSize = g.MeasureString(valText, pctFont)
+                        If barW > valSize.Width + 10 Then
+                            g.DrawString(valText, pctFont, Brushes.White, marginLeft + barW - valSize.Width - 6, yPos + (barHeight - valSize.Height) / 2)
+                        Else
+                            g.DrawString(valText, pctFont, New SolidBrush(acColor), marginLeft + barW + 5, yPos + (barHeight - valSize.Height) / 2)
+                        End If
+                    ElseIf barW > 0 Then
+                        g.FillRectangle(New SolidBrush(acColor), marginLeft, yPos, Math.Max(barW, 2), barHeight)
+                        g.DrawString(Format(pct, "0.0") & "%", pctFont, New SolidBrush(acColor), marginLeft + 6, yPos + (barHeight - 14) / 2)
+                    End If
+
+                    ' CDF value annotation
+                    g.DrawString(Format(acCDF, "0.000000"), valueFont, Brushes.Gray, marginLeft + plotWidth + 8, yPos + (barHeight - 12) / 2)
+
+                    yPos += barHeight + spacing
+                Next
+
+                ' Separator line
+                g.DrawLine(New Pen(Color.FromArgb(180, 180, 180), 1), marginLeft, yPos - 2, marginLeft + plotWidth, yPos - 2)
+
+                ' Total bar
+                Dim totalLabel = "TOTAL"
+                Dim totalLabelSize = g.MeasureString(totalLabel, New Font("Segoe UI", 8.5F, FontStyle.Bold))
+                g.DrawString(totalLabel, New Font("Segoe UI", 8.5F, FontStyle.Bold), Brushes.Black, marginLeft - totalLabelSize.Width - 8, yPos + (barHeight - totalLabelSize.Height) / 2 + 2)
+                Dim totalBarBrush As New SolidBrush(Color.FromArgb(80, 46, 94, 168))
+                g.FillRectangle(totalBarBrush, marginLeft, yPos + 2, plotWidth, barHeight)
+                g.DrawRectangle(New Pen(Color.FromArgb(46, 94, 168), 1.5F), marginLeft, yPos + 2, plotWidth, barHeight)
+                g.DrawString("100%", pctFont, Brushes.White, marginLeft + plotWidth - 42, yPos + (barHeight - 12) / 2 + 2)
+                g.DrawString(Format(totalCDF, "0.000000"), valueFont, Brushes.Gray, marginLeft + plotWidth + 8, yPos + 6)
+                totalBarBrush.Dispose()
+
+                ' Cleanup
+                titleFont.Dispose()
+                labelFont.Dispose()
+                valueFont.Dispose()
+                pctFont.Dispose()
+            End Using
+
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
+        End Function
+
+
+        ''' <summary>
+        ''' Draws a horizontal bar chart showing the fatigue life ratio (N_fail / Repetitions) for each aircraft.
+        ''' Bars are green when ratio > 1 (life reserve) and red when ratio &lt; 1 (overstressed).
+        ''' </summary>
+        Private Function DrawLifeRatioChart(rpt As clsDetailedReportData, chartColors() As Color) As Bitmap
+            If rpt.AircraftDetails Is Nothing Then Return New Bitmap(1, 1)
+
+            ' Count valid aircraft
+            Dim acList As New List(Of Tuple(Of String, Double, Double, Color))
+            Dim acIdx As Integer = 0
+            For ia As Integer = 1 To UBound(rpt.AircraftDetails)
+                If rpt.AircraftDetails(ia) Is Nothing Then Continue For
+                Dim det = rpt.AircraftDetails(ia)
+                Dim ratio As Double = 0
+                If det.TotalRepetitions > 0 AndAlso det.NtoFail > 0 Then
+                    ratio = det.NtoFail / det.TotalRepetitions
+                End If
+                Dim acColor As Color = chartColors(acIdx Mod chartColors.Length)
+                acList.Add(New Tuple(Of String, Double, Double, Color)(det.ACName, ratio, det.MaxCDF, acColor))
+                acIdx += 1
+            Next
+            If acList.Count = 0 Then Return New Bitmap(1, 1)
+
+            Dim barHeight As Integer = 32
+            Dim spacing As Integer = 8
+            Dim chartWidth As Integer = 800
+            Dim chartHeight As Integer = 70 + acList.Count * (barHeight + spacing) + 30
+            Dim marginLeft As Integer = 180
+            Dim marginRight As Integer = 100
+            Dim marginTop As Integer = 50
+            Dim plotWidth As Integer = chartWidth - marginLeft - marginRight
+
+            ' Use log scale for bar width
+            Dim maxLogRatio As Double = 0
+            For Each ac In acList
+                If ac.Item2 > 0 Then
+                    Dim absLog As Double = Math.Abs(Math.Log10(ac.Item2))
+                    If absLog > maxLogRatio Then maxLogRatio = absLog
+                End If
+            Next
+            If maxLogRatio < 1 Then maxLogRatio = 1
+
+            ' Center the zero line (ratio=1.0) in the plot
+            Dim centerX As Integer = marginLeft + plotWidth \ 2
+
+            Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
+
+            Using g As Graphics = Graphics.FromImage(bmpHi)
+                g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+                g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.ScaleTransform(2, 2)
+                g.Clear(Color.White)
+
+                ' Title
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
+                Dim titleText = "Fatigue Life Reserve (N_fail / Repetitions)"
+                Dim titleSize = g.MeasureString(titleText, titleFont)
+                g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 12)
+
+                ' Border
+                g.DrawRectangle(New Pen(Color.FromArgb(209, 213, 219), 1), 0, 0, chartWidth - 1, chartHeight - 1)
+
+                Dim labelFont As New Font("Segoe UI", 8.5F)
+                Dim valueFont As New Font("Segoe UI", 7.5F)
+
+                ' Reference line at ratio = 1.0 (center)
+                Dim refPen As New Pen(Color.FromArgb(100, 0, 0, 0), 1.5F)
+                refPen.DashStyle = Drawing2D.DashStyle.Dash
+                g.DrawLine(refPen, centerX, marginTop - 10, centerX, chartHeight - 20)
+                g.DrawString("Ratio = 1.0", New Font("Segoe UI", 7, FontStyle.Italic), Brushes.DarkGray, centerX + 3, marginTop - 15)
+
+                ' Label regions
+                Dim regionFont As New Font("Segoe UI", 7)
+                g.DrawString(ChrW(&H2190) & " Overstressed (ratio < 1)", regionFont, New SolidBrush(Color.FromArgb(180, 214, 39, 40)), marginLeft + 5, marginTop - 15)
+                Dim reserveText = "Life Reserve (ratio > 1) " & ChrW(&H2192)
+                Dim reserveSize = g.MeasureString(reserveText, regionFont)
+                g.DrawString(reserveText, regionFont, New SolidBrush(Color.FromArgb(180, 34, 139, 34)), marginLeft + plotWidth - reserveSize.Width - 5, marginTop - 15)
+
+                Dim yPos As Integer = marginTop
+                For Each ac In acList
+                    Dim acName = ac.Item1
+                    Dim ratio = ac.Item2
+
+                    ' Aircraft name (right-aligned)
+                    Dim nameSize = g.MeasureString(acName, labelFont)
+                    g.DrawString(acName, labelFont, Brushes.Black, marginLeft - nameSize.Width - 8, yPos + (barHeight - nameSize.Height) / 2)
+
+                    If ratio > 0 Then
+                        Dim logRatio As Double = Math.Log10(ratio)
+                        Dim barW As Single = CSng(Math.Abs(logRatio) / maxLogRatio * (plotWidth / 2 - 10))
+                        barW = Math.Min(barW, plotWidth / 2 - 5)
+
+                        Dim barColor As Color
+                        Dim barLeft As Single
+                        If ratio >= 1 Then
+                            ' Green bar extends right from center
+                            barColor = Color.FromArgb(200, 34, 139, 34)
+                            barLeft = centerX
+                        Else
+                            ' Red bar extends left from center
+                            barColor = Color.FromArgb(200, 214, 39, 40)
+                            barLeft = centerX - barW
+                        End If
+
+                        If barW > 1 Then
+                            g.FillRectangle(New SolidBrush(barColor), barLeft, yPos, barW, barHeight)
+                            g.DrawRectangle(New Pen(Color.FromArgb(barColor.R, barColor.G, barColor.B), 1), barLeft, yPos, barW, barHeight)
+                        End If
+
+                        ' Value annotation
+                        Dim ratioText As String
+                        If ratio >= 100 Then
+                            ratioText = Format(ratio, "0.0E+00")
+                        ElseIf ratio >= 1 Then
+                            ratioText = Format(ratio, "#,##0.0")
+                        Else
+                            ratioText = Format(ratio, "0.000")
+                        End If
+                        Dim annotX As Single = If(ratio >= 1, centerX + barW + 4, barLeft - g.MeasureString(ratioText, valueFont).Width - 4)
+                        g.DrawString(ratioText, valueFont, Brushes.Black, annotX, yPos + (barHeight - 12) / 2)
+                    Else
+                        g.DrawString("N/A", valueFont, Brushes.Gray, centerX + 5, yPos + (barHeight - 12) / 2)
+                    End If
+
+                    yPos += barHeight + spacing
+                Next
+
+                ' Cleanup
+                titleFont.Dispose()
+                labelFont.Dispose()
+                valueFont.Dispose()
+                regionFont.Dispose()
+                refPen.Dispose()
+            End Using
+
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
         End Function
 
 

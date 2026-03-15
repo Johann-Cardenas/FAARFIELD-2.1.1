@@ -128,16 +128,16 @@ Namespace Libs
             'Dim base64String = System.Text.Encoding.UTF8.GetString(src)
             Dim bmpStr = encodeTobase64(src)
             If cssclass = "" Then
-                tmptxt = "<image src='data:image/x-png;base64," + bmpStr + "' Style='width:80%; margin-left:auto; margin-right:auto;'/>"
+                tmptxt = "<image src='data:image/png;base64," + bmpStr + "' Style='width:80%; margin-left:auto; margin-right:auto;'/>"
             Else
-                tmptxt = "<image src='data:image/x-png;base64," + bmpStr + "' class='" + cssclass + "' Style='width:80%; margin-left:auto; margin-right:auto;'/>"
+                tmptxt = "<image src='data:image/png;base64," + bmpStr + "' class='" + cssclass + "' Style='width:80%; margin-left:auto; margin-right:auto;'/>"
             End If
             Return tmptxt
         End Function
 
         Public Function encodeTobase64(image As Bitmap) As String
             Dim ms As System.IO.MemoryStream = New System.IO.MemoryStream()
-            image.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp)
+            image.Save(ms, System.Drawing.Imaging.ImageFormat.Png)
             Dim byteImage As Byte() = ms.ToArray()
             Dim imageEncoded = Convert.ToBase64String(byteImage)
             Return imageEncoded
