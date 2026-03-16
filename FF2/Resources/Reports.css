@@ -46,7 +46,7 @@ body {
     margin-right: auto;
 }
 
-    .image image {
+    .image img {
         width: auto;
         height: auto;
     }
@@ -196,7 +196,7 @@ table th:first-child {
     page-break-inside: avoid;
 }
 
-.chart-container image {
+.chart-container img {
     width: auto;
     max-width: 100%;
     height: auto;

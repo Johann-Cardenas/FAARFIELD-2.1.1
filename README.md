@@ -483,3 +483,45 @@ FAARFIELD.sln
 ```
 
 ---
+
+## Modifications from original FAARFIELD 2.1.1 source
+
+This section documents all changes made to this codebase relative to the unmodified FAA-published FAARFIELD 2.1.1 source code.
+
+### 1. Detailed Computation Report (new feature)
+
+Added a comprehensive HTML report that documents the full computational trace of flexible pavement thickness design. The report is generated automatically after running Thickness Design or Life Analysis and is accessible from the section tree under **Reports > Detailed Computation Report**.
+
+**Files added:**
+- `FaarFieldAnalysis/clsDetailedReportData.vb` — Data collection classes populated during analysis (aircraft details, iteration records, CDF sweep data, sublayer info, ACR/PCR results).
+
+**Files modified:**
+- `FF2/ViewModels/MainWindowViewModel.vb` — Added `refreshDetailedReport()` and 12 GDI+ chart-drawing functions for inline bitmap rendering.
+- `FF2/ViewModels/DetailedReportViewModel.vb` — Tree view item that triggers report generation.
+- `FF2/Libs/HtmlUtils.vb` — HTML helper class for report assembly and PDF export.
+- `FF2/Resources/Reports.css` — Stylesheet for report layout (dashboard cards, tables, chart containers, equation blocks, step lists).
+- `FF2/Converters/BrowserBehavior.vb` — Attached behavior binding the HTML string to the WPF WebBrowser control.
+- `FaarFieldAnalysis/modCDF.vb` — Instrumented to populate `clsDetailedReportData` during CDF computation.
+- `FaarFieldAnalysis/modStrDesignFlex.vb` — Instrumented to capture iteration records and sublayer data during flexible design.
+
+The report includes 15 sections (A through L) covering pavement structure, design equations, coverage-to-pass concepts, fatigue characterization, per-aircraft breakdowns, CDF sweep tables, convergence history, and ACR/PCR details. All charts are rendered as supersampled GDI+ bitmaps encoded as inline base64 PNG.
+
+### 2. Annual departure limit increased to 500,000
+
+Raised the maximum allowable annual departures per aircraft from 100,000 to 500,000.
+
+**Files modified:**
+- `FF2/ValidationRules/AnnualDepartureValidationRule.vb` — Changed validation cap from 100,000 to 500,000.
+- `FF2/Models/AircraftList.vb` — Changed error-list validation cap from 100,000 to 500,000.
+- `FF2/ViewModels/MainWindowViewModel.vb` — Changed MessageBox validation cap from 100,000 to 500,000.
+
+The original 100,000 limit was an engineering reasonableness bound with no regulatory citation in the code. This change allows analysis of higher-traffic scenarios. All other input limits (design life 1–50 years per AC 150/5320-6D §302.a, growth rate ±10%) remain unchanged.
+
+### 3. "Open in Browser" HTML export for Detailed Computation Report
+
+Added an **Open in Browser** button next to the existing "Save As PDF" button on the Detailed Computation Report pane. This saves the report as a standalone `.html` file and opens it in the default browser, bypassing the IE-based WPF WebBrowser control and SelectPdf renderer limitations.
+
+**Files modified:**
+- `FF2/Libs/HtmlUtils.vb` — Added `HtmlToFile()` method (saves HTML with UTF-8 encoding, launches default browser).
+- `FF2/Views/MainWindow.xaml` — Added "Open in Browser" button bound to `OnSectionReportOpenHtml` command.
+- `FF2/ViewModels/MainWindowViewModel.vb` — Added `OnSectionReportOpenHtml` command property and `SectionReportOpenHtml` handler (SaveFileDialog for `.html`, calls `HtmlToFile`).

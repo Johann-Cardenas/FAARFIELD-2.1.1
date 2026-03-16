@@ -692,6 +692,26 @@ FAILURELAW:
                     det.ProjectedTireWidthAtSubgrade = TW(IA) + 2 * Depth
                     det.SubgradeModelUsed = If(CBool(StraightLineModel), If(gBleasdaleModel, "Bleasdale", "Straight-Line"), "Standard")
                     det.AsphaltModelUsed = If(Asphalt AndAlso DesigningP209DrawStructure, If(gRDEC, "RDEC", "AI"), "N/A")
+
+                    ' Capture AA/BB used for this aircraft's NtoFail computation
+                    If Not CBool(StraightLineModel) Then
+                        det.NtoFailAA = 0.000247 + 0.000245 * System.Math.Log(SubMod) / Log10
+                        det.NtoFailBB = 0.0658 * SubMod ^ 0.559!
+                    Else
+                        det.NtoFailAA = 0.004
+                        det.NtoFailBB = 8.1
+                        Dim detStrainBreak As Double = det.VerticalStrain
+                        Dim detAAorig As Double = 0.000247 + 0.000245 * System.Math.Log(15000) / Log10
+                        Dim detBBorig As Double = 0.0658 * 15000 ^ 0.559!
+                        detAAorig = detAAorig * 10000 ^ (1 / detBBorig)
+                        Dim sb As Double = (8.1 * System.Math.Log(0.004) / Log10 - detBBorig * System.Math.Log(detAAorig) / Log10)
+                        sb = 10.0# ^ (sb / (8.1 - detBBorig))
+                        det.StrainBreakpoint = sb
+                        If det.VerticalStrain <= sb Then
+                            det.NtoFailAA = detAAorig
+                            det.NtoFailBB = detBBorig
+                        End If
+                    End If
                     det.NGearLoads = If(AC(LI).libGear = "WFBF" Or AC(LI).libGear = "WFBN", 2, If(AC(LI).libGear = "X", AC(LI).libNGroups, 1))
 
                     ' Capture per-offset data

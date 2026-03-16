@@ -307,8 +307,8 @@ Public Class AircraftList
 
         Me._errorMsgList.Clear()
 
-        If value > 100000 Then
-            _errorMsgList.Add("Maximum allowable number of Annual Departures is 100,000")
+        If value > 500000 Then
+            _errorMsgList.Add("Maximum allowable number of Annual Departures is 500,000")
             status = False
         ElseIf value < 0 Then
             _errorMsgList.Add("Minimum allowable number of Annual Departures is 0")

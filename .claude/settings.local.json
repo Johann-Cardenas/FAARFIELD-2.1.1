@@ -11,7 +11,15 @@
       "Bash(where msbuild:*)",
       "Bash(find:*)",
       "Bash(ls:*)",
-      "Bash(\"C:/Program Files \\(x86\\)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/MSBuild.exe\" \"C:/Users/johan/Box/05 Repositories/FAARFIELD-2.1.1/FF2/FF2.vbproj\" /p:Configuration=Debug /verbosity:quiet 2>&1 | tail -30)"
+      "Bash(\"C:/Program Files \\(x86\\)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/MSBuild.exe\" \"C:/Users/johan/Box/05 Repositories/FAARFIELD-2.1.1/FF2/FF2.vbproj\" /p:Configuration=Debug /verbosity:quiet 2>&1 | tail -30)",
+      "Bash(\"C:/Program Files \\(x86\\)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/MSBuild.exe\" \"C:/Users/johan/Box/05 Repositories/FAARFIELD-2.1.1/FAARFIELD.sln\" -p:Configuration=Debug -verbosity:minimal 2>&1 | tail -20)",
+      "Bash(\"C:/Program Files \\(x86\\)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/MSBuild.exe\" \"C:/Users/johan/Box/05 Repositories/FAARFIELD-2.1.1/FAARFIELD.sln\" -p:Configuration=Debug -verbosity:minimal 2>&1 | tail -10)",
+      "Bash(\"C:/Program Files \\(x86\\)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/MSBuild.exe\" \"C:/Users/johan/Box/05 Repositories/FAARFIELD-2.1.1/FAARFIELD.sln\" -p:Configuration=Debug -verbosity:minimal 2>&1 | tail -5)",
+      "Bash(\"C:/Program Files \\(x86\\)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/MSBuild.exe\" \"C:/Users/johan/Box/05 Repositories/FAARFIELD-2.1.1/FAARFIELD.sln\" -p:Configuration=Debug -verbosity:minimal 2>&1 | grep -E \"\\(error BC|Build succeeded|\\\\.vb\\\\\\(.*error\\)\" | head -5)",
+      "Bash(\"C:/Program Files \\(x86\\)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/MSBuild.exe\" \"C:/Users/johan/Box/05 Repositories/FAARFIELD-2.1.1/FAARFIELD.sln\" -p:Configuration=Debug -verbosity:minimal 2>&1 | grep -c \"error BC\")",
+      "Bash(grep:*)",
+      "Bash(/tmp/summary.txt:*)",
+      "Read(//tmp/**)"
     ]
   }
 }

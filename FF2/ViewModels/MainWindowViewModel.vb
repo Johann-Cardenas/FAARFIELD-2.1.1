@@ -5806,8 +5806,8 @@ Namespace ViewModels
             End If
 
             Dim value = SelectedAirplane.NumberDepartures
-            If value > 100000 Then
-                MessageBox.Show("Maximum allowable number for Annual Departure is 100,000. ")
+            If value > 500000 Then
+                MessageBox.Show("Maximum allowable number for Annual Departure is 500,000. ")
                 SelectedAirplane.NumberDepartures = 1200
             ElseIf value < 1 And CurrentSectionView.Section.SelectedRun = 2 Then
                 MessageBox.Show("Minimum allowable value of Annual Departures for Life/Compaction run is 1")
@@ -8559,9 +8559,9 @@ Namespace ViewModels
 
             ' B.1 Subgrade failure model equation image
             Dim eqLines1() As String = {
-                "AA  =  0.000247  +  0.000245 " & ChrW(&H00D7) & " log" & ChrW(&H2081) & ChrW(&H2080) & "(E_subgrade)",
-                "BB  =  0.0658 " & ChrW(&H00D7) & " E_subgrade" & ChrW(&H2070) & ChrW(&H00B7) & ChrW(&H2075) & ChrW(&H2075) & ChrW(&H2079),
-                "N_fail  =  10,000 " & ChrW(&H00D7) & " (AA / " & ChrW(&H03B5) & "v)^BB",
+                "AA  =  0.000247  +  0.000245 " & ChrW(&H00D7) & " log10(E_subgrade)",
+                "BB  =  0.0658 " & ChrW(&H00D7) & " E_subgrade^{0.559}",
+                "N_fail  =  10,000 " & ChrW(&H00D7) & " (AA / " & ChrW(&H03B5) & "v)^{BB}",
                 "",
                 "For this structure  (E_subgrade = " & Format(subgradeMod, "#,##0") & " " & PressureUnit & "):",
                 "   AA = " & Format(computedAA, "0.000000"),
@@ -9344,8 +9344,8 @@ Namespace ViewModels
                 Dim gridPen As New Pen(Color.FromArgb(230, 230, 230), 1)
                 gridPen.DashStyle = Drawing2D.DashStyle.Dot
                 Dim nGridY As Integer = 5
-                Dim axisFont As New Font("Segoe UI", 7.5F)
-                Dim labelFont As New Font("Segoe UI", 8.5F)
+                Dim axisFont As New Font("Segoe UI", 8.0F)
+                Dim labelFont As New Font("Segoe UI", 9.0F, FontStyle.Bold)
 
                 For i As Integer = 0 To nGridY
                     Dim yVal As Double = yMax * i / nGridY
@@ -9372,14 +9372,13 @@ Namespace ViewModels
                 g.DrawString(xAxisLabel, labelFont, Brushes.Black, CSng(marginLeft + (plotWidth - xAxisSize.Width) / 2), chartHeight - 22)
 
                 ' Y-axis label (drawn rotated)
-                Dim sf As New StringFormat()
-                sf.FormatFlags = StringFormatFlags.DirectionVertical
                 Dim yAxisLabel = "CDF"
-                g.TranslateTransform(14, CSng(marginTop + plotHeight / 2))
+                g.TranslateTransform(30, CSng(marginTop + plotHeight / 2))
                 g.RotateTransform(-90)
                 Dim yAxisSize = g.MeasureString(yAxisLabel, labelFont)
                 g.DrawString(yAxisLabel, labelFont, Brushes.Black, -yAxisSize.Width / 2, 0)
                 g.ResetTransform()
+                g.ScaleTransform(2, 2) ' Restore 2x supersampling scale
 
                 ' Draw tire width indicator band at bottom of plot
                 If det.TireWidth > 0 Then
@@ -9479,42 +9478,42 @@ Namespace ViewModels
                 }
                 g.FillPolygon(New SolidBrush(Color.FromArgb(255, 34, 139, 34)), triPts)
 
-                ' Draw legend — compact, positioned in top-right
-                Dim legendFont As New Font("Segoe UI", 7.0F)
-                Dim legendLineH As Integer = 15
-                Dim legendW As Integer = 190
-                Dim legendX As Integer = marginLeft + plotWidth - legendW - 8
-                Dim legendY As Integer = marginTop + 8
-                Dim legendH As Integer = 3 * legendLineH + 8
+                ' Draw legend — compact, positioned in bottom-right to avoid overlap with tire width annotations
+                Dim legendFont As New Font("Segoe UI", 8.0F)
+                Dim legendLineH As Integer = 17
+                Dim legendW As Integer = 210
+                Dim legendH As Integer = 3 * legendLineH + 10
+                Dim legendX As Integer = marginLeft + plotWidth - legendW - 10
+                Dim legendY As Integer = marginTop + plotHeight - legendH - 10
                 Dim legendBg As New Rectangle(legendX, legendY, legendW, legendH)
                 g.FillRectangle(New SolidBrush(Color.FromArgb(245, 245, 245)), legendBg)
                 g.DrawRectangle(Pens.LightGray, legendBg)
 
                 ' Line entry
-                Dim ly0 As Integer = legendY + 4
-                g.DrawLine(dataPen, legendX + 6, ly0 + 5, legendX + 22, ly0 + 5)
-                g.DrawString("CDF curve", legendFont, Brushes.Black, legendX + 26, ly0)
+                Dim ly0 As Integer = legendY + 5
+                g.DrawLine(dataPen, legendX + 6, ly0 + 6, legendX + 24, ly0 + 6)
+                g.DrawString("CDF curve", legendFont, Brushes.Black, legendX + 28, ly0)
 
                 ' Diamond entry
                 Dim ly1 As Integer = ly0 + legendLineH
                 Dim ldPts() As PointF = {
-                    New PointF(legendX + 14, ly1 + 1),
-                    New PointF(legendX + 19, ly1 + 5),
-                    New PointF(legendX + 14, ly1 + 9),
-                    New PointF(legendX + 9, ly1 + 5)
+                    New PointF(legendX + 15, ly1 + 1),
+                    New PointF(legendX + 21, ly1 + 6),
+                    New PointF(legendX + 15, ly1 + 11),
+                    New PointF(legendX + 9, ly1 + 6)
                 }
                 g.FillPolygon(Brushes.Red, ldPts)
-                g.DrawString("Max CDF = " & Format(maxCDFVal, "0.000000"), legendFont, Brushes.Black, legendX + 26, ly1)
+                g.DrawString("Max CDF = " & Format(maxCDFVal, "0.000000"), legendFont, Brushes.Black, legendX + 28, ly1)
 
                 ' Triangle entry
                 Dim ly2 As Integer = ly1 + legendLineH
                 Dim ltPts() As PointF = {
-                    New PointF(legendX + 14, ly2 + 1),
-                    New PointF(legendX + 19, ly2 + 9),
-                    New PointF(legendX + 9, ly2 + 9)
+                    New PointF(legendX + 15, ly2 + 1),
+                    New PointF(legendX + 21, ly2 + 11),
+                    New PointF(legendX + 9, ly2 + 11)
                 }
                 g.FillPolygon(New SolidBrush(Color.FromArgb(255, 34, 139, 34)), ltPts)
-                g.DrawString("CDF at critical offset", legendFont, Brushes.Black, legendX + 26, ly2)
+                g.DrawString("CDF at critical offset", legendFont, Brushes.Black, legendX + 28, ly2)
 
                 ' Cleanup GDI+ objects
                 titleFont.Dispose()
@@ -9609,12 +9608,13 @@ Namespace ViewModels
                 Dim xAxisSize = g.MeasureString(xAxisLabel, labelFont)
                 g.DrawString(xAxisLabel, labelFont, Brushes.Black, CSng(marginLeft + (plotWidth - xAxisSize.Width) / 2), chartHeight - 25)
 
-                g.TranslateTransform(14, CSng(marginTop + plotHeight / 2))
+                g.TranslateTransform(30, CSng(marginTop + plotHeight / 2))
                 g.RotateTransform(-90)
                 Dim yAxisLabel = "CDF"
                 Dim yAxisSize = g.MeasureString(yAxisLabel, labelFont)
                 g.DrawString(yAxisLabel, labelFont, Brushes.Black, -yAxisSize.Width / 2, 0)
                 g.ResetTransform()
+                g.ScaleTransform(2, 2) ' Restore 2x supersampling scale
 
                 ' Draw per-aircraft CDF curves
                 Dim nAC As Integer = rpt.CDFSweep.NAircraftCaptured
@@ -9724,6 +9724,90 @@ Namespace ViewModels
 
 
         ''' <summary>
+        ''' Draws a string with ^{...} markers rendered as superscripts (60% size, raised 35%).
+        ''' Returns the total width drawn.
+        ''' </summary>
+        Private Function DrawFormattedString(g As Graphics, text As String, baseFont As Font, brush As Brush, x As Single, y As Single) As Single
+            Dim totalWidth As Single = 0
+            Dim superFontSize As Single = baseFont.Size * 0.6F
+            Dim superShift As Single = baseFont.GetHeight(g) * 0.35F
+
+            Using superFont As New Font(baseFont.FontFamily, superFontSize, baseFont.Style)
+                Dim pos As Integer = 0
+                While pos < text.Length
+                    Dim caretIdx As Integer = text.IndexOf("^{", pos)
+                    If caretIdx < 0 Then
+                        ' No more superscripts — draw remainder
+                        Dim remainder = text.Substring(pos)
+                        g.DrawString(remainder, baseFont, brush, x + totalWidth, y)
+                        totalWidth += g.MeasureString(remainder, baseFont).Width - 6 ' trim GDI+ padding
+                        Exit While
+                    End If
+
+                    ' Draw normal text before the ^{
+                    If caretIdx > pos Then
+                        Dim normal = text.Substring(pos, caretIdx - pos)
+                        g.DrawString(normal, baseFont, brush, x + totalWidth, y)
+                        totalWidth += g.MeasureString(normal, baseFont).Width - 6
+                    End If
+
+                    ' Find closing brace (handle nested ^{...} by counting braces)
+                    Dim braceStart As Integer = caretIdx + 2
+                    Dim depth As Integer = 1
+                    Dim braceEnd As Integer = braceStart
+                    While braceEnd < text.Length AndAlso depth > 0
+                        If text(braceEnd) = "{"c Then depth += 1
+                        If text(braceEnd) = "}"c Then depth -= 1
+                        braceEnd += 1
+                    End While
+                    Dim superText = text.Substring(braceStart, braceEnd - braceStart - 1)
+
+                    ' Recursively draw superscript content (handles nested ^{})
+                    Dim superWidth = DrawFormattedString(g, superText, superFont, brush, x + totalWidth, y - superShift)
+                    totalWidth += superWidth
+                    pos = braceEnd
+                End While
+            End Using
+
+            Return totalWidth
+        End Function
+
+        ''' <summary>
+        ''' Measures the width of a formatted string with ^{...} superscript markers.
+        ''' </summary>
+        Private Function MeasureFormattedString(g As Graphics, text As String, baseFont As Font) As Single
+            Dim totalWidth As Single = 0
+            Dim superFontSize As Single = baseFont.Size * 0.6F
+
+            Using superFont As New Font(baseFont.FontFamily, superFontSize, baseFont.Style)
+                Dim pos As Integer = 0
+                While pos < text.Length
+                    Dim caretIdx As Integer = text.IndexOf("^{", pos)
+                    If caretIdx < 0 Then
+                        totalWidth += g.MeasureString(text.Substring(pos), baseFont).Width - 6
+                        Exit While
+                    End If
+                    If caretIdx > pos Then
+                        totalWidth += g.MeasureString(text.Substring(pos, caretIdx - pos), baseFont).Width - 6
+                    End If
+                    Dim braceStart As Integer = caretIdx + 2
+                    Dim depth As Integer = 1
+                    Dim braceEnd As Integer = braceStart
+                    While braceEnd < text.Length AndAlso depth > 0
+                        If text(braceEnd) = "{"c Then depth += 1
+                        If text(braceEnd) = "}"c Then depth -= 1
+                        braceEnd += 1
+                    End While
+                    Dim superText = text.Substring(braceStart, braceEnd - braceStart - 1)
+                    totalWidth += MeasureFormattedString(g, superText, superFont)
+                    pos = braceEnd
+                End While
+            End Using
+
+            Return totalWidth
+        End Function
+
+        ''' <summary>
         ''' Renders mathematical equations as a high-quality bitmap using GDI+.
         ''' </summary>
         Private Function DrawEquationImage(title As String, equationLines() As String, Optional width As Integer = 750) As Bitmap
@@ -9800,7 +9884,7 @@ Namespace ViewModels
                     If line.StartsWith("For this") OrElse line.StartsWith("   ") Then
                         brush = computedBrush
                     End If
-                    g.DrawString(line, eqFont, brush, leftPad + 10 * scale, yPos)
+                    DrawFormattedString(g, line, eqFont, brush, leftPad + 10 * scale, yPos)
                     yPos += lineSpacing
                 Next
 
@@ -10006,9 +10090,52 @@ Namespace ViewModels
         ''' <summary>
         ''' Draws a log-log fatigue curve (strain vs allowable repetitions) with aircraft scatter points.
         ''' </summary>
+        ''' <summary>
+        ''' Computes NtoFail for a given absolute strain using the specified subgrade model.
+        ''' </summary>
+        Private Function ComputeNtoFail(strainAbs As Double, modelName As String, subMod As Double) As Double
+            If strainAbs < 0.00001 Then strainAbs = 0.00001
+
+            If modelName = "Bleasdale" Then
+                ' Bleasdale 2 model (modCDF.vb lines 360-392)
+                Dim a11 As Double = -0.163768916705
+                Dim b11 As Double = 185.192806802
+                Dim c11 As Double = 1.65054449461
+                Dim inner As Double = a11 + b11 * strainAbs
+                If inner <= 0.0001 Then Return 1.0E+15 ' Below endurance limit (asymptote)
+                If strainAbs <= 0.001765093 Then
+                    Dim expn As Double = inner ^ (-1.0 / c11)
+                    If expn > 15 Then Return 1.0E+15
+                    Return 10.0 ^ expn
+                Else
+                    Return (0.00414131183 / strainAbs) ^ 8.1
+                End If
+
+            ElseIf modelName = "Straight-Line" Then
+                ' Straight-Line model (modCDF.vb lines 336-351)
+                Dim AAorig As Double = 0.000247 + 0.000245 * Math.Log(15000) / 2.302585
+                Dim BBorig As Double = 0.0658 * 15000 ^ 0.559
+                AAorig = AAorig * 10000.0 ^ (1.0 / BBorig)
+                Dim AA_sl As Double = 0.004
+                Dim BB_sl As Double = 8.1
+                Dim strainBreak As Double = (BB_sl * Math.Log10(AA_sl) - BBorig * Math.Log10(AAorig))
+                strainBreak = 10.0 ^ (strainBreak / (BB_sl - BBorig))
+                If strainAbs > strainBreak Then
+                    Return (AA_sl / strainAbs) ^ BB_sl
+                Else
+                    Return (AAorig / strainAbs) ^ BBorig
+                End If
+
+            Else ' Standard model
+                Dim AA As Double = 0.000247 + 0.000245 * Math.Log(subMod) / 2.302585
+                Dim BB As Double = 0.0658 * subMod ^ 0.559
+                Return 10000.0 * (AA / strainAbs) ^ BB
+            End If
+        End Function
+
         Private Function DrawFatigueCurve(rpt As clsDetailedReportData, chartColors() As Color) As Bitmap
             Dim chartWidth As Integer = 900
-            Dim chartHeight As Integer = 550
+            Dim chartHeight As Integer = 600
             Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
 
             Using g As Graphics = Graphics.FromImage(bmpHi)
@@ -10018,37 +10145,46 @@ Namespace ViewModels
                 g.Clear(Color.White)
 
                 Dim faaBlue As Color = Color.FromArgb(46, 94, 168)
-                Dim marginLeft As Integer = 90
-                Dim marginRight As Integer = 40
-                Dim marginTop As Integer = 55
-                Dim marginBottom As Integer = 65
+                Dim marginLeft As Integer = 95
+                Dim marginRight As Integer = 45
+                Dim marginTop As Integer = 50
+                Dim marginBottom As Integer = 70
                 Dim plotWidth As Integer = chartWidth - marginLeft - marginRight
                 Dim plotHeight As Integer = chartHeight - marginTop - marginBottom
 
-                ' Title — single centered line
-                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
-                Dim subtitleFont As New Font("Segoe UI", 7.5F)
-                Dim titleText = "Subgrade Fatigue Model: Vertical Strain vs. Allowable Repetitions"
-                Dim titleSize = g.MeasureString(titleText, titleFont)
-                g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 12)
-
                 ' Get subgrade modulus from last layer
-                Dim subMod As Double = 15000 ' default
+                Dim subMod As Double = 15000
                 If rpt.SublayerData.DesignLayers.Count > 0 Then
                     subMod = rpt.SublayerData.DesignLayers(rpt.SublayerData.DesignLayers.Count - 1).Modulus
                 End If
 
-                ' Compute AA, BB for standard model
-                Dim modelAA As Double = 0.000247 + 0.000245 * Math.Log10(subMod)
-                Dim modelBB As Double = 0.0658 * subMod ^ 0.559
+                ' Detect which subgrade model(s) the aircraft use
+                Dim activeModel As String = "Standard"
+                If rpt.AircraftDetails IsNot Nothing Then
+                    For ia As Integer = 1 To UBound(rpt.AircraftDetails)
+                        If rpt.AircraftDetails(ia) IsNot Nothing AndAlso rpt.AircraftDetails(ia).SubgradeModelUsed <> "" Then
+                            activeModel = rpt.AircraftDetails(ia).SubgradeModelUsed
+                            Exit For
+                        End If
+                    Next
+                End If
 
-                ' Determine axis ranges from aircraft data
-                Dim minStrain As Double = 50 ' microstrain
-                Dim maxStrain As Double = 5000
-                Dim minN As Double = 100
-                Dim maxN As Double = 1.0E+15
+                ' Bleasdale zone parameters
+                Dim isBleasdale As Boolean = (activeModel = "Bleasdale")
+                Dim blea_a11 As Double = -0.163768916705
+                Dim blea_b11 As Double = 185.192806802
+                Dim strainAsymptote As Double = -blea_a11 / blea_b11          ' ~0.000884 abs strain
+                Dim microAsymptote As Double = strainAsymptote * 1000000.0    ' ~884.3 με
+                Dim strainTransition As Double = 0.001765093                   ' Bleasdale → power-law
+                Dim microTransition As Double = strainTransition * 1000000.0  ' ~1765.1 με
 
-                ' Collect aircraft data points
+                ' Title — includes model name
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
+                Dim titleText = "Subgrade Fatigue Model (" & activeModel & If(isBleasdale, " — Piecewise", "") & ")"
+                Dim titleSize = g.MeasureString(titleText, titleFont)
+                g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 10)
+
+                ' Collect aircraft data points: (strainMicro, NtoFail, TotalReps, Name, Color)
                 Dim acPoints As New List(Of Tuple(Of Double, Double, Double, String, Color))
                 If rpt.AircraftDetails IsNot Nothing Then
                     For ia As Integer = 1 To UBound(rpt.AircraftDetails)
@@ -10058,28 +10194,103 @@ Namespace ViewModels
                         If strainMicro > 0 AndAlso det.NtoFail > 0 Then
                             Dim acColor As Color = chartColors((ia - 1) Mod chartColors.Length)
                             acPoints.Add(New Tuple(Of Double, Double, Double, String, Color)(strainMicro, det.NtoFail, det.TotalRepetitions, det.ACName, acColor))
-                            If strainMicro < minStrain Then minStrain = strainMicro * 0.5
-                            If strainMicro > maxStrain Then maxStrain = strainMicro * 2
-                            If det.NtoFail < minN Then minN = det.NtoFail * 0.1
-                            If det.NtoFail > maxN Then maxN = det.NtoFail * 10
-                            If det.TotalRepetitions < minN Then minN = det.TotalRepetitions * 0.1
-                            If det.TotalRepetitions > maxN Then maxN = det.TotalRepetitions * 10
                         End If
                     Next
                 End If
 
-                ' Ensure reasonable ranges
-                Dim logMinS As Double = Math.Floor(Math.Log10(Math.Max(minStrain, 1)))
-                Dim logMaxS As Double = Math.Ceiling(Math.Log10(Math.Max(maxStrain, 10)))
-                Dim logMinN As Double = Math.Floor(Math.Log10(Math.Max(minN, 1)))
-                Dim logMaxN As Double = Math.Ceiling(Math.Log10(Math.Max(maxN, 100)))
+                ' Determine axis ranges from data
+                Dim dataMinS As Double = Double.MaxValue
+                Dim dataMaxS As Double = Double.MinValue
+                Dim dataMinN As Double = Double.MaxValue
+                Dim dataMaxN As Double = Double.MinValue
+                For Each pt In acPoints
+                    If pt.Item1 < dataMinS Then dataMinS = pt.Item1
+                    If pt.Item1 > dataMaxS Then dataMaxS = pt.Item1
+                    If pt.Item2 < dataMinN Then dataMinN = pt.Item2
+                    If pt.Item2 > dataMaxN Then dataMaxN = pt.Item2
+                    If pt.Item3 > 0 Then
+                        If pt.Item3 < dataMinN Then dataMinN = pt.Item3
+                        If pt.Item3 > dataMaxN Then dataMaxN = pt.Item3
+                    End If
+                Next
+
+                ' Fallback
+                If dataMinS = Double.MaxValue Then
+                    dataMinS = 100 : dataMaxS = 1000
+                    dataMinN = 1.0E+4 : dataMaxN = 1.0E+12
+                End If
+
+                ' Axis ranges
+                Dim logMinS, logMaxS, logMinN, logMaxN As Double
+
+                If isBleasdale Then
+                    ' X: show from near asymptote to beyond data and transition
+                    logMinS = Math.Min(Math.Log10(microAsymptote) - 0.08, Math.Log10(dataMinS) - 0.3)
+                    logMaxS = Math.Max(Math.Log10(dataMaxS) + 0.5, Math.Log10(microTransition) + 0.5)
+                    ' Y: fixed 10^0 to 10^8
+                    logMinN = 0
+                    logMaxN = 8
+                Else
+                    ' X-axis range — adaptive padding based on data spread
+                    Dim logDataCenter As Double = (Math.Log10(dataMinS) + Math.Log10(dataMaxS)) / 2
+                    Dim logDataSpan As Double = Math.Log10(dataMaxS) - Math.Log10(dataMinS)
+                    If logDataSpan < 0.5 Then
+                        logMinS = logDataCenter - 1.0
+                        logMaxS = logDataCenter + 1.0
+                    ElseIf logDataSpan < 1.5 Then
+                        logMinS = Math.Log10(dataMinS) - 0.4
+                        logMaxS = Math.Log10(dataMaxS) + 0.4
+                    Else
+                        logMinS = Math.Floor(Math.Log10(dataMinS)) - 0.3
+                        logMaxS = Math.Ceiling(Math.Log10(dataMaxS)) + 0.3
+                    End If
+
+                    ' Y-axis range from data with 1 decade padding
+                    logMinN = Math.Floor(Math.Log10(Math.Max(dataMinN, 1))) - 1
+                    logMaxN = Math.Ceiling(Math.Log10(Math.Max(dataMaxN, 10))) + 1
+                    If logMaxN - logMinN < 3 Then
+                        Dim logNCenter As Double = (logMinN + logMaxN) / 2
+                        logMinN = logNCenter - 2
+                        logMaxN = logNCenter + 2
+                    End If
+                End If
 
                 ' Plot area
                 Dim plotRect As New Rectangle(marginLeft, marginTop, plotWidth, plotHeight)
                 g.FillRectangle(New SolidBrush(Color.FromArgb(250, 250, 252)), plotRect)
-                g.DrawRectangle(Pens.DarkGray, plotRect)
 
-                ' Helper: map log values to pixel coordinates
+                ' Bleasdale zone backgrounds
+                If isBleasdale Then
+                    Dim plotL As Single = CSng(marginLeft)
+                    Dim plotR As Single = CSng(marginLeft + plotWidth)
+                    Dim plotT As Single = CSng(marginTop)
+                    Dim plotB As Single = CSng(marginTop + plotHeight)
+                    ' Compute transition pixel positions inline (xScale not yet defined)
+                    Dim xAsymZone As Single = CSng(marginLeft + (Math.Log10(microAsymptote) - logMinS) / (logMaxS - logMinS) * plotWidth)
+                    Dim xTransZone As Single = CSng(marginLeft + (Math.Log10(microTransition) - logMinS) / (logMaxS - logMinS) * plotWidth)
+
+                    ' Zone A: left edge to asymptote — endurance limit (green tint)
+                    If xAsymZone > plotL Then
+                        g.FillRectangle(New SolidBrush(Color.FromArgb(18, 76, 175, 80)),
+                            plotL, plotT, Math.Min(xAsymZone, plotR) - plotL, plotB - plotT)
+                    End If
+                    ' Zone B: asymptote to transition — Bleasdale curve (blue tint)
+                    Dim zBL As Single = Math.Max(xAsymZone, plotL)
+                    Dim zBR As Single = Math.Min(xTransZone, plotR)
+                    If zBR > zBL Then
+                        g.FillRectangle(New SolidBrush(Color.FromArgb(18, 46, 94, 168)),
+                            zBL, plotT, zBR - zBL, plotB - plotT)
+                    End If
+                    ' Zone C: transition to right edge — power-law tail (amber tint)
+                    If xTransZone < plotR Then
+                        g.FillRectangle(New SolidBrush(Color.FromArgb(18, 214, 130, 40)),
+                            Math.Max(xTransZone, plotL), plotT, plotR - Math.Max(xTransZone, plotL), plotB - plotT)
+                    End If
+                End If
+
+                g.DrawRectangle(New Pen(Color.DarkGray, 1.0F), plotRect)
+
+                ' Mapping functions
                 Dim xScale = Function(logVal As Double) As Single
                                  Return CSng(marginLeft + (logVal - logMinS) / (logMaxS - logMinS) * plotWidth)
                              End Function
@@ -10088,118 +10299,339 @@ Namespace ViewModels
                              End Function
 
                 ' Grid lines
-                Dim gridPen As New Pen(Color.FromArgb(230, 230, 230), 1)
+                Dim gridPen As New Pen(Color.FromArgb(220, 220, 220), 1)
                 gridPen.DashStyle = Drawing2D.DashStyle.Dot
-                Dim axisFont As New Font("Segoe UI", 7.0F)
-                Dim labelFont As New Font("Segoe UI", 8.0F)
+                Dim axisFont As New Font("Segoe UI", 8.5F)
+                Dim labelFont As New Font("Segoe UI", 9.5F, FontStyle.Bold)
+                Dim minorFont As New Font("Segoe UI", 7.0F)
+                Dim minorPen As New Pen(Color.FromArgb(240, 240, 240), 1)
+                minorPen.DashStyle = Drawing2D.DashStyle.Dot
 
-                ' X-axis grid (strain)
-                For logV As Integer = CInt(logMinS) To CInt(logMaxS)
+                ' X-axis ticks: major at 10^n, minor at 2×,3×,5×
+                Dim minorMults() As Double = {2, 3, 5}
+                For logV As Integer = CInt(Math.Floor(logMinS)) - 1 To CInt(Math.Ceiling(logMaxS)) + 1
                     Dim xPx As Single = xScale(logV)
-                    If logV > logMinS AndAlso logV < logMaxS Then g.DrawLine(gridPen, xPx, marginTop, xPx, marginTop + plotHeight)
-                    Dim xLabel = "10" & logV.ToString()
-                    If logV = 1 Then xLabel = "10"
-                    If logV = 2 Then xLabel = "100"
-                    If logV = 3 Then xLabel = "1,000"
-                    If logV = 4 Then xLabel = "10,000"
-                    Dim xlSize = g.MeasureString(xLabel, axisFont)
-                    g.DrawString(xLabel, axisFont, Brushes.Black, xPx - xlSize.Width / 2, marginTop + plotHeight + 4)
+                    If xPx > marginLeft AndAlso xPx < marginLeft + plotWidth Then
+                        g.DrawLine(gridPen, xPx, marginTop, xPx, marginTop + plotHeight)
+                        Dim micVal As Double = 10.0 ^ logV
+                        Dim xLabel As String = If(micVal >= 1000, Format(micVal, "#,##0"), Format(micVal, "0"))
+                        Dim xlSz = g.MeasureString(xLabel, axisFont)
+                        g.DrawString(xLabel, axisFont, Brushes.Black, xPx - xlSz.Width / 2, marginTop + plotHeight + 5)
+                    End If
+                    For Each m In minorMults
+                        Dim mLog As Double = logV + Math.Log10(m)
+                        Dim mPx As Single = xScale(mLog)
+                        If mPx > marginLeft + 3 AndAlso mPx < marginLeft + plotWidth - 3 Then
+                            g.DrawLine(minorPen, mPx, marginTop, mPx, marginTop + plotHeight)
+                            Dim mVal As Double = 10.0 ^ logV * m
+                            Dim mLabel As String = If(mVal >= 1000, Format(mVal, "#,##0"), Format(mVal, "0"))
+                            Dim mSz = g.MeasureString(mLabel, minorFont)
+                            g.DrawString(mLabel, minorFont, New SolidBrush(Color.FromArgb(130, 130, 130)), mPx - mSz.Width / 2, marginTop + plotHeight + 6)
+                        End If
+                    Next
                 Next
 
-                ' Y-axis grid (N_fail)
-                For logV As Integer = CInt(logMinN) To CInt(logMaxN)
+                ' Y-axis ticks
+                For logV As Integer = CInt(Math.Ceiling(logMinN)) To CInt(Math.Floor(logMaxN))
                     Dim yPx As Single = yScale(logV)
-                    If logV > logMinN AndAlso logV < logMaxN Then g.DrawLine(gridPen, marginLeft, yPx, marginLeft + plotWidth, yPx)
-                    Dim yLabel = "1E+" & logV.ToString()
-                    If logV <= 0 Then yLabel = "1E" & logV.ToString()
-                    Dim ylSize = g.MeasureString(yLabel, axisFont)
-                    g.DrawString(yLabel, axisFont, Brushes.Black, marginLeft - ylSize.Width - 4, yPx - ylSize.Height / 2)
+                    If yPx > marginTop AndAlso yPx < marginTop + plotHeight Then
+                        g.DrawLine(gridPen, marginLeft, yPx, marginLeft + plotWidth, yPx)
+                    End If
+                    Dim yLabel As String = "10^" & logV.ToString()
+                    Dim ylSz = g.MeasureString(yLabel, axisFont)
+                    g.DrawString(yLabel, axisFont, Brushes.Black, marginLeft - ylSz.Width - 6, yPx - ylSz.Height / 2)
                 Next
 
                 ' Axis labels
                 Dim xAxisLabel = "Vertical Strain (" & ChrW(&H03BC) & ChrW(&H03B5) & ")"
                 Dim xAxisSize = g.MeasureString(xAxisLabel, labelFont)
-                g.DrawString(xAxisLabel, labelFont, Brushes.Black, CSng(marginLeft + (plotWidth - xAxisSize.Width) / 2), chartHeight - 20)
+                g.DrawString(xAxisLabel, labelFont, Brushes.Black, CSng(marginLeft + (plotWidth - xAxisSize.Width) / 2), chartHeight - 22)
 
-                g.TranslateTransform(12, CSng(marginTop + plotHeight / 2))
+                g.TranslateTransform(30, CSng(marginTop + plotHeight / 2))
                 g.RotateTransform(-90)
                 Dim yAxisLabel = "Allowable Repetitions (N)"
                 Dim yAxisSize = g.MeasureString(yAxisLabel, labelFont)
                 g.DrawString(yAxisLabel, labelFont, Brushes.Black, -yAxisSize.Width / 2, 0)
                 g.ResetTransform()
+                g.ScaleTransform(2, 2) ' Restore 2x supersampling scale
 
-                ' Draw fatigue model curve
-                Dim curvePen As New Pen(faaBlue, 2.5F)
-                Dim curvePoints As New List(Of PointF)
-                Dim nSteps As Integer = 200
-                For i As Integer = 0 To nSteps
-                    Dim logS As Double = logMinS + (logMaxS - logMinS) * i / nSteps
-                    Dim strainVal As Double = 10 ^ logS / 1000000.0 ' convert microstrain to strain
-                    If strainVal < 0.0001 Then strainVal = 0.0001
-                    Dim nFail As Double = 10000.0 * (modelAA / strainVal) ^ modelBB
-                    Dim logNF As Double = Math.Log10(Math.Max(nFail, 1))
-                    If logNF >= logMinN AndAlso logNF <= logMaxN Then
-                        curvePoints.Add(New PointF(xScale(logS), yScale(logNF)))
+                ' Bleasdale transition markers and zone labels
+                If isBleasdale Then
+                    Dim transFont As New Font("Segoe UI", 7.0F, FontStyle.Bold)
+                    Dim zoneFont As New Font("Segoe UI", 7.5F, FontStyle.Italic)
+                    Dim plotT As Single = CSng(marginTop)
+                    Dim plotB As Single = CSng(marginTop + plotHeight)
+                    Dim plotL As Single = CSng(marginLeft)
+                    Dim plotR As Single = CSng(marginLeft + plotWidth)
+
+                    ' Asymptote vertical line (ε ≈ 884 με)
+                    Dim xAsymPx As Single = xScale(Math.Log10(microAsymptote))
+                    If xAsymPx > plotL AndAlso xAsymPx < plotR Then
+                        Dim asymPen As New Pen(Color.FromArgb(160, 56, 142, 60), 1.5F)
+                        asymPen.DashStyle = Drawing2D.DashStyle.DashDot
+                        g.DrawLine(asymPen, xAsymPx, plotT, xAsymPx, plotB)
+                        ' Diamond marker
+                        Dim dm As Single = 5
+                        Dim dmY As Single = plotT + 10
+                        g.FillPolygon(New SolidBrush(Color.FromArgb(56, 142, 60)),
+                            {New PointF(xAsymPx, dmY - dm), New PointF(xAsymPx + dm, dmY),
+                             New PointF(xAsymPx, dmY + dm), New PointF(xAsymPx - dm, dmY)})
+                        ' Strain label
+                        Dim aLbl = Format(microAsymptote, "0.0") & " " & ChrW(&H03BC) & ChrW(&H03B5)
+                        Dim aLblSz = g.MeasureString(aLbl, transFont)
+                        g.FillRectangle(New SolidBrush(Color.FromArgb(220, 255, 255, 255)),
+                            xAsymPx + 3, plotT + 18, aLblSz.Width + 4, aLblSz.Height + 2)
+                        g.DrawString(aLbl, transFont, New SolidBrush(Color.FromArgb(56, 142, 60)),
+                            xAsymPx + 5, plotT + 19)
+                        asymPen.Dispose()
                     End If
-                Next
 
-                ' Subtle fill under the fatigue curve
-                If curvePoints.Count > 1 Then
-                    Dim curveFillPts As New List(Of PointF)
-                    curveFillPts.Add(New PointF(curvePoints(0).X, CSng(marginTop + plotHeight)))
-                    curveFillPts.AddRange(curvePoints)
-                    curveFillPts.Add(New PointF(curvePoints(curvePoints.Count - 1).X, CSng(marginTop + plotHeight)))
-                    g.FillPolygon(New SolidBrush(Color.FromArgb(15, faaBlue.R, faaBlue.G, faaBlue.B)), curveFillPts.ToArray())
+                    ' Transition vertical line (ε ≈ 1765 με, N ≈ 1000)
+                    Dim xTransPx As Single = xScale(Math.Log10(microTransition))
+                    If xTransPx > plotL AndAlso xTransPx < plotR Then
+                        Dim transPen As New Pen(Color.FromArgb(160, 180, 100, 20), 1.5F)
+                        transPen.DashStyle = Drawing2D.DashStyle.DashDot
+                        g.DrawLine(transPen, xTransPx, plotT, xTransPx, plotB)
+                        ' Diamond marker
+                        Dim dm As Single = 5
+                        Dim dmY As Single = plotT + 10
+                        g.FillPolygon(New SolidBrush(Color.FromArgb(180, 100, 20)),
+                            {New PointF(xTransPx, dmY - dm), New PointF(xTransPx + dm, dmY),
+                             New PointF(xTransPx, dmY + dm), New PointF(xTransPx - dm, dmY)})
+                        ' Strain label
+                        Dim tLbl = Format(microTransition, "0.0") & " " & ChrW(&H03BC) & ChrW(&H03B5)
+                        Dim tLblSz = g.MeasureString(tLbl, transFont)
+                        g.FillRectangle(New SolidBrush(Color.FromArgb(220, 255, 255, 255)),
+                            xTransPx + 3, plotT + 18, tLblSz.Width + 4, tLblSz.Height + 2)
+                        g.DrawString(tLbl, transFont, New SolidBrush(Color.FromArgb(180, 100, 20)),
+                            xTransPx + 5, plotT + 19)
+                        transPen.Dispose()
+                    End If
+
+                    ' N = 1,000 horizontal reference line
+                    Dim yN1000 As Single = yScale(3) ' log10(1000) = 3
+                    If yN1000 > plotT + 5 AndAlso yN1000 < plotB - 5 Then
+                        Dim n1000Pen As New Pen(Color.FromArgb(120, 180, 100, 20), 1.0F)
+                        n1000Pen.DashStyle = Drawing2D.DashStyle.Dash
+                        g.DrawLine(n1000Pen, plotL, yN1000, plotR, yN1000)
+                        Dim nLbl = "N = 1,000"
+                        Dim nLblSz = g.MeasureString(nLbl, transFont)
+                        g.FillRectangle(New SolidBrush(Color.FromArgb(220, 255, 255, 255)),
+                            plotR - nLblSz.Width - 8, yN1000 - nLblSz.Height - 2, nLblSz.Width + 6, nLblSz.Height + 2)
+                        g.DrawString(nLbl, transFont, New SolidBrush(Color.FromArgb(180, 100, 20)),
+                            plotR - nLblSz.Width - 5, yN1000 - nLblSz.Height - 1)
+                        n1000Pen.Dispose()
+                    End If
+
+                    ' Zone labels at top of each zone
+                    If xAsymPx > plotL + 50 Then
+                        Dim zACenter As Single = (plotL + Math.Min(xAsymPx, plotR)) / 2
+                        Dim zALbl = "Endurance Limit"
+                        Dim zASz = g.MeasureString(zALbl, zoneFont)
+                        g.DrawString(zALbl, zoneFont, New SolidBrush(Color.FromArgb(100, 56, 142, 60)),
+                            zACenter - zASz.Width / 2, plotT + 4)
+                    End If
+
+                    If xTransPx > xAsymPx + 60 Then
+                        Dim zBCenter As Single = (Math.Max(xAsymPx, plotL) + Math.Min(xTransPx, plotR)) / 2
+                        Dim zBLbl1 = "Bleasdale Curve"
+                        Dim zBSz1 = g.MeasureString(zBLbl1, zoneFont)
+                        g.DrawString(zBLbl1, zoneFont, New SolidBrush(Color.FromArgb(100, 46, 94, 168)),
+                            zBCenter - zBSz1.Width / 2, plotT + 4)
+                        Dim zBLbl2 = "(Cov " & ChrW(&H2265) & " 1,000)"
+                        Dim zBSz2 = g.MeasureString(zBLbl2, zoneFont)
+                        g.DrawString(zBLbl2, zoneFont, New SolidBrush(Color.FromArgb(100, 46, 94, 168)),
+                            zBCenter - zBSz2.Width / 2, plotT + 4 + zBSz1.Height)
+                    End If
+
+                    If plotR > xTransPx + 60 Then
+                        Dim zCCenter As Single = (Math.Max(xTransPx, plotL) + plotR) / 2
+                        Dim zCLbl1 = "Power Law"
+                        Dim zCSz1 = g.MeasureString(zCLbl1, zoneFont)
+                        g.DrawString(zCLbl1, zoneFont, New SolidBrush(Color.FromArgb(100, 180, 100, 20)),
+                            zCCenter - zCSz1.Width / 2, plotT + 4)
+                        Dim zCLbl2 = "(Cov < 1,000)"
+                        Dim zCSz2 = g.MeasureString(zCLbl2, zoneFont)
+                        g.DrawString(zCLbl2, zoneFont, New SolidBrush(Color.FromArgb(100, 180, 100, 20)),
+                            zCCenter - zCSz2.Width / 2, plotT + 4 + zCSz1.Height)
+                    End If
+
+                    transFont.Dispose()
+                    zoneFont.Dispose()
                 End If
-                If curvePoints.Count > 1 Then g.DrawLines(curvePen, curvePoints.ToArray())
 
-                ' Combined equation + parameters box — upper-left inside plot area
-                Dim eqBoxFont As New Font("Consolas", 8.0F, FontStyle.Bold)
-                Dim paramBoxFont As New Font("Segoe UI", 7.5F)
-                Dim eqText As String = "N = 10,000 " & ChrW(&H00D7) & " (AA / " & ChrW(&H03B5) & "v)^BB"
-                Dim paramLine1 As String = "E_subgrade = " & Format(subMod, "#,##0") & " psi"
-                Dim paramLine2 As String = "AA = " & Format(modelAA, "0.000000") & "    BB = " & Format(modelBB, "0.000")
+                ' Draw the fatigue model curve
+                Dim nSteps As Integer = 500
 
-                Dim eqSize = g.MeasureString(eqText, eqBoxFont)
-                Dim p1Size = g.MeasureString(paramLine1, paramBoxFont)
-                Dim p2Size = g.MeasureString(paramLine2, paramBoxFont)
-                Dim infoW As Single = Math.Max(eqSize.Width, Math.Max(p1Size.Width, p2Size.Width)) + 16
-                Dim infoH As Single = eqSize.Height + p1Size.Height + p2Size.Height + 14
+                If isBleasdale Then
+                    ' Two segments: Bleasdale (blue solid) and power-law (amber dashed)
+                    Dim bleaPen As New Pen(faaBlue, 2.5F)
+                    Dim powPen As New Pen(Color.FromArgb(180, 100, 20), 2.5F)
+                    powPen.DashStyle = Drawing2D.DashStyle.Dash
+                    Dim bleaPoints As New List(Of PointF)
+                    Dim powPoints As New List(Of PointF)
 
-                Dim infoX As Single = marginLeft + 10
-                Dim infoY As Single = marginTop + 8
-                Dim infoRect As New RectangleF(infoX, infoY, infoW, infoH)
-                g.FillRectangle(New SolidBrush(Color.FromArgb(240, 255, 255, 255)), infoRect)
-                g.DrawRectangle(New Pen(Color.FromArgb(100, faaBlue.R, faaBlue.G, faaBlue.B), 1.0F), infoRect.X, infoRect.Y, infoRect.Width, infoRect.Height)
+                    For i As Integer = 0 To nSteps
+                        Dim logS As Double = logMinS + (logMaxS - logMinS) * i / nSteps
+                        Dim strainAbs As Double = 10.0 ^ logS / 1000000.0
+                        Dim nFail As Double = ComputeNtoFail(strainAbs, activeModel, subMod)
+                        Dim logNF As Double = Math.Log10(Math.Max(nFail, 1))
+                        If logNF < logMinN Then logNF = logMinN
+                        If logNF > logMaxN Then logNF = logMaxN
+                        Dim pt As New PointF(xScale(logS), yScale(logNF))
 
-                Dim infoTxtY As Single = infoY + 4
-                g.DrawString(eqText, eqBoxFont, New SolidBrush(faaBlue), infoX + 8, infoTxtY)
-                infoTxtY += eqSize.Height + 2
-                g.DrawString(paramLine1, paramBoxFont, New SolidBrush(Color.FromArgb(80, 80, 80)), infoX + 8, infoTxtY)
-                infoTxtY += p1Size.Height + 1
-                g.DrawString(paramLine2, paramBoxFont, New SolidBrush(Color.FromArgb(80, 80, 80)), infoX + 8, infoTxtY)
+                        If strainAbs <= strainTransition Then
+                            bleaPoints.Add(pt)
+                        Else
+                            If powPoints.Count = 0 AndAlso bleaPoints.Count > 0 Then
+                                ' Ensure continuity at the transition point
+                                Dim tLogS = Math.Log10(microTransition)
+                                Dim tNF = ComputeNtoFail(strainTransition, activeModel, subMod)
+                                Dim tLogNF = Math.Log10(Math.Max(tNF, 1))
+                                If tLogNF < logMinN Then tLogNF = logMinN
+                                If tLogNF > logMaxN Then tLogNF = logMaxN
+                                Dim tPt As New PointF(xScale(tLogS), yScale(tLogNF))
+                                bleaPoints.Add(tPt)
+                                powPoints.Add(tPt)
+                            End If
+                            powPoints.Add(pt)
+                        End If
+                    Next
 
-                ' Draw aircraft scatter points and repetition lines
-                ' Collect label positions for collision avoidance (includes legend + info box areas)
+                    ' Fill under Bleasdale segment
+                    If bleaPoints.Count > 1 Then
+                        Dim fillPts As New List(Of PointF)
+                        fillPts.Add(New PointF(bleaPoints(0).X, CSng(marginTop + plotHeight)))
+                        fillPts.AddRange(bleaPoints)
+                        fillPts.Add(New PointF(bleaPoints(bleaPoints.Count - 1).X, CSng(marginTop + plotHeight)))
+                        g.FillPolygon(New SolidBrush(Color.FromArgb(12, faaBlue.R, faaBlue.G, faaBlue.B)), fillPts.ToArray())
+                        g.DrawLines(bleaPen, bleaPoints.ToArray())
+                    End If
+                    ' Fill under power-law segment
+                    If powPoints.Count > 1 Then
+                        Dim fillPts As New List(Of PointF)
+                        fillPts.Add(New PointF(powPoints(0).X, CSng(marginTop + plotHeight)))
+                        fillPts.AddRange(powPoints)
+                        fillPts.Add(New PointF(powPoints(powPoints.Count - 1).X, CSng(marginTop + plotHeight)))
+                        g.FillPolygon(New SolidBrush(Color.FromArgb(12, 180, 100, 20)), fillPts.ToArray())
+                        g.DrawLines(powPen, powPoints.ToArray())
+                    End If
+
+                    bleaPen.Dispose()
+                    powPen.Dispose()
+                Else
+                    ' Single-color curve for Standard / Straight-Line models
+                    Dim curvePen As New Pen(faaBlue, 2.5F)
+                    Dim curvePoints As New List(Of PointF)
+                    For i As Integer = 0 To nSteps
+                        Dim logS As Double = logMinS + (logMaxS - logMinS) * i / nSteps
+                        Dim strainAbs As Double = 10.0 ^ logS / 1000000.0
+                        Dim nFail As Double = ComputeNtoFail(strainAbs, activeModel, subMod)
+                        Dim logNF As Double = Math.Log10(Math.Max(nFail, 1))
+                        If logNF < logMinN Then logNF = logMinN
+                        If logNF > logMaxN Then logNF = logMaxN
+                        curvePoints.Add(New PointF(xScale(logS), yScale(logNF)))
+                    Next
+
+                    If curvePoints.Count > 1 Then
+                        Dim fillPts As New List(Of PointF)
+                        fillPts.Add(New PointF(curvePoints(0).X, CSng(marginTop + plotHeight)))
+                        fillPts.AddRange(curvePoints)
+                        fillPts.Add(New PointF(curvePoints(curvePoints.Count - 1).X, CSng(marginTop + plotHeight)))
+                        g.FillPolygon(New SolidBrush(Color.FromArgb(15, faaBlue.R, faaBlue.G, faaBlue.B)), fillPts.ToArray())
+                    End If
+                    If curvePoints.Count > 1 Then g.DrawLines(curvePen, curvePoints.ToArray())
+                    curvePen.Dispose()
+                End If
+
+                ' Equation box
+                Dim eqBoxFont As New Font("Consolas", If(isBleasdale, 4.5F, 9.0F), FontStyle.Bold)
+                Dim paramBoxFont As New Font("Segoe UI", If(isBleasdale, 4.25F, 8.5F))
+
+                Dim eqLines As New List(Of String)
+                Dim paramLines As New List(Of String)
+                If activeModel = "Bleasdale" Then
+                    eqLines.Add("Bleasdale (piecewise):")
+                    eqLines.Add(ChrW(&H03B5) & " " & ChrW(&H2264) & " " & Format(microTransition, "0.0") & " " & ChrW(&H03BC) & ChrW(&H03B5) & ":")
+                    eqLines.Add("  N = 10^{((a + b" & ChrW(&H00B7) & ChrW(&H03B5) & "v)^{-1/c})}")
+                    eqLines.Add(ChrW(&H03B5) & " > " & Format(microTransition, "0.0") & " " & ChrW(&H03BC) & ChrW(&H03B5) & ":")
+                    eqLines.Add("  N = (0.00414 / " & ChrW(&H03B5) & "v)^{8.1}")
+                    paramLines.Add("a = -0.1638  b = 185.19  c = 1.651")
+                    paramLines.Add("Asymptote: " & Format(microAsymptote, "0.0") & " " & ChrW(&H03BC) & ChrW(&H03B5))
+                    paramLines.Add("Transition: " & Format(microTransition, "0.0") & " " & ChrW(&H03BC) & ChrW(&H03B5) & " (N " & ChrW(&H2248) & " 1,000)")
+                ElseIf activeModel = "Straight-Line" Then
+                    eqLines.Add("Straight-Line Model:")
+                    eqLines.Add("N = (AA / " & ChrW(&H03B5) & "v)^{BB}")
+                    paramLines.Add("E_subgrade = " & Format(subMod, "#,##0") & " psi")
+                Else
+                    eqLines.Add("Standard Model:")
+                    eqLines.Add("N = 10,000 " & ChrW(&H00D7) & " (AA / " & ChrW(&H03B5) & "v)^{BB}")
+                    Dim stdAA As Double = 0.000247 + 0.000245 * Math.Log(subMod) / 2.302585
+                    Dim stdBB As Double = 0.0658 * subMod ^ 0.559
+                    paramLines.Add("AA = " & Format(stdAA, "0.000000") & "   BB = " & Format(stdBB, "0.000"))
+                    paramLines.Add("E_subgrade = " & Format(subMod, "#,##0") & " psi")
+                End If
+
+                ' Measure all lines to compute box size
+                Dim boxW As Single = 0
+                Dim boxH As Single = 8
+                For Each line In eqLines
+                    Dim w = MeasureFormattedString(g, line, eqBoxFont)
+                    If w > boxW Then boxW = w
+                    Dim sz = g.MeasureString(line, eqBoxFont)
+                    boxH += sz.Height + 2
+                Next
+                For Each line In paramLines
+                    Dim sz = g.MeasureString(line, paramBoxFont)
+                    If sz.Width > boxW Then boxW = sz.Width
+                    boxH += sz.Height + 1
+                Next
+                boxW += 24
+                boxH += 4
+
+                Dim infoX As Single = marginLeft + 12
+                ' infoY will be repositioned for Bleasdale after legend is laid out; use placeholder
+                Dim infoY As Single = CSng(marginTop + 10)
+                Dim infoRect As New RectangleF(infoX, infoY, boxW, boxH)
+
+                ' Draw equation box at default position for non-Bleasdale (Bleasdale redraws above legend later)
+                If Not isBleasdale Then
+                    g.FillRectangle(New SolidBrush(Color.FromArgb(240, 255, 255, 255)), infoRect)
+                    g.DrawRectangle(New Pen(Color.FromArgb(100, faaBlue.R, faaBlue.G, faaBlue.B), 1.0F), infoRect.X, infoRect.Y, infoRect.Width, infoRect.Height)
+
+                    Dim txtY As Single = infoY + 5
+                    For Each line In eqLines
+                        DrawFormattedString(g, line, eqBoxFont, New SolidBrush(faaBlue), infoX + 12, txtY)
+                        txtY += g.MeasureString(line, eqBoxFont).Height + 2
+                    Next
+                    For Each line In paramLines
+                        g.DrawString(line, paramBoxFont, New SolidBrush(Color.FromArgb(80, 80, 80)), infoX + 12, txtY)
+                        txtY += g.MeasureString(line, paramBoxFont).Height + 1
+                    Next
+                End If
+
+                ' Scatter points and labels
                 Dim labelPositions As New List(Of RectangleF)
-                ' Reserve info box area so scatter labels avoid it
                 labelPositions.Add(infoRect)
-                Dim ptFont As New Font("Segoe UI", 7.5F)
-                Dim ptFontBold As New Font("Segoe UI", 7.5F, FontStyle.Bold)
+                Dim ptFont As New Font("Segoe UI", 8.5F, FontStyle.Bold)
 
-                ' Pre-reserve legend area so scatter labels avoid it
-                Dim legendFont As New Font("Segoe UI", 7.5F)
-                Dim legendLineH As Integer = 16
-                Dim legendH As Integer = (acPoints.Count + 2) * legendLineH + 10
-                Dim maxLegendEntryW As Single = 0
+                ' Legend — bottom-left (curve typically descends from upper-left to lower-right)
+                Dim legendFont As New Font("Segoe UI", If(isBleasdale, 6.375F, 8.5F))
+                Dim legendLineH As Integer = If(isBleasdale, 14, 18)
+                Dim legendEntries As Integer = acPoints.Count + If(isBleasdale, 3, 2)
+                Dim legendH As Integer = legendEntries * legendLineH + 12
+                Dim maxLegEntryW As Single = 0
                 For Each pt In acPoints
                     Dim ew = g.MeasureString(pt.Item4 & " (N_fail)", legendFont)
-                    If ew.Width > maxLegendEntryW Then maxLegendEntryW = ew.Width
+                    If ew.Width > maxLegEntryW Then maxLegEntryW = ew.Width
                 Next
-                Dim legendW As Integer = CInt(maxLegendEntryW) + 42
-                Dim legendX As Integer = marginLeft + plotWidth - legendW - 8
-                Dim legendY As Integer = marginTop + plotHeight - legendH - 8
-                ' Reserve legend space for label collision
+                If isBleasdale Then
+                    Dim blew = g.MeasureString("Power law (Cov < 1,000)", legendFont)
+                    If blew.Width > maxLegEntryW Then maxLegEntryW = blew.Width
+                End If
+                Dim legendW As Integer = CInt(maxLegEntryW) + 46
+                Dim legendX As Integer = marginLeft + 12
+                Dim legendY As Integer = marginTop + plotHeight - legendH - 10
                 labelPositions.Add(New RectangleF(legendX, legendY, legendW, legendH))
 
                 For Each pt In acPoints
@@ -10214,23 +10646,20 @@ Namespace ViewModels
                     Dim xPx = xScale(logS)
                     Dim yPx = yScale(logNF)
 
-                    ' White halo behind the scatter point for visibility over gridlines
-                    g.FillEllipse(Brushes.White, xPx - 8, yPx - 8, 16, 16)
-                    ' Draw N_fail point (filled circle)
+                    ' White halo + scatter point
+                    g.FillEllipse(Brushes.White, xPx - 9, yPx - 9, 18, 18)
                     g.FillEllipse(New SolidBrush(acColor), xPx - 7, yPx - 7, 14, 14)
-                    g.DrawEllipse(New Pen(Color.FromArgb(60, 0, 0, 0), 0.8F), xPx - 7, yPx - 7, 14, 14)
+                    g.DrawEllipse(New Pen(Color.FromArgb(80, 0, 0, 0), 1.0F), xPx - 7, yPx - 7, 14, 14)
 
-                    ' Draw repetitions horizontal dashed line (thinner, more subtle)
+                    ' Repetitions dashed line
                     If totalReps > 0 Then
                         Dim logReps = Math.Log10(totalReps)
                         If logReps >= logMinN AndAlso logReps <= logMaxN Then
                             Dim repsYPx = yScale(logReps)
-                            Dim repsPen As New Pen(Color.FromArgb(120, acColor.R, acColor.G, acColor.B), 0.7F)
+                            Dim repsPen As New Pen(Color.FromArgb(140, acColor.R, acColor.G, acColor.B), 1.0F)
                             repsPen.DashStyle = Drawing2D.DashStyle.Dash
-                            ' Only draw from left edge to the strain x-position (not full width)
                             g.DrawLine(repsPen, marginLeft, repsYPx, xPx, repsYPx)
-                            ' Vertical connector from reps line down/up to the N_fail point
-                            Dim connPen As New Pen(Color.FromArgb(80, acColor.R, acColor.G, acColor.B), 0.6F)
+                            Dim connPen As New Pen(Color.FromArgb(100, acColor.R, acColor.G, acColor.B), 0.8F)
                             connPen.DashStyle = Drawing2D.DashStyle.Dot
                             g.DrawLine(connPen, xPx, repsYPx, xPx, yPx)
                             connPen.Dispose()
@@ -10238,91 +10667,123 @@ Namespace ViewModels
                         End If
                     End If
 
-                    ' Label with collision avoidance — try right, then left, then below
-                    Dim lblSize = g.MeasureString(acName, ptFont)
-                    Dim lblX As Single = xPx + 8
+                    ' Label with strain value
+                    Dim lblText As String = acName & " (" & Format(strainMicro, "0.0") & " " & ChrW(&H03BC) & ChrW(&H03B5) & ")"
+                    Dim lblSize = g.MeasureString(lblText, ptFont)
+                    Dim lblX As Single = xPx + 10
                     Dim lblY As Single = yPx - lblSize.Height / 2
                     Dim lblRect As New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
 
-                    ' Try placement: right of point, then shift down, then try left of point
                     Dim placed As Boolean = False
-                    ' Right side attempts
-                    For attempt As Integer = 0 To 4
+                    For attempt As Integer = 0 To 5
                         Dim overlaps As Boolean = False
                         For Each existing In labelPositions
                             If lblRect.IntersectsWith(existing) Then overlaps = True : Exit For
                         Next
                         If Not overlaps Then placed = True : Exit For
-                        lblY += lblSize.Height + 1
+                        lblY += lblSize.Height + 2
                         lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
                     Next
-                    ' If still overlapping, try left side
                     If Not placed Then
-                        lblX = xPx - lblSize.Width - 8
+                        lblX = xPx - lblSize.Width - 10
                         lblY = yPx - lblSize.Height / 2
                         lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
-                        For attempt As Integer = 0 To 3
+                        For attempt As Integer = 0 To 4
                             Dim overlaps As Boolean = False
                             For Each existing In labelPositions
                                 If lblRect.IntersectsWith(existing) Then overlaps = True : Exit For
                             Next
                             If Not overlaps Then placed = True : Exit For
-                            lblY += lblSize.Height + 1
+                            lblY += lblSize.Height + 2
                             lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
                         Next
                     End If
+                    If Not placed Then
+                        lblX = xPx - lblSize.Width / 2
+                        lblY = yPx - lblSize.Height - 14
+                        lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
+                    End If
                     labelPositions.Add(lblRect)
 
-                    ' Draw a thin leader line from point to label
-                    Dim leaderPen As New Pen(Color.FromArgb(100, acColor.R, acColor.G, acColor.B), 0.6F)
+                    Dim leaderPen As New Pen(Color.FromArgb(120, acColor.R, acColor.G, acColor.B), 0.8F)
                     g.DrawLine(leaderPen, xPx, yPx, lblX + If(lblX > xPx, 0, lblSize.Width), lblY + lblSize.Height / 2)
                     leaderPen.Dispose()
 
-                    ' Draw label with a white halo for readability
-                    Dim haloBrush As New SolidBrush(Color.FromArgb(200, 255, 255, 255))
-                    Dim haloRect As New RectangleF(lblX - 1, lblY - 1, lblSize.Width + 2, lblSize.Height + 1)
-                    g.FillRectangle(haloBrush, haloRect)
-                    haloBrush.Dispose()
-                    g.DrawString(acName, ptFont, New SolidBrush(acColor), lblX, lblY)
+                    Dim haloRect As New RectangleF(lblX - 2, lblY - 1, lblSize.Width + 4, lblSize.Height + 2)
+                    g.FillRectangle(New SolidBrush(Color.FromArgb(220, 255, 255, 255)), haloRect)
+                    g.DrawString(lblText, ptFont, New SolidBrush(acColor), lblX, lblY)
                 Next
                 ptFont.Dispose()
-                ptFontBold.Dispose()
 
-                ' Legend — positioned at bottom-left, inside plot area
-                g.FillRectangle(New SolidBrush(Color.FromArgb(235, 255, 255, 255)), legendX, legendY, legendW, legendH)
-                g.DrawRectangle(New Pen(Color.FromArgb(180, 180, 180), 0.8F), legendX, legendY, legendW, legendH)
+                ' Reposition equation box on top of legend for Bleasdale
+                If isBleasdale Then
+                    infoY = legendY - boxH - 6
+                    infoRect = New RectangleF(CSng(legendX), infoY, boxW, boxH)
+                    ' Redraw equation box at new position
+                    g.FillRectangle(New SolidBrush(Color.FromArgb(240, 255, 255, 255)), infoRect)
+                    g.DrawRectangle(New Pen(Color.FromArgb(100, faaBlue.R, faaBlue.G, faaBlue.B), 1.0F), infoRect.X, infoRect.Y, infoRect.Width, infoRect.Height)
+                    Dim reTxtY As Single = infoY + 5
+                    For Each line In eqLines
+                        DrawFormattedString(g, line, eqBoxFont, New SolidBrush(faaBlue), infoRect.X + 8, reTxtY)
+                        reTxtY += g.MeasureString(line, eqBoxFont).Height + 1
+                    Next
+                    For Each line In paramLines
+                        g.DrawString(line, paramBoxFont, New SolidBrush(Color.FromArgb(80, 80, 80)), infoRect.X + 8, reTxtY)
+                        reTxtY += g.MeasureString(line, paramBoxFont).Height + 1
+                    Next
+                End If
 
-                ' Curve entry
-                Dim lly As Integer = legendY + 5
-                g.DrawLine(curvePen, legendX + 6, lly + 7, legendX + 24, lly + 7)
-                g.DrawString("Fatigue model", legendFont, Brushes.Black, legendX + 28, lly)
-                lly += legendLineH
+                ' Legend drawing
+                g.FillRectangle(New SolidBrush(Color.FromArgb(240, 255, 255, 255)), legendX, legendY, legendW, legendH)
+                g.DrawRectangle(New Pen(Color.FromArgb(170, 170, 170), 1.0F), legendX, legendY, legendW, legendH)
 
-                ' Dashed line entry (repetitions)
-                Dim repLegPen As New Pen(Color.FromArgb(120, 120, 120), 0.7F)
+                Dim lly As Integer = legendY + 6
+
+                If isBleasdale Then
+                    ' Bleasdale curve line
+                    Dim bLegPen As New Pen(faaBlue, 2.5F)
+                    g.DrawLine(bLegPen, legendX + 8, lly + 8, legendX + 26, lly + 8)
+                    g.DrawString("Bleasdale curve", legendFont, Brushes.Black, legendX + 30, lly)
+                    lly += legendLineH
+                    bLegPen.Dispose()
+                    ' Power-law line
+                    Dim pLegPen As New Pen(Color.FromArgb(180, 100, 20), 2.5F)
+                    pLegPen.DashStyle = Drawing2D.DashStyle.Dash
+                    g.DrawLine(pLegPen, legendX + 8, lly + 8, legendX + 26, lly + 8)
+                    g.DrawString("Power law (Cov < 1,000)", legendFont, Brushes.Black, legendX + 30, lly)
+                    lly += legendLineH
+                    pLegPen.Dispose()
+                Else
+                    Dim cLegPen As New Pen(faaBlue, 2.5F)
+                    g.DrawLine(cLegPen, legendX + 8, lly + 8, legendX + 26, lly + 8)
+                    g.DrawString(activeModel & " model", legendFont, Brushes.Black, legendX + 30, lly)
+                    lly += legendLineH
+                    cLegPen.Dispose()
+                End If
+
+                Dim repLegPen As New Pen(Color.FromArgb(120, 120, 120), 1.0F)
                 repLegPen.DashStyle = Drawing2D.DashStyle.Dash
-                g.DrawLine(repLegPen, legendX + 6, lly + 7, legendX + 24, lly + 7)
-                g.DrawString("Total repetitions", legendFont, Brushes.Black, legendX + 28, lly)
+                g.DrawLine(repLegPen, legendX + 8, lly + 8, legendX + 26, lly + 8)
+                g.DrawString("Total repetitions", legendFont, Brushes.Black, legendX + 30, lly)
+                lly += legendLineH
                 repLegPen.Dispose()
 
-                Dim lIdx As Integer = 2
                 For Each pt In acPoints
-                    Dim ly = legendY + 5 + lIdx * legendLineH
-                    g.FillEllipse(New SolidBrush(pt.Item5), legendX + 10, ly + 2, 9, 9)
-                    g.DrawString(pt.Item4, legendFont, Brushes.Black, legendX + 28, ly)
-                    lIdx += 1
+                    g.FillEllipse(New SolidBrush(pt.Item5), legendX + 12, lly + 3, 10, 10)
+                    g.DrawString(pt.Item4, legendFont, Brushes.Black, legendX + 30, lly)
+                    lly += legendLineH
                 Next
 
                 ' Cleanup
                 titleFont.Dispose()
-                subtitleFont.Dispose()
                 axisFont.Dispose()
                 labelFont.Dispose()
+                minorFont.Dispose()
                 legendFont.Dispose()
                 eqBoxFont.Dispose()
                 paramBoxFont.Dispose()
                 gridPen.Dispose()
-                curvePen.Dispose()
+                minorPen.Dispose()
             End Using
 
             Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
@@ -10414,10 +10875,11 @@ Namespace ViewModels
                     Dim ylSize = g.MeasureString(yLabel, axisFont)
                     g.DrawString(yLabel, axisFont, New SolidBrush(blueColor), marginLeft - ylSize.Width - 6, yPx - ylSize.Height / 2)
                 Next
-                g.TranslateTransform(10, CSng(marginTop + plotHeight / 2))
+                g.TranslateTransform(25, CSng(marginTop + plotHeight / 2))
                 g.RotateTransform(-90)
                 g.DrawString("|ln(CDF)|", labelFont, New SolidBrush(blueColor), -30, 0)
                 g.ResetTransform()
+                g.ScaleTransform(2, 2) ' Restore 2x supersampling scale
 
                 ' Right Y-axis: Thickness (linear, red)
                 Dim redColor As Color = Color.FromArgb(214, 39, 40)
@@ -10429,10 +10891,11 @@ Namespace ViewModels
                     Dim yLabel = Format(thkVal, "0.0")
                     g.DrawString(yLabel, axisFont, New SolidBrush(redColor), marginLeft + plotWidth + 8, yPx - 6)
                 Next
-                g.TranslateTransform(chartWidth - 12, CSng(marginTop + plotHeight / 2))
+                g.TranslateTransform(chartWidth - 25, CSng(marginTop + plotHeight / 2))
                 g.RotateTransform(90)
                 g.DrawString("Thickness (" & thicknessUnit & ")", labelFont, New SolidBrush(redColor), -50, 0)
                 g.ResetTransform()
+                g.ScaleTransform(2, 2) ' Restore 2x supersampling scale
 
                 ' CDFExitErr threshold line
                 Dim exitErrLog As Double = Math.Log10(CDF.CDFExitErr)
@@ -10570,7 +11033,7 @@ Namespace ViewModels
                     Dim yVal As Double = yMax * i / nGridY
                     Dim yPx As Integer = CInt(marginTop + plotHeight - (yVal / yMax) * plotHeight)
                     If i > 0 AndAlso i < nGridY Then g.DrawLine(gridPen, marginLeft, yPx, marginLeft + plotWidth, yPx)
-                    Dim yLabel = Format(yVal, "0.00000")
+                    Dim yLabel = Format(yVal, "0.0000")
                     Dim yLabelSize = g.MeasureString(yLabel, axisFont)
                     g.DrawString(yLabel, axisFont, Brushes.Black, marginLeft - yLabelSize.Width - 4, yPx - yLabelSize.Height / 2)
                 Next
@@ -10587,10 +11050,11 @@ Namespace ViewModels
 
                 ' Axis labels
                 g.DrawString("Offset (" & offsetUnit & ")", labelFont, Brushes.Black, CSng(marginLeft + plotWidth / 2 - 40), chartHeight - 22)
-                g.TranslateTransform(14, CSng(marginTop + plotHeight / 2))
+                g.TranslateTransform(30, CSng(marginTop + plotHeight / 2))
                 g.RotateTransform(-90)
                 g.DrawString("C/P Ratio", labelFont, Brushes.Black, -30, 0)
                 g.ResetTransform()
+                g.ScaleTransform(2, 2) ' Restore 2x supersampling scale
 
                 ' Draw curves
                 Dim legendEntries As New List(Of Tuple(Of String, Color))
@@ -10945,7 +11409,7 @@ Namespace ViewModels
         ''' </summary>
         Private Function DrawWheelCPVisualization(det As clsAircraftDetail) As Bitmap
             Dim chartWidth As Integer = 900
-            Dim chartHeight As Integer = 520
+            Dim chartHeight As Integer = 550
             Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
 
             Using g As Graphics = Graphics.FromImage(bmpHi)
@@ -10956,18 +11420,22 @@ Namespace ViewModels
 
                 Dim faaBlue As Color = Color.FromArgb(46, 94, 168)
                 Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
-                Dim labelFont As New Font("Segoe UI", 7.5F)
-                Dim smallFont As New Font("Segoe UI", 6.5F)
-                Dim mathFont As New Font("Consolas", 6.5F)
+                Dim labelFont As New Font("Segoe UI", 8.5F)
+                Dim smallFont As New Font("Segoe UI", 7.5F)
+                Dim mathFont As New Font("Consolas", 7.5F)
+                Dim axisTickFont As New Font("Segoe UI", 7.5F)
+                Dim axisLabelFont As New Font("Segoe UI", 9.0F, FontStyle.Bold)
 
                 ' Title
-                g.DrawString("C/P Analysis: " & det.ACName & " (" & det.GearType & ", TW=" & Format(det.TireWidth, "0.0") & """)", titleFont, Brushes.Black, 15, 8)
+                Dim cpTitle = "C/P Analysis: " & det.ACName & " (" & det.GearType & ", TW=" & Format(det.TireWidth, "0.0") & """)"
+                Dim cpTitleSize = g.MeasureString(cpTitle, titleFont)
+                g.DrawString(cpTitle, titleFont, Brushes.Black, CSng((chartWidth - cpTitleSize.Width) / 2), 8)
 
                 ' Plot area
-                Dim marginLeft As Integer = 75
+                Dim marginLeft As Integer = 85
                 Dim marginRight As Integer = 25
-                Dim marginTop As Integer = 70
-                Dim marginBottom As Integer = 55
+                Dim marginTop As Integer = 95
+                Dim marginBottom As Integer = 70
                 Dim plotWidth As Integer = chartWidth - marginLeft - marginRight
                 Dim plotHeight As Integer = chartHeight - marginTop - marginBottom
 
@@ -10993,17 +11461,33 @@ Namespace ViewModels
                     Dim yVal As Double = yMax * i / nGridY
                     Dim yPx As Integer = CInt(marginTop + plotHeight - (yVal / yMax) * plotHeight)
                     If i > 0 AndAlso i < nGridY Then g.DrawLine(gridPen, marginLeft, yPx, marginLeft + plotWidth, yPx)
-                    g.DrawString(Format(yVal, "0.00000"), smallFont, Brushes.Black, 5, yPx - 6)
+                    Dim yLabel = Format(yVal, "0.000")
+                    Dim yLabelSize = g.MeasureString(yLabel, axisTickFont)
+                    g.DrawString(yLabel, axisTickFont, Brushes.Black, marginLeft - yLabelSize.Width - 4, yPx - yLabelSize.Height / 2)
                 Next
                 Dim nGridX As Integer = 8
                 For i As Integer = 0 To nGridX
                     Dim xVal As Double = xMax * i / nGridX
                     Dim xPx As Integer = CInt(marginLeft + (xVal / xMax) * plotWidth)
                     If i > 0 AndAlso i < nGridX Then g.DrawLine(gridPen, xPx, marginTop, xPx, marginTop + plotHeight)
-                    g.DrawString(Format(xVal, "0"), smallFont, Brushes.Black, xPx - 6, marginTop + plotHeight + 4)
+                    Dim xLabel = Format(xVal, "0")
+                    Dim xLabelSize = g.MeasureString(xLabel, axisTickFont)
+                    g.DrawString(xLabel, axisTickFont, Brushes.Black, xPx - xLabelSize.Width / 2, marginTop + plotHeight + 8)
                 Next
-                g.DrawString("Offset from nominal wheel path centerline (inches)", labelFont, Brushes.Black, marginLeft + plotWidth \ 2 - 120, chartHeight - 18)
-                g.DrawString("C/P", labelFont, Brushes.Black, marginLeft - 22, marginTop - 14)
+
+                ' X-axis label (centered)
+                Dim xAxisLabel = "Offset from nominal wheel path centerline (inches)"
+                Dim xAxisSize = g.MeasureString(xAxisLabel, axisLabelFont)
+                g.DrawString(xAxisLabel, axisLabelFont, Brushes.Black, CSng(marginLeft + (plotWidth - xAxisSize.Width) / 2), chartHeight - 22)
+
+                ' Y-axis label (rotated)
+                g.TranslateTransform(22, CSng(marginTop + plotHeight / 2))
+                g.RotateTransform(-90)
+                Dim cpYAxisLabel = "Coverage / Pass (C/P)"
+                Dim cpYAxisSize = g.MeasureString(cpYAxisLabel, axisLabelFont)
+                g.DrawString(cpYAxisLabel, axisLabelFont, Brushes.Black, -cpYAxisSize.Width / 2, 0)
+                g.ResetTransform()
+                g.ScaleTransform(2, 2) ' Restore 2x supersampling scale
 
                 ' Tire width band at top
                 Dim halfTW As Double = det.TireWidth / 2.0
@@ -11151,25 +11635,26 @@ Namespace ViewModels
                     End If
                 Next
 
-                ' Legend — compact box at bottom-right to avoid overlapping curves
-                Dim legendLineH As Integer = 13
+                ' Legend — compact box in upper-right (curves peak near offset=0 on the left, so upper-right is clear)
+                Dim legendFont As New Font("Segoe UI", 7.5F)
+                Dim legendLineH As Integer = 16
                 Dim legendCount As Integer = wheelPositions.Count + 2 ' wheels + actual + reconstructed
-                Dim lgH As Integer = legendCount * legendLineH + 8
-                Dim lgW As Integer = 185
-                Dim lgX As Integer = marginLeft + plotWidth - lgW - 8
-                Dim lgY2 As Integer = marginTop + plotHeight - lgH - 8
+                Dim lgH As Integer = legendCount * legendLineH + 10
+                Dim lgW As Integer = 200
+                Dim lgX As Integer = marginLeft + plotWidth - lgW - 10
+                Dim lgY2 As Integer = marginTop + 10
                 g.FillRectangle(New SolidBrush(Color.FromArgb(240, 245, 245, 245)), lgX, lgY2, lgW, lgH)
                 g.DrawRectangle(Pens.LightGray, lgX, lgY2, lgW, lgH)
 
                 ' Actual C/P entry
-                Dim lgRow As Integer = lgY2 + 4
-                g.DrawLine(actualPen, lgX + 6, lgRow + 5, lgX + 22, lgRow + 5)
-                g.DrawString("Actual C/P (FAARFIELD)", smallFont, Brushes.Black, lgX + 26, lgRow)
+                Dim lgRow As Integer = lgY2 + 5
+                g.DrawLine(actualPen, lgX + 6, lgRow + 6, lgX + 24, lgRow + 6)
+                g.DrawString("Actual C/P (FAARFIELD)", legendFont, Brushes.Black, lgX + 28, lgRow)
                 lgRow += legendLineH
 
                 ' Reconstructed sum entry
-                g.DrawLine(sumPen, lgX + 6, lgRow + 5, lgX + 22, lgRow + 5)
-                g.DrawString("Reconstructed sum", smallFont, Brushes.Black, lgX + 26, lgRow)
+                g.DrawLine(sumPen, lgX + 6, lgRow + 6, lgX + 24, lgRow + 6)
+                g.DrawString("Reconstructed sum", legendFont, Brushes.Black, lgX + 28, lgRow)
                 lgRow += legendLineH
 
                 ' Wheel entries
@@ -11181,17 +11666,20 @@ Namespace ViewModels
                     If wMult > 1 Then wLabel &= " (" & ChrW(&H00D7) & wMult & ")"
                     Dim wLegPen As New Pen(Color.FromArgb(180, wColor.R, wColor.G, wColor.B), 1.2F)
                     wLegPen.DashStyle = Drawing2D.DashStyle.Dash
-                    g.DrawLine(wLegPen, lgX + 6, lgRow + 5, lgX + 22, lgRow + 5)
-                    g.DrawString(wLabel, smallFont, New SolidBrush(wColor), lgX + 26, lgRow)
+                    g.DrawLine(wLegPen, lgX + 6, lgRow + 6, lgX + 24, lgRow + 6)
+                    g.DrawString(wLabel, legendFont, New SolidBrush(wColor), lgX + 28, lgRow)
                     wLegPen.Dispose()
                     lgRow += legendLineH
                 Next
+                legendFont.Dispose()
 
                 ' Cleanup
                 titleFont.Dispose()
                 labelFont.Dispose()
                 smallFont.Dispose()
                 mathFont.Dispose()
+                axisTickFont.Dispose()
+                axisLabelFont.Dispose()
                 gridPen.Dispose()
                 actualPen.Dispose()
                 sumPen.Dispose()
@@ -11295,12 +11783,15 @@ Namespace ViewModels
                 For logV As Integer = CInt(logMinD) To CInt(logMaxD)
                     Dim yPx As Single = CSng(marginTop + plotHeight - (logV - logMinD) / (logMaxD - logMinD) * plotHeight)
                     If logV > logMinD AndAlso logV < logMaxD Then g.DrawLine(gridPen, marginLeft, yPx, marginLeft + plotWidth, yPx)
-                    g.DrawString("1E" & logV.ToString(), axisFont, Brushes.Black, 10, yPx - 6)
+                    Dim tickLabel = "1E" & logV.ToString()
+                    Dim tickSize = g.MeasureString(tickLabel, axisFont)
+                    g.DrawString(tickLabel, axisFont, Brushes.Black, marginLeft - tickSize.Width - 4, yPx - tickSize.Height / 2)
                 Next
-                g.TranslateTransform(10, CSng(marginTop + plotHeight / 2))
+                g.TranslateTransform(18, CSng(marginTop + plotHeight / 2))
                 g.RotateTransform(-90)
                 g.DrawString("CDF per Departure (damage/pass)", labelFont, Brushes.Black, -90, 0)
                 g.ResetTransform()
+                g.ScaleTransform(2, 2) ' Restore 2x supersampling scale
 
                 ' Plot points
                 For Each pt In points
@@ -11521,26 +12012,33 @@ Namespace ViewModels
                 Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
                 Dim titleText = "Fatigue Life Reserve (N_fail / Repetitions)"
                 Dim titleSize = g.MeasureString(titleText, titleFont)
-                g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 12)
+                g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 8)
 
                 ' Border
                 g.DrawRectangle(New Pen(Color.FromArgb(209, 213, 219), 1), 0, 0, chartWidth - 1, chartHeight - 1)
 
-                Dim labelFont As New Font("Segoe UI", 7.5F)
-                Dim valueFont As New Font("Segoe UI", 7.0F)
+                Dim labelFont As New Font("Segoe UI", 8.5F)
+                Dim valueFont As New Font("Segoe UI", 8.0F)
 
                 ' Reference line at ratio = 1.0 (center)
                 Dim refPen As New Pen(Color.FromArgb(100, 0, 0, 0), 1.5F)
                 refPen.DashStyle = Drawing2D.DashStyle.Dash
-                g.DrawLine(refPen, centerX, marginTop - 10, centerX, chartHeight - 20)
-                g.DrawString("Ratio = 1.0", New Font("Segoe UI", 7, FontStyle.Italic), Brushes.DarkGray, centerX + 3, marginTop - 15)
+                g.DrawLine(refPen, centerX, marginTop - 5, centerX, chartHeight - 20)
 
-                ' Label regions
-                Dim regionFont As New Font("Segoe UI", 7)
-                g.DrawString(ChrW(&H2190) & " Overstressed (ratio < 1)", regionFont, New SolidBrush(Color.FromArgb(180, 214, 39, 40)), marginLeft + 5, marginTop - 15)
-                Dim reserveText = "Life Reserve (ratio > 1) " & ChrW(&H2192)
+                ' "Ratio = 1.0" label — draw centered above the reference line, above the region labels
+                Dim ratioLabelFont As New Font("Segoe UI", 7.5F, FontStyle.Italic)
+                Dim ratioLabelText = "Ratio = 1.0"
+                Dim ratioLabelSize = g.MeasureString(ratioLabelText, ratioLabelFont)
+                g.DrawString(ratioLabelText, ratioLabelFont, Brushes.DarkGray, centerX - ratioLabelSize.Width / 2, marginTop - 30)
+                ratioLabelFont.Dispose()
+
+                ' Label regions — positioned just above the bars, spaced away from center label
+                Dim regionFont As New Font("Segoe UI", 8.0F)
+                Dim overstressedText = ChrW(&H2190) & " Overstressed"
+                g.DrawString(overstressedText, regionFont, New SolidBrush(Color.FromArgb(200, 214, 39, 40)), marginLeft + 5, marginTop - 16)
+                Dim reserveText = "Life Reserve " & ChrW(&H2192)
                 Dim reserveSize = g.MeasureString(reserveText, regionFont)
-                g.DrawString(reserveText, regionFont, New SolidBrush(Color.FromArgb(180, 34, 139, 34)), marginLeft + plotWidth - reserveSize.Width - 5, marginTop - 15)
+                g.DrawString(reserveText, regionFont, New SolidBrush(Color.FromArgb(200, 34, 139, 34)), marginLeft + plotWidth - reserveSize.Width - 5, marginTop - 16)
 
                 Dim yPos As Integer = marginTop
                 For Each ac In acList
@@ -13034,6 +13532,12 @@ Namespace ViewModels
             End Get
         End Property
 
+        Public ReadOnly Property OnSectionReportOpenHtml As ICommand
+            Get
+                Return New DelegateCommand(AddressOf SectionReportOpenHtml, AddressOf SectionReportCreatePdfEnabled)
+            End Get
+        End Property
+
 
         Public ReadOnly Property ImageShowHide As ICommand
             Get
@@ -13197,6 +13701,43 @@ Namespace ViewModels
                 pdfcreatorchecker = True
             End If
 
+        End Sub
+
+
+        ''' <summary>
+        ''' Saves the Detailed Computation Report as an HTML file and opens it in the default browser.
+        ''' </summary>
+        Private Sub SectionReportOpenHtml(context As Object)
+            Dim rptName As String = CStr(context)
+            If rptName <> "DetailedRpt" Then Return
+
+            Dim saveHtml As New System.Windows.Forms.SaveFileDialog()
+            saveHtml.Filter = "HTML Files|*.html"
+            saveHtml.Title = "Save as an HTML file"
+            saveHtml.FileName = Me.CurrentJob.Name & "-" & Me.CurrentSectionView.Report.Parent.Name & "-Detailed Computation Report"
+
+            If saveHtml.ShowDialog() <> System.Windows.Forms.DialogResult.OK Then
+                Return
+            End If
+
+            ' Use the new HTML report generator (native SVG + modern CSS)
+            Dim Section = CurrentSectionView.Section
+            Dim theJob = CurrentJob
+            Dim thkU As String, presU As String, wgtU As String, lenU As String
+            If TypeOf (theJob.DesignOptions.MeasurementSystem) Is UsCustomary Then
+                thkU = "in." : presU = "psi" : wgtU = "lbs" : lenU = "in."
+            Else
+                thkU = "mm" : presU = "MPa" : wgtU = "kg" : lenU = "mm"
+            End If
+            Dim analysisName As String = If(Section.AnalysisType IsNot Nothing, Section.AnalysisType.Name, Nothing)
+            Dim htmlContent As String = Libs.HtmlReportGenerator.Generate(
+                FEDFAA1.gDetailedReportData,
+                theJob.Name,
+                Section.Name,
+                analysisName,
+                MainWindowTitle,
+                thkU, presU, wgtU, lenU)
+            hu.HtmlToFile(htmlContent, saveHtml.FileName)
         End Sub
 
 

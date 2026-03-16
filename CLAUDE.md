@@ -295,7 +295,7 @@ Bitmap (GDI+, System.Drawing)
   → rendered at 2x/3x with ScaleTransform()
   → SupersampleBitmap() downscales with HighQualityBicubic
   → HtmlUtils.encodeTobase64() saves as PNG to MemoryStream, converts to base64
-  → HtmlUtils.wrap_bmp_img() wraps in <image src='data:image/png;base64,...'>
+  → HtmlUtils.wrap_bmp_img() wraps in <img src='data:image/png;base64,...'>
   → embedded inline in HTML string
   → HtmlUtils.CreateHtmlPage() wraps with <!DOCTYPE>, <head>, Reports.css, <body>
   → DetailedReportHtml property set → BrowserBehavior navigates WebBrowser

@@ -1,0 +1,1051 @@
+﻿<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>FAARFIELD Detailed Computation Report — New Job 1</title>
+<style>
+
+:root {
+  --primary: #1a3c6e;
+  --primary-light: #e8eef6;
+  --accent: #D62728;
+  --text: #2c3e50;
+  --text-light: #6c7a89;
+  --border: #d5dce6;
+  --bg: #ffffff;
+  --bg-alt: #f8f9fb;
+  --success: #2CA02C;
+  --warning: #FF7F0E;
+  --radius: 6px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 40px;
+  font-size: 14px;
+}
+
+/* Header */
+.report-header {
+  text-align: center;
+  padding: 30px 0 20px;
+  border-bottom: 3px solid var(--primary);
+  margin-bottom: 30px;
+}
+.report-header h1 {
+  color: var(--primary);
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.subtitle { color: var(--text-light); font-size: 12px; margin-bottom: 12px; }
+.header-meta {
+  display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+  font-size: 13px; color: var(--text-light);
+}
+
+/* Dashboard cards */
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 12px;
+  margin-bottom: 30px;
+}
+.card {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  text-align: center;
+}
+.card-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); margin-bottom: 4px; }
+.card-value { font-size: 20px; font-weight: 700; color: var(--primary); }
+.card-unit { font-size: 12px; font-weight: 400; color: var(--text-light); }
+
+/* TOC */
+.toc {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 28px;
+  margin-bottom: 30px;
+}
+.toc h2 { font-size: 16px; margin-bottom: 10px; color: var(--primary); }
+.toc ol { padding-left: 20px; columns: 2; column-gap: 30px; }
+.toc li { margin-bottom: 4px; font-size: 13px; break-inside: avoid; }
+.toc a { color: var(--primary); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+
+/* Section headings */
+section { margin-bottom: 36px; page-break-inside: avoid; }
+section > h2 {
+  font-size: 18px;
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary-light);
+  padding-bottom: 6px;
+  margin-bottom: 16px;
+}
+.sec-num {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  width: 26px; height: 26px;
+  text-align: center;
+  line-height: 26px;
+  border-radius: 50%;
+  font-size: 13px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+h3 { font-size: 15px; color: var(--text); margin: 18px 0 10px; }
+h4 { font-size: 14px; color: var(--text-light); margin: 14px 0 8px; }
+
+/* Tables */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+.data-table th {
+  background: var(--primary);
+  color: white;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.data-table tbody tr:hover { background: var(--primary-light); }
+.data-table.compact td, .data-table.compact th { padding: 4px 8px; font-size: 12px; }
+.highlight { background: #fff8e1 !important; }
+.highlight td { font-weight: 600; }
+.table-scroll { overflow-x: auto; margin-bottom: 16px; }
+.param-table td:first-child { font-weight: 600; white-space: nowrap; }
+
+/* Equation cards */
+.equation-card {
+  background: linear-gradient(135deg, #f0f4fa 0%, #e8eef6 100%);
+  border-left: 4px solid var(--primary);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+}
+.equation-card h4 { color: var(--primary); margin: 0 0 8px; font-size: 13px; }
+.eq {
+  font-family: 'Cambria Math', 'Latin Modern Math', 'STIX Two Math', serif;
+  font-size: 15px;
+  margin: 4px 0;
+  padding: 2px 0;
+}
+.eq-note { font-size: 12px; color: var(--text-light); margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 6px; }
+
+/* Callouts */
+.callout {
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.callout.info {
+  background: var(--primary-light);
+  border-left: 4px solid var(--primary);
+}
+.callout.warn {
+  background: #fff8e1;
+  border-left: 4px solid var(--warning);
+}
+.alert {
+  background: #fdecea;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Charts */
+.chart-wrap {
+  margin: 16px 0;
+  text-align: center;
+}
+.chart-svg {
+  width: 100%;
+  max-width: 900px;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: white;
+}
+.chart-svg .chart-title { font: bold 12px 'Segoe UI', sans-serif; fill: var(--text); }
+.chart-svg .axis-label { font: 11px 'Segoe UI', sans-serif; fill: var(--text); }
+.chart-svg .tick { font: 9px 'Segoe UI', sans-serif; fill: var(--text-light); }
+.chart-svg .label { font: 10px 'Segoe UI', sans-serif; fill: var(--text); }
+.chart-svg .legend-text { font: 10px 'Segoe UI', sans-serif; fill: var(--text); }
+
+/* Steps */
+.steps {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.steps h4 { margin: 0 0 10px; }
+.steps ol { padding-left: 24px; }
+.steps li { margin-bottom: 6px; font-size: 13px; }
+
+/* Aircraft block */
+.aircraft-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 24px;
+  page-break-inside: avoid;
+}
+.aircraft-block h3 {
+  color: var(--primary);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin: 0 0 14px;
+}
+
+/* Collapsible details */
+details {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+details summary {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  background: var(--bg-alt);
+  border-radius: var(--radius);
+}
+details[open] summary { border-bottom: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; }
+details > table, details > div { margin: 0; }
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 20px 0;
+  border-top: 2px solid var(--border);
+  margin-top: 40px;
+  color: var(--text-light);
+  font-size: 12px;
+}
+footer a { color: var(--primary); text-decoration: none; }
+
+/* Print */
+@media print {
+  body { max-width: 100%; padding: 10px; font-size: 11px; }
+  .toc { break-after: page; }
+  section { break-inside: avoid; }
+  .dashboard { grid-template-columns: repeat(3, 1fr); }
+  details[open] summary ~ * { display: block !important; }
+}
+
+</style>
+</head>
+<body>
+<header class='report-header'>
+<h1>FAA FAARFIELD Detailed Computation Report</h1>
+<p class='subtitle'>FAARFIELD 2.1.1 (Build 03/16/2026)</p>
+<div class='header-meta'>
+<div><strong>Job:</strong> New Job 1</div>
+<div><strong>Structure:</strong> New Structure 1</div>
+<div><strong>Analysis:</strong> HMA on Aggregate</div>
+<div><strong>Generated:</strong> 2026-03-16 15:28:41</div>
+</div>
+</header>
+<section class='dashboard'>
+<div class='card'><div class='card-label'>Max Total CDF</div><div class='card-value'>0.996974</div></div>
+<div class='card'><div class='card-label'>Design Thickness</div><div class='card-value'>11.30 <span class='card-unit'>in.</span></div></div>
+<div class='card'><div class='card-label'>Aircraft in Mix</div><div class='card-value'>4</div></div>
+<div class='card'><div class='card-label'>Critical Offset</div><div class='card-value'>200 <span class='card-unit'>in.</span></div></div>
+<div class='card'><div class='card-label'>Subgrade Modulus</div><div class='card-value'>15,000 <span class='card-unit'>psi</span></div></div>
+<div class='card'><div class='card-label'>Converged / Iterations</div><div class='card-value'>Yes / 3</div></div>
+</section>
+<nav class='toc' id='toc'>
+<h2>Table of Contents</h2>
+<ol>
+<li><a href='#section-a'>Pavement Structure Summary</a></li>
+<li><a href='#section-b'>Design Equations</a></li>
+<li><a href='#section-c'>Understanding Coverage-to-Pass (C/P)</a></li>
+<li><a href='#section-d'>Fatigue Characterization</a></li>
+<li><a href='#section-e'>Per-Aircraft Detailed Breakdown</a></li>
+<li><a href='#section-f'>Coverage-to-Pass (C/P) Distribution</a></li>
+<li><a href='#section-g'>CDF Sweep Table (41 offsets)</a></li>
+<li><a href='#section-h'>CDF Distribution Across Pavement Width</a></li>
+<li><a href='#section-i'>Newton-Raphson Convergence</a></li>
+</ol>
+</nav>
+<section id='section-a'>
+<h2><span class='sec-num'>A</span> Pavement Structure Summary</h2>
+<h3>Design Layers</h3>
+<table class='data-table'><thead><tr><th>Layer #</th><th>Thickness (in.)</th><th>Modulus (psi)</th><th>LCode</th></tr></thead><tbody>
+<tr><td>1</td><td>4.00</td><td>200,000</td><td>1</td></tr>
+<tr><td>2</td><td>18.21</td><td>78,646</td><td>6</td></tr>
+<tr><td>3</td><td>11.30</td><td>20,770</td><td>8</td></tr>
+<tr><td>4</td><td>Semi-infinite</td><td>15,000</td><td>4</td></tr>
+</tbody></table>
+<h3>Expanded Sublayer Structure (after modulus adjustment)</h3>
+<table class='data-table'><thead><tr><th>Layer #</th><th>Thickness (in.)</th><th>Modulus (psi)</th><th>LCode</th></tr></thead><tbody>
+<tr><td>1</td><td>4.00</td><td>200,000</td><td>1</td></tr>
+<tr><td>2</td><td>8.21</td><td>98,039</td><td>6</td></tr>
+<tr><td>3</td><td>10.00</td><td>62,724</td><td>6</td></tr>
+<tr><td>4</td><td>11.30</td><td>20,770</td><td>8</td></tr>
+<tr><td>5</td><td>Semi-infinite</td><td>15,000</td><td>4</td></tr>
+</tbody></table>
+<div class='callout info'>Evaluation Depth at Subgrade = 33.51 in.</div>
+</section>
+<section id='section-b'>
+<h2><span class='sec-num'>B</span> Design Equations</h2>
+<div class='equation-card'>
+<h4>Subgrade Strain Failure Model (FAA Standard)</h4>
+<div class='eq'>AA = 0.000247 + 0.000245 &times; log<sub>10</sub>(E<sub>subgrade</sub>)</div>
+<div class='eq'>BB = 0.0658 &times; E<sub>subgrade</sub><sup>0.559</sup></div>
+<div class='eq'>N<sub>fail</sub> = 10,000 &times; (AA / &epsilon;<sub>v</sub>)<sup>BB</sup></div>
+<div class='eq-note'>For this structure (E<sub>subgrade</sub> = 15,000 psi): AA = 0.001270, BB = 14.212</div>
+</div>
+<div class='equation-card'>
+<h4>Cumulative Damage Factor (CDF)</h4>
+<div class='eq'>CDF<sub>aircraft</sub> = Repetitions &times; (C/P) / N<sub>fail</sub></div>
+<div class='eq'>CDF<sub>total</sub> = &Sigma; CDF<sub>aircraft</sub> &nbsp;&nbsp;(summed over all aircraft)</div>
+<div class='eq-note'>where C/P = Coverage-to-Pass ratio from Gaussian lateral wander model (&sigma; = 30.435 in.)</div>
+</div>
+<div class='equation-card'>
+<h4>Coverage-to-Pass (Gaussian Wander Model)</h4>
+<div class='eq'>C/P(offset) = &int; G(x; &sigma;) dx &nbsp;&nbsp;over tire contact width</div>
+<div class='eq'>G(x; &sigma;) = [1 / (&sigma;&radic;(2&pi;))] &times; exp(&minus;x&sup2; / 2&sigma;&sup2;)</div>
+<div class='eq-note'>&sigma; = 30.435 in. (std. dev. of lateral wander)<br/>Projected tire width at depth d: TW<sub>proj</sub> = TW + 2d</div>
+</div>
+<div class='equation-card'>
+<h4>Convergence Criterion</h4>
+<div class='eq'>|ln(CDF<sub>total</sub>)| &lt; 0.005 &nbsp;&nbsp;(exit criterion)</div>
+<div class='eq-note'>Design converges when 0.995 &lt; CDF<sub>total</sub> &lt; 1.005<br/>Sublayers activated when 0.5 &lt; CDF &lt; 2.0 (|ln(CDF)| &lt; 0.690)</div>
+</div>
+</section>
+<section id='section-c'>
+<h2><span class='sec-num'>C</span> Understanding Coverage-to-Pass (C/P)</h2>
+<div class='callout info'>
+<p>The Coverage-to-Pass (C/P) ratio is the probability that a given evaluation strip (10 in. wide) on the pavement surface will be loaded by a passing wheel, accounting for Gaussian lateral wander of the aircraft about the nominal wheel path centerline. The standard deviation of wander is &sigma; = 30.435 in. (corresponding to a wander width of 70 in.).</p>
+<p>For multi-wheel gear configurations, the total C/P at each strip is the superposition (sum) of the individual GaussArea contributions from every wheel in the gear assembly, because the entire gear wanders as a rigid body. FAARFIELD evaluates 41 strips on one side of the nominal wheel path centerline (offsets 0 to 400 in.).</p>
+</div>
+</section>
+<section id='section-d'>
+<h2><span class='sec-num'>D</span> Fatigue Characterization</h2>
+<div class='callout info'><p>The following chart shows the subgrade fatigue model curve (allowable repetitions vs. vertical strain) with each aircraft's computed strain and N<sub>fail</sub> plotted as scatter points.</p></div>
+<div class='chart-wrap'>
+<svg viewBox='0 0 850 500' class='chart-svg' xmlns='http://www.w3.org/2000/svg'>
+<rect x='80' y='40' width='740' height='400' fill='#FAFBFC' stroke='#ccc'/>
+<line x1='80' y1='440' x2='820' y2='440' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='75' y='444' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>0</tspan></text>
+<line x1='80' y1='400' x2='820' y2='400' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='75' y='404' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>1</tspan></text>
+<line x1='80' y1='360' x2='820' y2='360' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='75' y='364' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>2</tspan></text>
+<line x1='80' y1='320' x2='820' y2='320' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='75' y='324' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>3</tspan></text>
+<line x1='80' y1='280' x2='820' y2='280' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='75' y='284' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>4</tspan></text>
+<line x1='80' y1='240' x2='820' y2='240' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='75' y='244' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>5</tspan></text>
+<line x1='80' y1='200' x2='820' y2='200' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='75' y='204' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>6</tspan></text>
+<line x1='80' y1='160' x2='820' y2='160' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='75' y='164' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>7</tspan></text>
+<line x1='80' y1='120' x2='820' y2='120' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='75' y='124' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>8</tspan></text>
+<line x1='80' y1='80' x2='820' y2='80' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='75' y='84' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>9</tspan></text>
+<line x1='80' y1='40' x2='820' y2='40' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='75' y='44' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>10</tspan></text>
+<line x1='80' y1='40' x2='80' y2='440' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='80' y='458' text-anchor='middle' class='tick'>100</text>
+<line x1='450' y1='40' x2='450' y2='440' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='450' y='458' text-anchor='middle' class='tick'>1,000</text>
+<line x1='820' y1='40' x2='820' y2='440' stroke='#e8e8e8' stroke-width='0.5'/>
+<text x='820' y='458' text-anchor='middle' class='tick'>10,000</text>
+<path d='M80 40 L83.7 40 L87.4 40 L91.1 40 L94.8 40 L98.5 40 L102.2 40 L105.9 40 L109.6 40 L113.3 40 L117 40 L120.7 40 L124.4 40 L128.1 40 L131.8 40 L135.5 40 L139.2 40 L142.9 40 L146.6 40 L150.3 40 L154 40 L157.7 40 L161.4 40 L165.1 40 L168.8 40 L172.5 40 L176.2 40 L179.9 40 L183.6 40 L187.3 40 L191 40 L194.7 40 L198.4 40 L202.1 40 L205.8 40 L209.5 40 L213.2 40 L216.9 40 L220.6 40 L224.3 40 L228 40 L231.7 40 L235.4 40 L239.1 40 L242.8 40 L246.5 40 L250.2 40 L253.9 40 L257.6 40 L261.3 40 L265 40 L268.7 40 L272.4 40 L276.1 40 L279.8 40 L283.5 40 L287.2 40 L290.9 40 L294.6 40 L298.3 40 L302 40 L305.7 40 L309.4 40 L313.1 40 L316.8 40 L320.5 40 L324.2 40 L327.9 40 L331.6 40 L335.3 44.7 L339 50.4 L342.7 56.1 L346.4 61.8 L350.1 67.5 L353.8 73.2 L357.5 78.8 L361.2 84.5 L364.9 90.2 L368.6 95.9 L372.3 101.6 L376 107.3 L379.7 112.9 L383.4 118.6 L387.1 124.3 L390.8 130 L394.5 135.7 L398.2 141.4 L401.9 147.1 L405.6 152.7 L409.3 158.4 L413 164.1 L416.7 169.8 L420.4 175.5 L424.1 181.2 L427.8 186.9 L431.5 192.5 L435.2 198.2 L438.9 203.9 L442.6 209.6 L446.3 215.3 L450 221 L453.7 226.6 L457.4 232.3 L461.1 238 L464.8 243.7 L468.5 249.4 L472.2 255.1 L475.9 260.8 L479.6 266.4 L483.3 272.1 L487 277.8 L490.7 283.5 L494.4 289.2 L498.1 294.9 L501.8 300.5 L505.5 306.2 L509.2 311.9 L512.9 317.6 L516.6 323.3 L520.3 329 L524 334.7 L527.7 340.3 L531.4 346 L535.1 351.7 L538.8 357.4 L542.5 363.1 L546.2 368.8 L549.9 374.5 L553.6 380.1 L557.3 385.8 L561 391.5 L564.7 397.2 L568.4 402.9 L572.1 408.6 L575.8 414.2 L579.5 419.9 L583.2 425.6 L586.9 431.3 L590.6 437 L594.3 440 L598 440 L601.7 440 L605.4 440 L609.1 440 L612.8 440 L616.5 440 L620.2 440 L623.9 440 L627.6 440 L631.3 440 L635 440 L638.7 440 L642.4 440 L646.1 440 L649.8 440 L653.5 440 L657.2 440 L660.9 440 L664.6 440 L668.3 440 L672 440 L675.7 440 L679.4 440 L683.1 440 L686.8 440 L690.5 440 L694.2 440 L697.9 440 L701.6 440 L705.3 440 L709 440 L712.7 440 L716.4 440 L720.1 440 L723.8 440 L727.5 440 L731.2 440 L734.9 440 L738.6 440 L742.3 440 L746 440 L749.7 440 L753.4 440 L757.1 440 L760.8 440 L764.5 440 L768.2 440 L771.9 440 L775.6 440 L779.3 440 L783 440 L786.7 440 L790.4 440 L794.1 440 L797.8 440 L801.5 440 L805.2 440 L808.9 440 L812.6 440 L816.3 440 L820 440' fill='none' stroke='#1F77B4' stroke-width='2.5'/>
+<circle cx='456.6' cy='99.4' r='5' fill='#1F77B4' stroke='white' stroke-width='1.5'/>
+<text x='464.6' y='103.4' class='label'>B777-9</text>
+<line x1='80' y1='188' x2='820' y2='188' stroke='#1F77B4' stroke-width='1' stroke-dasharray='6,3' opacity='0.5'/>
+<circle cx='464.9' cy='156.2' r='5' fill='#FF7F0E' stroke='white' stroke-width='1.5'/>
+<text x='472.9' y='160.2' class='label'>B787-10</text>
+<line x1='80' y1='188' x2='820' y2='188' stroke='#FF7F0E' stroke-width='1' stroke-dasharray='6,3' opacity='0.5'/>
+<circle cx='458.4' cy='113.9' r='5' fill='#2CA02C' stroke='white' stroke-width='1.5'/>
+<text x='466.4' y='117.9' class='label'>B787-8</text>
+<line x1='80' y1='188' x2='820' y2='188' stroke='#2CA02C' stroke-width='1' stroke-dasharray='6,3' opacity='0.5'/>
+<circle cx='465.5' cy='159.6' r='5' fill='#D62728' stroke='white' stroke-width='1.5'/>
+<text x='473.5' y='163.6' class='label'>B787-9</text>
+<line x1='80' y1='188' x2='820' y2='188' stroke='#D62728' stroke-width='1' stroke-dasharray='6,3' opacity='0.5'/>
+<text x='450' y='495' text-anchor='middle' class='axis-label'>Vertical Strain (&mu;&epsilon;)</text>
+<text x='15' y='240' text-anchor='middle' class='axis-label' transform='rotate(-90,15,240)'>Allowable Repetitions (N<tspan dy='-4' font-size='8'>fail</tspan><tspan dy='4'>)</tspan></text>
+<text x='425' y='20' text-anchor='middle' class='chart-title'>Subgrade Fatigue Model</text>
+</svg></div>
+<h3>Aircraft Fatigue Parameters</h3>
+<table class='data-table'><thead><tr>
+<th>Aircraft</th><th>Vert. Strain (&mu;&epsilon;)</th><th>AA</th><th>BB</th><th>N<sub>fail</sub></th><th>Repetitions</th><th>N<sub>fail</sub>/Reps</th><th>Model</th>
+</tr></thead><tbody>
+<tr>
+<td>B777-9</td><td>1041.75</td><td>0.002428</td><td>14.212</td><td>3.271E+08</td><td>2,000,000</td><td>1.64E+02</td><td>Bleasdale</td></tr>
+<tr>
+<td>B787-10</td><td>1097.11</td><td>0.002428</td><td>14.212</td><td>1.241E+07</td><td>2,000,000</td><td>6.20E+00</td><td>Bleasdale</td></tr>
+<tr>
+<td>B787-8</td><td>1053.42</td><td>0.002428</td><td>14.212</td><td>1.424E+08</td><td>2,000,000</td><td>7.12E+01</td><td>Bleasdale</td></tr>
+<tr>
+<td>B787-9</td><td>1101.35</td><td>0.002428</td><td>14.212</td><td>1.022E+07</td><td>2,000,000</td><td>5.11E+00</td><td>Bleasdale</td></tr>
+</tbody></table>
+<div class='chart-wrap'>
+<svg viewBox='0 0 800 204' class='chart-svg'>
+<text x='400' y='20' text-anchor='middle' class='chart-title'>Fatigue Life Reserve (N<tspan dy='-4' font-size='8'>fail</tspan><tspan dy='4'> / Repetitions)</tspan></text>
+<line x1='475' y1='40' x2='475' y2='184' stroke='#333' stroke-width='1.5'/>
+<text x='475' y='35' text-anchor='middle' class='tick'>Ratio = 1.0</text>
+<text x='175' y='58' text-anchor='end' class='label'>B777-9</text>
+<rect x='475' y='40' width='217.7' height='28' fill='#2CA02C' opacity='0.75' rx='3'/>
+<text x='697.7' y='58' text-anchor='start' class='tick'>1.64E+02</text>
+<text x='175' y='94' text-anchor='end' class='label'>B787-10</text>
+<rect x='475' y='76' width='78' height='28' fill='#2CA02C' opacity='0.75' rx='3'/>
+<text x='558' y='94' text-anchor='start' class='tick'>6.20E+00</text>
+<text x='175' y='130' text-anchor='end' class='label'>B787-8</text>
+<rect x='475' y='112' width='182.2' height='28' fill='#2CA02C' opacity='0.75' rx='3'/>
+<text x='662.2' y='130' text-anchor='start' class='tick'>7.12E+01</text>
+<text x='175' y='166' text-anchor='end' class='label'>B787-9</text>
+<rect x='475' y='148' width='69.7' height='28' fill='#2CA02C' opacity='0.75' rx='3'/>
+<text x='549.7' y='166' text-anchor='start' class='tick'>5.11E+00</text>
+</svg></div>
+</section>
+<section id='section-e'>
+<h2><span class='sec-num'>E</span> Per-Aircraft Detailed Breakdown</h2>
+<div class='aircraft-block'>
+<h3>Aircraft 1: B777-9</h3>
+<table class='data-table param-table'><thead><tr><th>Parameter</th><th>Value</th><th>Description</th></tr></thead><tbody>
+<tr><td>Gear Type</td><td>X</td><td>Landing gear configuration</td></tr>
+<tr><td>Gear Load</td><td>777,000 lbs</td><td>Maximum gear load applied to pavement</td></tr>
+<tr><td>Tire Pressure</td><td>14.8 psi</td><td>Inflation pressure</td></tr>
+<tr><td>Tire Width (TW)</td><td>23.65 in.</td><td>Contact width at surface</td></tr>
+<tr><td>Contact Area</td><td>0.00 in.&sup2;</td><td>Static tire contact area</td></tr>
+<tr><td>Annual Departures</td><td>100,000</td><td>Annual departure level (ADL)</td></tr>
+<tr><td>Total Repetitions</td><td>2,000,000</td><td>Computed from ADL &times; 20-year design life</td></tr>
+<tr><td># Gear Loads</td><td>1</td><td>Main + belly gear load groups</td></tr>
+<tr><td>Projected TW at Subgrade</td><td>90.67 in.</td><td>TW + 2&times;depth (45&deg; spread)</td></tr>
+<tr><td>Max Vertical Strain</td><td>1041.75 &mu;&epsilon;</td><td>LEAF-computed subgrade strain</td></tr>
+<tr><td>N<sub>fail</sub></td><td>3.271E+08</td><td>Allowable repetitions (Bleasdale)</td></tr>
+<tr><td>Max C/P Ratio</td><td>0.82142</td><td>Peak coverage-to-pass ratio</td></tr>
+<tr><td>Max CDF (this aircraft)</td><td>0.429871</td><td>Peak damage contribution</td></tr>
+<tr><td>CDF at Critical Offset</td><td>0.419165</td><td>Damage at critical strip</td></tr>
+</tbody></table>
+<div class='chart-wrap'>
+<svg viewBox='0 0 750 400' class='chart-svg'>
+<rect x='70' y='40' width='655' height='310' fill='#FAFBFC' stroke='#ccc'/>
+<text x='375' y='20' text-anchor='middle' class='chart-title'>B777-9 &mdash; CDF vs Offset</text>
+<path d='M70 350 L86.4 350 L102.8 350 L119.1 350 L135.5 350 L151.9 350 L168.3 349.9 L184.6 349.6 L201 348.8 L217.4 347 L233.8 343.1 L250.1 335.7 L266.5 322.9 L282.9 303 L299.3 275.6 L315.6 241.8 L332 204.5 L348.4 168.1 L364.8 136.7 L381.1 113 L397.5 98.1 L413.9 91.7 L430.3 93.3 L446.6 103 L463 121.4 L479.4 148.4 L495.8 182.3 L512.1 219.6 L528.5 255.9 L544.9 287.5 L561.3 311.9 L577.6 328.8 L594 339.2 L610.4 345 L626.8 347.9 L643.1 349.2 L659.5 349.7 L675.9 349.9 L692.3 350 L708.6 350 L725 350' fill='none' stroke='#1F77B4' stroke-width='2'/>
+<line x1='397.5' y1='40' x2='397.5' y2='350' stroke='#D62728' stroke-width='1' stroke-dasharray='5,3'/>
+<text x='65' y='354' text-anchor='end' class='tick'>0.000000</text>
+<line x1='70' y1='350' x2='725' y2='350' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='292' text-anchor='end' class='tick'>0.103169</text>
+<line x1='70' y1='288' x2='725' y2='288' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='230' text-anchor='end' class='tick'>0.206338</text>
+<line x1='70' y1='226' x2='725' y2='226' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='168' text-anchor='end' class='tick'>0.309507</text>
+<line x1='70' y1='164' x2='725' y2='164' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='106' text-anchor='end' class='tick'>0.412676</text>
+<line x1='70' y1='102' x2='725' y2='102' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='44' text-anchor='end' class='tick'>0.515845</text>
+<line x1='70' y1='40' x2='725' y2='40' stroke='#eee' stroke-width='0.5'/>
+<text x='70' y='368' text-anchor='middle' class='tick'>0</text>
+<text x='233.8' y='368' text-anchor='middle' class='tick'>100</text>
+<text x='397.5' y='368' text-anchor='middle' class='tick'>200</text>
+<text x='561.3' y='368' text-anchor='middle' class='tick'>300</text>
+<text x='725' y='368' text-anchor='middle' class='tick'>400</text>
+<text x='397.5' y='395' text-anchor='middle' class='axis-label'>Offset (in.)</text>
+<text x='12' y='195' text-anchor='middle' class='axis-label' transform='rotate(-90,12,195)'>CDF</text>
+</svg></div>
+<details><summary>CDF by Offset &mdash; B777-9 (click to expand)</summary>
+<table class='data-table compact'><thead><tr><th>Offset (in.)</th><th>C/P</th><th>CDF</th></tr></thead><tbody>
+<tr><td>0</td><td>0.00000</td><td>0.000000</td></tr>
+<tr><td>10</td><td>0.00000</td><td>0.000002</td></tr>
+<tr><td>20</td><td>0.00000</td><td>0.000002</td></tr>
+<tr><td>30</td><td>0.00001</td><td>0.000006</td></tr>
+<tr><td>40</td><td>0.00004</td><td>0.000021</td></tr>
+<tr><td>50</td><td>0.00014</td><td>0.000074</td></tr>
+<tr><td>60</td><td>0.00045</td><td>0.000238</td></tr>
+<tr><td>70</td><td>0.00137</td><td>0.000718</td></tr>
+<tr><td>80</td><td>0.00378</td><td>0.001979</td></tr>
+<tr><td>90</td><td>0.00952</td><td>0.004982</td></tr>
+<tr><td>100</td><td>0.02182</td><td>0.011418</td></tr>
+<tr><td>110</td><td>0.04547</td><td>0.023797</td></tr>
+<tr><td>120</td><td>0.08626</td><td>0.045144</td></tr>
+<tr><td>130</td><td>0.14929</td><td>0.078130</td></tr>
+<tr><td>140</td><td>0.23644</td><td>0.123736</td></tr>
+<tr><td>150</td><td>0.34409</td><td>0.180070</td></tr>
+<tr><td>160</td><td>0.46258</td><td>0.242079</td></tr>
+<tr><td>170</td><td>0.57840</td><td>0.302691</td></tr>
+<tr><td>180</td><td>0.67836</td><td>0.355001</td></tr>
+<tr><td>190</td><td>0.75358</td><td>0.394364</td></tr>
+<tr class='highlight'><td>200</td><td>0.80097</td><td>0.419165</td></tr>
+<tr><td>210</td><td>0.82142</td><td>0.429871</td></tr>
+<tr><td>220</td><td>0.81636</td><td>0.427218</td></tr>
+<tr><td>230</td><td>0.78534</td><td>0.410989</td></tr>
+<tr><td>240</td><td>0.72678</td><td>0.380340</td></tr>
+<tr><td>250</td><td>0.64098</td><td>0.335438</td></tr>
+<tr><td>260</td><td>0.53330</td><td>0.279088</td></tr>
+<tr><td>270</td><td>0.41470</td><td>0.217024</td></tr>
+<tr><td>280</td><td>0.29907</td><td>0.156508</td></tr>
+<tr><td>290</td><td>0.19878</td><td>0.104026</td></tr>
+<tr><td>300</td><td>0.12119</td><td>0.063422</td></tr>
+<tr><td>310</td><td>0.06752</td><td>0.035335</td></tr>
+<tr><td>320</td><td>0.03429</td><td>0.017943</td></tr>
+<tr><td>330</td><td>0.01584</td><td>0.008289</td></tr>
+<tr><td>340</td><td>0.00665</td><td>0.003482</td></tr>
+<tr><td>350</td><td>0.00255</td><td>0.001333</td></tr>
+<tr><td>360</td><td>0.00089</td><td>0.000468</td></tr>
+<tr><td>370</td><td>0.00029</td><td>0.000151</td></tr>
+<tr><td>380</td><td>0.00009</td><td>0.000045</td></tr>
+<tr><td>390</td><td>0.00002</td><td>0.000013</td></tr>
+<tr><td>400</td><td>0.00001</td><td>0.000003</td></tr>
+</tbody></table></details>
+<div class='steps'>
+<h4>Step-by-Step Computation</h4>
+<ol>
+<li>Apply gear load of 777,000 lbs with tire pressure 14.8 psi and tire contact width 23.65 in. (X gear).</li>
+<li>Run LEAF to compute vertical subgrade strain. Result: &epsilon;<sub>v</sub> = 1041.75 &mu;&epsilon; at evaluation depth 33.51 in..</li>
+<li>Compute N<sub>fail</sub> using Bleasdale model: AA=0.002428, BB=14.212. N<sub>fail</sub> = 3.271E+08.</li>
+<li>Compute C/P at 41 strips. Peak C/P = 0.82142.</li>
+<li>Project tire width to subgrade (45&deg; spread): TW<sub>proj</sub> = 90.67 in..</li>
+<li>Total repetitions: 100,000 &times; 20 = 2,000,000.</li>
+<li>CDF = Reps &times; C/P / N<sub>fail</sub>. Max CDF = 0.429871. CDF at critical strip = 0.419165.</li>
+</ol></div>
+</div>
+<div class='aircraft-block'>
+<h3>Aircraft 2: B787-10</h3>
+<table class='data-table param-table'><thead><tr><th>Parameter</th><th>Value</th><th>Description</th></tr></thead><tbody>
+<tr><td>Gear Type</td><td>X</td><td>Landing gear configuration</td></tr>
+<tr><td>Gear Load</td><td>561,500 lbs</td><td>Maximum gear load applied to pavement</td></tr>
+<tr><td>Tire Pressure</td><td>15.4 psi</td><td>Inflation pressure</td></tr>
+<tr><td>Tire Width (TW)</td><td>24.63 in.</td><td>Contact width at surface</td></tr>
+<tr><td>Contact Area</td><td>0.00 in.&sup2;</td><td>Static tire contact area</td></tr>
+<tr><td>Annual Departures</td><td>100,000</td><td>Annual departure level (ADL)</td></tr>
+<tr><td>Total Repetitions</td><td>2,000,000</td><td>Computed from ADL &times; 20-year design life</td></tr>
+<tr><td># Gear Loads</td><td>1</td><td>Main + belly gear load groups</td></tr>
+<tr><td>Projected TW at Subgrade</td><td>91.65 in.</td><td>TW + 2&times;depth (45&deg; spread)</td></tr>
+<tr><td>Max Vertical Strain</td><td>1097.11 &mu;&epsilon;</td><td>LEAF-computed subgrade strain</td></tr>
+<tr><td>N<sub>fail</sub></td><td>1.241E+07</td><td>Allowable repetitions (Bleasdale)</td></tr>
+<tr><td>Max C/P Ratio</td><td>0.78101</td><td>Peak coverage-to-pass ratio</td></tr>
+<tr><td>Max CDF (this aircraft)</td><td>0.251660</td><td>Peak damage contribution</td></tr>
+<tr><td>CDF at Critical Offset</td><td>0.250633</td><td>Damage at critical strip</td></tr>
+</tbody></table>
+<div class='chart-wrap'>
+<svg viewBox='0 0 750 400' class='chart-svg'>
+<rect x='70' y='40' width='655' height='310' fill='#FAFBFC' stroke='#ccc'/>
+<text x='375' y='20' text-anchor='middle' class='chart-title'>B787-10 &mdash; CDF vs Offset</text>
+<path d='M70 350 L86.4 350 L102.8 350 L119.1 349.9 L135.5 349.8 L151.9 349.4 L168.3 348.4 L184.6 346 L201 341.1 L217.4 331.9 L233.8 316.5 L250.1 293.6 L266.5 263.1 L282.9 227 L299.3 189.1 L315.6 154.2 L332 126.2 L348.4 107 L364.8 96 L381.1 91.7 L397.5 92.7 L413.9 99.5 L430.3 113.6 L446.6 136.4 L463 167.5 L479.4 204.1 L495.8 241.9 L512.1 276.1 L528.5 303.7 L544.9 323.5 L561.3 336.2 L577.6 343.4 L594 347.2 L610.4 348.9 L626.8 349.6 L643.1 349.9 L659.5 350 L675.9 350 L692.3 350 L708.6 350 L725 350' fill='none' stroke='#FF7F0E' stroke-width='2'/>
+<line x1='397.5' y1='40' x2='397.5' y2='350' stroke='#D62728' stroke-width='1' stroke-dasharray='5,3'/>
+<text x='65' y='354' text-anchor='end' class='tick'>0.000000</text>
+<line x1='70' y1='350' x2='725' y2='350' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='292' text-anchor='end' class='tick'>0.060398</text>
+<line x1='70' y1='288' x2='725' y2='288' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='230' text-anchor='end' class='tick'>0.120797</text>
+<line x1='70' y1='226' x2='725' y2='226' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='168' text-anchor='end' class='tick'>0.181195</text>
+<line x1='70' y1='164' x2='725' y2='164' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='106' text-anchor='end' class='tick'>0.241594</text>
+<line x1='70' y1='102' x2='725' y2='102' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='44' text-anchor='end' class='tick'>0.301992</text>
+<line x1='70' y1='40' x2='725' y2='40' stroke='#eee' stroke-width='0.5'/>
+<text x='70' y='368' text-anchor='middle' class='tick'>0</text>
+<text x='233.8' y='368' text-anchor='middle' class='tick'>100</text>
+<text x='397.5' y='368' text-anchor='middle' class='tick'>200</text>
+<text x='561.3' y='368' text-anchor='middle' class='tick'>300</text>
+<text x='725' y='368' text-anchor='middle' class='tick'>400</text>
+<text x='397.5' y='395' text-anchor='middle' class='axis-label'>Offset (in.)</text>
+<text x='12' y='195' text-anchor='middle' class='axis-label' transform='rotate(-90,12,195)'>CDF</text>
+</svg></div>
+<details><summary>CDF by Offset &mdash; B787-10 (click to expand)</summary>
+<table class='data-table compact'><thead><tr><th>Offset (in.)</th><th>C/P</th><th>CDF</th></tr></thead><tbody>
+<tr><td>0</td><td>0.00000</td><td>0.000001</td></tr>
+<tr><td>10</td><td>0.00002</td><td>0.000005</td></tr>
+<tr><td>20</td><td>0.00006</td><td>0.000019</td></tr>
+<tr><td>30</td><td>0.00020</td><td>0.000064</td></tr>
+<tr><td>40</td><td>0.00062</td><td>0.000201</td></tr>
+<tr><td>50</td><td>0.00184</td><td>0.000593</td></tr>
+<tr><td>60</td><td>0.00494</td><td>0.001593</td></tr>
+<tr><td>70</td><td>0.01212</td><td>0.003905</td></tr>
+<tr><td>80</td><td>0.02703</td><td>0.008710</td></tr>
+<tr><td>90</td><td>0.05482</td><td>0.017665</td></tr>
+<tr><td>100</td><td>0.10121</td><td>0.032611</td></tr>
+<tr><td>110</td><td>0.17045</td><td>0.054923</td></tr>
+<tr><td>120</td><td>0.26269</td><td>0.084644</td></tr>
+<tr><td>130</td><td>0.37195</td><td>0.119853</td></tr>
+<tr><td>140</td><td>0.48650</td><td>0.156761</td></tr>
+<tr><td>150</td><td>0.59201</td><td>0.190758</td></tr>
+<tr><td>160</td><td>0.67657</td><td>0.218008</td></tr>
+<tr><td>170</td><td>0.73471</td><td>0.236740</td></tr>
+<tr><td>180</td><td>0.76784</td><td>0.247417</td></tr>
+<tr><td>190</td><td>0.78101</td><td>0.251660</td></tr>
+<tr class='highlight'><td>200</td><td>0.77782</td><td>0.250633</td></tr>
+<tr><td>210</td><td>0.75729</td><td>0.244016</td></tr>
+<tr><td>220</td><td>0.71467</td><td>0.230282</td></tr>
+<tr><td>230</td><td>0.64578</td><td>0.208086</td></tr>
+<tr><td>240</td><td>0.55176</td><td>0.177790</td></tr>
+<tr><td>250</td><td>0.44096</td><td>0.142088</td></tr>
+<tr><td>260</td><td>0.32685</td><td>0.105319</td></tr>
+<tr><td>270</td><td>0.22327</td><td>0.071942</td></tr>
+<tr><td>280</td><td>0.13988</td><td>0.045072</td></tr>
+<tr><td>290</td><td>0.08008</td><td>0.025805</td></tr>
+<tr><td>300</td><td>0.04179</td><td>0.013465</td></tr>
+<tr><td>310</td><td>0.01984</td><td>0.006392</td></tr>
+<tr><td>320</td><td>0.00856</td><td>0.002759</td></tr>
+<tr><td>330</td><td>0.00336</td><td>0.001084</td></tr>
+<tr><td>340</td><td>0.00121</td><td>0.000389</td></tr>
+<tr><td>350</td><td>0.00039</td><td>0.000127</td></tr>
+<tr><td>360</td><td>0.00012</td><td>0.000039</td></tr>
+<tr><td>370</td><td>0.00003</td><td>0.000011</td></tr>
+<tr><td>380</td><td>0.00001</td><td>0.000003</td></tr>
+<tr><td>390</td><td>0.00000</td><td>0.000001</td></tr>
+<tr><td>400</td><td>0.00000</td><td>0.000000</td></tr>
+</tbody></table></details>
+<div class='steps'>
+<h4>Step-by-Step Computation</h4>
+<ol>
+<li>Apply gear load of 561,500 lbs with tire pressure 15.4 psi and tire contact width 24.63 in. (X gear).</li>
+<li>Run LEAF to compute vertical subgrade strain. Result: &epsilon;<sub>v</sub> = 1097.11 &mu;&epsilon; at evaluation depth 33.51 in..</li>
+<li>Compute N<sub>fail</sub> using Bleasdale model: AA=0.002428, BB=14.212. N<sub>fail</sub> = 1.241E+07.</li>
+<li>Compute C/P at 41 strips. Peak C/P = 0.78101.</li>
+<li>Project tire width to subgrade (45&deg; spread): TW<sub>proj</sub> = 91.65 in..</li>
+<li>Total repetitions: 100,000 &times; 20 = 2,000,000.</li>
+<li>CDF = Reps &times; C/P / N<sub>fail</sub>. Max CDF = 0.251660. CDF at critical strip = 0.250633.</li>
+</ol></div>
+</div>
+<div class='aircraft-block'>
+<h3>Aircraft 3: B787-8</h3>
+<table class='data-table param-table'><thead><tr><th>Parameter</th><th>Value</th><th>Description</th></tr></thead><tbody>
+<tr><td>Gear Type</td><td>X</td><td>Landing gear configuration</td></tr>
+<tr><td>Gear Load</td><td>503,500 lbs</td><td>Maximum gear load applied to pavement</td></tr>
+<tr><td>Tire Pressure</td><td>14.4 psi</td><td>Inflation pressure</td></tr>
+<tr><td>Tire Width (TW)</td><td>23.11 in.</td><td>Contact width at surface</td></tr>
+<tr><td>Contact Area</td><td>0.00 in.&sup2;</td><td>Static tire contact area</td></tr>
+<tr><td>Annual Departures</td><td>100,000</td><td>Annual departure level (ADL)</td></tr>
+<tr><td>Total Repetitions</td><td>2,000,000</td><td>Computed from ADL &times; 20-year design life</td></tr>
+<tr><td># Gear Loads</td><td>1</td><td>Main + belly gear load groups</td></tr>
+<tr><td>Projected TW at Subgrade</td><td>90.13 in.</td><td>TW + 2&times;depth (45&deg; spread)</td></tr>
+<tr><td>Max Vertical Strain</td><td>1053.42 &mu;&epsilon;</td><td>LEAF-computed subgrade strain</td></tr>
+<tr><td>N<sub>fail</sub></td><td>1.424E+08</td><td>Allowable repetitions (Bleasdale)</td></tr>
+<tr><td>Max C/P Ratio</td><td>0.85462</td><td>Peak coverage-to-pass ratio</td></tr>
+<tr><td>Max CDF (this aircraft)</td><td>0.023906</td><td>Peak damage contribution</td></tr>
+<tr><td>CDF at Critical Offset</td><td>0.023721</td><td>Damage at critical strip</td></tr>
+</tbody></table>
+<div class='chart-wrap'>
+<svg viewBox='0 0 750 400' class='chart-svg'>
+<rect x='70' y='40' width='655' height='310' fill='#FAFBFC' stroke='#ccc'/>
+<text x='375' y='20' text-anchor='middle' class='chart-title'>B787-8 &mdash; CDF vs Offset</text>
+<path d='M70 350 L86.4 350 L102.8 350 L119.1 350 L135.5 349.9 L151.9 349.7 L168.3 349.1 L184.6 347.6 L201 344.4 L217.4 338.2 L233.8 327 L250.1 309.4 L266.5 284.2 L282.9 252.2 L299.3 215.6 L315.6 178.2 L332 144.4 L348.4 117.5 L364.8 99.7 L381.1 91.7 L397.5 93.7 L413.9 105.6 L430.3 127.2 L446.6 157.2 L463 193 L479.4 230.5 L495.8 265.7 L512.1 295.2 L528.5 317.3 L544.9 332.2 L561.3 341.1 L577.6 346 L594 348.4 L610.4 349.4 L626.8 349.8 L643.1 349.9 L659.5 350 L675.9 350 L692.3 350 L708.6 350 L725 350' fill='none' stroke='#2CA02C' stroke-width='2'/>
+<line x1='397.5' y1='40' x2='397.5' y2='350' stroke='#D62728' stroke-width='1' stroke-dasharray='5,3'/>
+<text x='65' y='354' text-anchor='end' class='tick'>0.000000</text>
+<line x1='70' y1='350' x2='725' y2='350' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='292' text-anchor='end' class='tick'>0.005737</text>
+<line x1='70' y1='288' x2='725' y2='288' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='230' text-anchor='end' class='tick'>0.011475</text>
+<line x1='70' y1='226' x2='725' y2='226' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='168' text-anchor='end' class='tick'>0.017212</text>
+<line x1='70' y1='164' x2='725' y2='164' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='106' text-anchor='end' class='tick'>0.022950</text>
+<line x1='70' y1='102' x2='725' y2='102' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='44' text-anchor='end' class='tick'>0.028687</text>
+<line x1='70' y1='40' x2='725' y2='40' stroke='#eee' stroke-width='0.5'/>
+<text x='70' y='368' text-anchor='middle' class='tick'>0</text>
+<text x='233.8' y='368' text-anchor='middle' class='tick'>100</text>
+<text x='397.5' y='368' text-anchor='middle' class='tick'>200</text>
+<text x='561.3' y='368' text-anchor='middle' class='tick'>300</text>
+<text x='725' y='368' text-anchor='middle' class='tick'>400</text>
+<text x='397.5' y='395' text-anchor='middle' class='axis-label'>Offset (in.)</text>
+<text x='12' y='195' text-anchor='middle' class='axis-label' transform='rotate(-90,12,195)'>CDF</text>
+</svg></div>
+<details><summary>CDF by Offset &mdash; B787-8 (click to expand)</summary>
+<table class='data-table compact'><thead><tr><th>Offset (in.)</th><th>C/P</th><th>CDF</th></tr></thead><tbody>
+<tr><td>0</td><td>0.00000</td><td>0.000000</td></tr>
+<tr><td>10</td><td>0.00001</td><td>0.000000</td></tr>
+<tr><td>20</td><td>0.00003</td><td>0.000001</td></tr>
+<tr><td>30</td><td>0.00011</td><td>0.000003</td></tr>
+<tr><td>40</td><td>0.00035</td><td>0.000010</td></tr>
+<tr><td>50</td><td>0.00109</td><td>0.000030</td></tr>
+<tr><td>60</td><td>0.00306</td><td>0.000086</td></tr>
+<tr><td>70</td><td>0.00786</td><td>0.000220</td></tr>
+<tr><td>80</td><td>0.01841</td><td>0.000515</td></tr>
+<tr><td>90</td><td>0.03919</td><td>0.001096</td></tr>
+<tr><td>100</td><td>0.07598</td><td>0.002125</td></tr>
+<tr><td>110</td><td>0.13437</td><td>0.003759</td></tr>
+<tr><td>120</td><td>0.21752</td><td>0.006085</td></tr>
+<tr><td>130</td><td>0.32361</td><td>0.009052</td></tr>
+<tr><td>140</td><td>0.44477</td><td>0.012441</td></tr>
+<tr><td>150</td><td>0.56835</td><td>0.015898</td></tr>
+<tr><td>160</td><td>0.68033</td><td>0.019031</td></tr>
+<tr><td>170</td><td>0.76922</td><td>0.021517</td></tr>
+<tr><td>180</td><td>0.82820</td><td>0.023167</td></tr>
+<tr><td>190</td><td>0.85462</td><td>0.023906</td></tr>
+<tr class='highlight'><td>200</td><td>0.84801</td><td>0.023721</td></tr>
+<tr><td>210</td><td>0.80844</td><td>0.022614</td></tr>
+<tr><td>220</td><td>0.73698</td><td>0.020615</td></tr>
+<tr><td>230</td><td>0.63776</td><td>0.017840</td></tr>
+<tr><td>240</td><td>0.51955</td><td>0.014533</td></tr>
+<tr><td>250</td><td>0.39524</td><td>0.011056</td></tr>
+<tr><td>260</td><td>0.27879</td><td>0.007799</td></tr>
+<tr><td>270</td><td>0.18127</td><td>0.005071</td></tr>
+<tr><td>280</td><td>0.10813</td><td>0.003025</td></tr>
+<tr><td>290</td><td>0.05896</td><td>0.001649</td></tr>
+<tr><td>300</td><td>0.02930</td><td>0.000820</td></tr>
+<tr><td>310</td><td>0.01325</td><td>0.000371</td></tr>
+<tr><td>320</td><td>0.00545</td><td>0.000152</td></tr>
+<tr><td>330</td><td>0.00204</td><td>0.000057</td></tr>
+<tr><td>340</td><td>0.00070</td><td>0.000020</td></tr>
+<tr><td>350</td><td>0.00022</td><td>0.000006</td></tr>
+<tr><td>360</td><td>0.00007</td><td>0.000002</td></tr>
+<tr><td>370</td><td>0.00002</td><td>0.000001</td></tr>
+<tr><td>380</td><td>0.00000</td><td>0.000000</td></tr>
+<tr><td>390</td><td>0.00000</td><td>0.000000</td></tr>
+<tr><td>400</td><td>0.00000</td><td>0.000000</td></tr>
+</tbody></table></details>
+<div class='steps'>
+<h4>Step-by-Step Computation</h4>
+<ol>
+<li>Apply gear load of 503,500 lbs with tire pressure 14.4 psi and tire contact width 23.11 in. (X gear).</li>
+<li>Run LEAF to compute vertical subgrade strain. Result: &epsilon;<sub>v</sub> = 1053.42 &mu;&epsilon; at evaluation depth 33.51 in..</li>
+<li>Compute N<sub>fail</sub> using Bleasdale model: AA=0.002428, BB=14.212. N<sub>fail</sub> = 1.424E+08.</li>
+<li>Compute C/P at 41 strips. Peak C/P = 0.85462.</li>
+<li>Project tire width to subgrade (45&deg; spread): TW<sub>proj</sub> = 90.13 in..</li>
+<li>Total repetitions: 100,000 &times; 20 = 2,000,000.</li>
+<li>CDF = Reps &times; C/P / N<sub>fail</sub>. Max CDF = 0.023906. CDF at critical strip = 0.023721.</li>
+</ol></div>
+</div>
+<div class='aircraft-block'>
+<h3>Aircraft 4: B787-9</h3>
+<table class='data-table param-table'><thead><tr><th>Parameter</th><th>Value</th><th>Description</th></tr></thead><tbody>
+<tr><td>Gear Type</td><td>X</td><td>Landing gear configuration</td></tr>
+<tr><td>Gear Load</td><td>563,000 lbs</td><td>Maximum gear load applied to pavement</td></tr>
+<tr><td>Tire Pressure</td><td>15.2 psi</td><td>Inflation pressure</td></tr>
+<tr><td>Tire Width (TW)</td><td>24.39 in.</td><td>Contact width at surface</td></tr>
+<tr><td>Contact Area</td><td>0.00 in.&sup2;</td><td>Static tire contact area</td></tr>
+<tr><td>Annual Departures</td><td>100,000</td><td>Annual departure level (ADL)</td></tr>
+<tr><td>Total Repetitions</td><td>2,000,000</td><td>Computed from ADL &times; 20-year design life</td></tr>
+<tr><td># Gear Loads</td><td>1</td><td>Main + belly gear load groups</td></tr>
+<tr><td>Projected TW at Subgrade</td><td>91.41 in.</td><td>TW + 2&times;depth (45&deg; spread)</td></tr>
+<tr><td>Max Vertical Strain</td><td>1101.35 &mu;&epsilon;</td><td>LEAF-computed subgrade strain</td></tr>
+<tr><td>N<sub>fail</sub></td><td>1.022E+07</td><td>Allowable repetitions (Bleasdale)</td></tr>
+<tr><td>Max C/P Ratio</td><td>0.77870</td><td>Peak coverage-to-pass ratio</td></tr>
+<tr><td>Max CDF (this aircraft)</td><td>0.304693</td><td>Peak damage contribution</td></tr>
+<tr><td>CDF at Critical Offset</td><td>0.303455</td><td>Damage at critical strip</td></tr>
+</tbody></table>
+<div class='chart-wrap'>
+<svg viewBox='0 0 750 400' class='chart-svg'>
+<rect x='70' y='40' width='655' height='310' fill='#FAFBFC' stroke='#ccc'/>
+<text x='375' y='20' text-anchor='middle' class='chart-title'>B787-9 &mdash; CDF vs Offset</text>
+<path d='M70 350 L86.4 350 L102.8 350 L119.1 349.9 L135.5 349.8 L151.9 349.4 L168.3 348.4 L184.6 346 L201 341.1 L217.4 331.9 L233.8 316.6 L250.1 293.7 L266.5 263.2 L282.9 227 L299.3 189.1 L315.6 154.1 L332 126.2 L348.4 106.9 L364.8 96 L381.1 91.7 L397.5 92.7 L413.9 99.5 L430.3 113.6 L446.6 136.4 L463 167.5 L479.4 204.2 L495.8 241.9 L512.1 276.2 L528.5 303.8 L544.9 323.6 L561.3 336.2 L577.6 343.5 L594 347.2 L610.4 348.9 L626.8 349.6 L643.1 349.9 L659.5 350 L675.9 350 L692.3 350 L708.6 350 L725 350' fill='none' stroke='#D62728' stroke-width='2'/>
+<line x1='397.5' y1='40' x2='397.5' y2='350' stroke='#D62728' stroke-width='1' stroke-dasharray='5,3'/>
+<text x='65' y='354' text-anchor='end' class='tick'>0.000000</text>
+<line x1='70' y1='350' x2='725' y2='350' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='292' text-anchor='end' class='tick'>0.073126</text>
+<line x1='70' y1='288' x2='725' y2='288' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='230' text-anchor='end' class='tick'>0.146253</text>
+<line x1='70' y1='226' x2='725' y2='226' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='168' text-anchor='end' class='tick'>0.219379</text>
+<line x1='70' y1='164' x2='725' y2='164' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='106' text-anchor='end' class='tick'>0.292506</text>
+<line x1='70' y1='102' x2='725' y2='102' stroke='#eee' stroke-width='0.5'/>
+<text x='65' y='44' text-anchor='end' class='tick'>0.365632</text>
+<line x1='70' y1='40' x2='725' y2='40' stroke='#eee' stroke-width='0.5'/>
+<text x='70' y='368' text-anchor='middle' class='tick'>0</text>
+<text x='233.8' y='368' text-anchor='middle' class='tick'>100</text>
+<text x='397.5' y='368' text-anchor='middle' class='tick'>200</text>
+<text x='561.3' y='368' text-anchor='middle' class='tick'>300</text>
+<text x='725' y='368' text-anchor='middle' class='tick'>400</text>
+<text x='397.5' y='395' text-anchor='middle' class='axis-label'>Offset (in.)</text>
+<text x='12' y='195' text-anchor='middle' class='axis-label' transform='rotate(-90,12,195)'>CDF</text>
+</svg></div>
+<details><summary>CDF by Offset &mdash; B787-9 (click to expand)</summary>
+<table class='data-table compact'><thead><tr><th>Offset (in.)</th><th>C/P</th><th>CDF</th></tr></thead><tbody>
+<tr><td>0</td><td>0.00000</td><td>0.000002</td></tr>
+<tr><td>10</td><td>0.00002</td><td>0.000006</td></tr>
+<tr><td>20</td><td>0.00006</td><td>0.000022</td></tr>
+<tr><td>30</td><td>0.00020</td><td>0.000076</td></tr>
+<tr><td>40</td><td>0.00062</td><td>0.000242</td></tr>
+<tr><td>50</td><td>0.00183</td><td>0.000714</td></tr>
+<tr><td>60</td><td>0.00491</td><td>0.001920</td></tr>
+<tr><td>70</td><td>0.01204</td><td>0.004712</td></tr>
+<tr><td>80</td><td>0.02688</td><td>0.010516</td></tr>
+<tr><td>90</td><td>0.05454</td><td>0.021341</td></tr>
+<tr><td>100</td><td>0.10075</td><td>0.039421</td></tr>
+<tr><td>110</td><td>0.16977</td><td>0.066429</td></tr>
+<tr><td>120</td><td>0.26176</td><td>0.102422</td></tr>
+<tr><td>130</td><td>0.37078</td><td>0.145078</td></tr>
+<tr><td>140</td><td>0.48508</td><td>0.189803</td></tr>
+<tr><td>150</td><td>0.59036</td><td>0.230998</td></tr>
+<tr><td>160</td><td>0.67471</td><td>0.264003</td></tr>
+<tr><td>170</td><td>0.73264</td><td>0.286670</td></tr>
+<tr><td>180</td><td>0.76562</td><td>0.299573</td></tr>
+<tr><td>190</td><td>0.77870</td><td>0.304693</td></tr>
+<tr class='highlight'><td>200</td><td>0.77554</td><td>0.303455</td></tr>
+<tr><td>210</td><td>0.75512</td><td>0.295465</td></tr>
+<tr><td>220</td><td>0.71268</td><td>0.278859</td></tr>
+<tr><td>230</td><td>0.64401</td><td>0.251988</td></tr>
+<tr><td>240</td><td>0.55021</td><td>0.215286</td></tr>
+<tr><td>250</td><td>0.43964</td><td>0.172023</td></tr>
+<tr><td>260</td><td>0.32577</td><td>0.127469</td></tr>
+<tr><td>270</td><td>0.22244</td><td>0.087038</td></tr>
+<tr><td>280</td><td>0.13929</td><td>0.054503</td></tr>
+<tr><td>290</td><td>0.07970</td><td>0.031186</td></tr>
+<tr><td>300</td><td>0.04157</td><td>0.016264</td></tr>
+<tr><td>310</td><td>0.01972</td><td>0.007715</td></tr>
+<tr><td>320</td><td>0.00850</td><td>0.003328</td></tr>
+<tr><td>330</td><td>0.00334</td><td>0.001307</td></tr>
+<tr><td>340</td><td>0.00120</td><td>0.000468</td></tr>
+<tr><td>350</td><td>0.00039</td><td>0.000153</td></tr>
+<tr><td>360</td><td>0.00012</td><td>0.000047</td></tr>
+<tr><td>370</td><td>0.00003</td><td>0.000013</td></tr>
+<tr><td>380</td><td>0.00001</td><td>0.000004</td></tr>
+<tr><td>390</td><td>0.00000</td><td>0.000001</td></tr>
+<tr><td>400</td><td>0.00000</td><td>0.000000</td></tr>
+</tbody></table></details>
+<div class='steps'>
+<h4>Step-by-Step Computation</h4>
+<ol>
+<li>Apply gear load of 563,000 lbs with tire pressure 15.2 psi and tire contact width 24.39 in. (X gear).</li>
+<li>Run LEAF to compute vertical subgrade strain. Result: &epsilon;<sub>v</sub> = 1101.35 &mu;&epsilon; at evaluation depth 33.51 in..</li>
+<li>Compute N<sub>fail</sub> using Bleasdale model: AA=0.002428, BB=14.212. N<sub>fail</sub> = 1.022E+07.</li>
+<li>Compute C/P at 41 strips. Peak C/P = 0.77870.</li>
+<li>Project tire width to subgrade (45&deg; spread): TW<sub>proj</sub> = 91.41 in..</li>
+<li>Total repetitions: 100,000 &times; 20 = 2,000,000.</li>
+<li>CDF = Reps &times; C/P / N<sub>fail</sub>. Max CDF = 0.304693. CDF at critical strip = 0.303455.</li>
+</ol></div>
+</div>
+</section>
+<section id='section-f'>
+<h2><span class='sec-num'>F</span> Coverage-to-Pass (C/P) Distribution</h2>
+<div class='chart-wrap'>
+<svg viewBox='0 0 850 450' class='chart-svg'>
+<rect x='80' y='40' width='620' height='360' fill='#FAFBFC' stroke='#ccc'/>
+<text x='390' y='20' text-anchor='middle' class='chart-title'>Coverage-to-Pass (C/P) Distribution</text>
+<path d='M80 400 L95.5 400 L111 400 L126.5 400 L142 400 L157.5 399.9 L173 399.8 L188.5 399.5 L204 398.6 L219.5 396.5 L235 392 L250.5 383.3 L266 368.4 L281.5 345.3 L297 313.4 L312.5 274 L328 230.6 L343.5 188.1 L359 151.5 L374.5 124 L390 106.6 L405.5 99.1 L421 101 L436.5 112.3 L452 133.8 L467.5 165.2 L483 204.7 L498.5 248.1 L514 290.5 L529.5 327.2 L545 355.6 L560.5 375.3 L576 387.4 L591.5 394.2 L607 397.6 L622.5 399.1 L638 399.7 L653.5 399.9 L669 400 L684.5 400 L700 400' fill='none' stroke='#1F77B4' stroke-width='2'/>
+<path d='M80 400 L95.5 400 L111 400 L126.5 399.9 L142 399.8 L157.5 399.3 L173 398.2 L188.5 395.6 L204 390.1 L219.5 379.9 L235 362.9 L250.5 337.6 L266 303.8 L281.5 263.8 L297 221.8 L312.5 183.2 L328 152.2 L343.5 130.9 L359 118.7 L374.5 113.9 L390 115.1 L405.5 122.6 L421 138.2 L436.5 163.5 L452 197.9 L467.5 238.5 L483 280.3 L498.5 318.2 L514 348.8 L529.5 370.7 L545 384.7 L560.5 392.7 L576 396.9 L591.5 398.8 L607 399.6 L622.5 399.9 L638 400 L653.5 400 L669 400 L684.5 400 L700 400' fill='none' stroke='#FF7F0E' stroke-width='2'/>
+<path d='M80 400 L95.5 400 L111 400 L126.5 400 L142 399.9 L157.5 399.6 L173 398.9 L188.5 397.1 L204 393.3 L219.5 385.6 L235 372.2 L250.5 350.8 L266 320.3 L281.5 281.5 L297 237.1 L312.5 191.8 L328 150.8 L343.5 118.2 L359 96.6 L374.5 87 L390 89.4 L405.5 103.9 L421 130 L436.5 166.4 L452 209.7 L467.5 255.2 L483 297.9 L498.5 333.6 L514 360.4 L529.5 378.4 L545 389.3 L560.5 395.1 L576 398 L591.5 399.3 L607 399.7 L622.5 399.9 L638 400 L653.5 400 L669 400 L684.5 400 L700 400' fill='none' stroke='#2CA02C' stroke-width='2'/>
+<path d='M80 400 L95.5 400 L111 400 L126.5 399.9 L142 399.8 L157.5 399.3 L173 398.2 L188.5 395.6 L204 390.2 L219.5 380 L235 363.1 L250.5 337.8 L266 304.1 L281.5 264.2 L297 222.3 L312.5 183.8 L328 152.9 L343.5 131.6 L359 119.6 L374.5 114.8 L390 115.9 L405.5 123.4 L421 138.9 L436.5 164.1 L452 198.5 L467.5 239 L483 280.7 L498.5 318.5 L514 349 L529.5 370.8 L545 384.8 L560.5 392.8 L576 396.9 L591.5 398.8 L607 399.6 L622.5 399.9 L638 400 L653.5 400 L669 400 L684.5 400 L700 400' fill='none' stroke='#D62728' stroke-width='2'/>
+<line x1='390' y1='40' x2='390' y2='400' stroke='#D62728' stroke-width='1' stroke-dasharray='5,3'/>
+<text x='75' y='404' text-anchor='end' class='tick'>0.0000</text>
+<line x1='80' y1='400' x2='700' y2='400' stroke='#eee' stroke-width='0.5'/>
+<text x='75' y='332' text-anchor='end' class='tick'>0.1966</text>
+<line x1='80' y1='328' x2='700' y2='328' stroke='#eee' stroke-width='0.5'/>
+<text x='75' y='260' text-anchor='end' class='tick'>0.3931</text>
+<line x1='80' y1='256' x2='700' y2='256' stroke='#eee' stroke-width='0.5'/>
+<text x='75' y='188' text-anchor='end' class='tick'>0.5897</text>
+<line x1='80' y1='184' x2='700' y2='184' stroke='#eee' stroke-width='0.5'/>
+<text x='75' y='116' text-anchor='end' class='tick'>0.7863</text>
+<line x1='80' y1='112' x2='700' y2='112' stroke='#eee' stroke-width='0.5'/>
+<text x='75' y='44' text-anchor='end' class='tick'>0.9828</text>
+<line x1='80' y1='40' x2='700' y2='40' stroke='#eee' stroke-width='0.5'/>
+<text x='80' y='418' text-anchor='middle' class='tick'>0</text>
+<text x='235' y='418' text-anchor='middle' class='tick'>100</text>
+<text x='390' y='418' text-anchor='middle' class='tick'>200</text>
+<text x='545' y='418' text-anchor='middle' class='tick'>300</text>
+<text x='700' y='418' text-anchor='middle' class='tick'>400</text>
+<rect x='710' y='50' width='12' height='12' fill='#1F77B4'/>
+<text x='726' y='60' class='legend-text'>B777-9</text>
+<rect x='710' y='68' width='12' height='12' fill='#FF7F0E'/>
+<text x='726' y='78' class='legend-text'>B787-10</text>
+<rect x='710' y='86' width='12' height='12' fill='#2CA02C'/>
+<text x='726' y='96' class='legend-text'>B787-8</text>
+<rect x='710' y='104' width='12' height='12' fill='#D62728'/>
+<text x='726' y='114' class='legend-text'>B787-9</text>
+<text x='390' y='445' text-anchor='middle' class='axis-label'>Offset (in.)</text>
+<text x='12' y='220' text-anchor='middle' class='axis-label' transform='rotate(-90,12,220)'>C/P Ratio</text>
+</svg></div>
+</section>
+<section id='section-g'>
+<h2><span class='sec-num'>G</span> CDF Sweep Table (41 offsets)</h2>
+<div class='table-scroll'><table class='data-table compact'><thead><tr>
+<th>Offset (in.)</th><th>B777-9 C/P</th><th>B777-9 CDF</th><th>B787-10 C/P</th><th>B787-10 CDF</th><th>B787-8 C/P</th><th>B787-8 CDF</th><th>B787-9 C/P</th><th>B787-9 CDF</th><th>Total CDF</th></tr></thead><tbody>
+<tr><td>0</td><td>0.00000</td><td>0.000000</td><td>0.00000</td><td>0.000001</td><td>0.00000</td><td>0.000000</td><td>0.00000</td><td>0.000002</td><td><strong>0.000003</strong></td></tr>
+<tr><td>10</td><td>0.00000</td><td>0.000002</td><td>0.00002</td><td>0.000005</td><td>0.00001</td><td>0.000000</td><td>0.00002</td><td>0.000006</td><td><strong>0.000013</strong></td></tr>
+<tr><td>20</td><td>0.00000</td><td>0.000002</td><td>0.00006</td><td>0.000019</td><td>0.00003</td><td>0.000001</td><td>0.00006</td><td>0.000022</td><td><strong>0.000043</strong></td></tr>
+<tr><td>30</td><td>0.00001</td><td>0.000006</td><td>0.00020</td><td>0.000064</td><td>0.00011</td><td>0.000003</td><td>0.00020</td><td>0.000076</td><td><strong>0.000149</strong></td></tr>
+<tr><td>40</td><td>0.00004</td><td>0.000021</td><td>0.00062</td><td>0.000201</td><td>0.00035</td><td>0.000010</td><td>0.00062</td><td>0.000242</td><td><strong>0.000475</strong></td></tr>
+<tr><td>50</td><td>0.00014</td><td>0.000074</td><td>0.00184</td><td>0.000593</td><td>0.00109</td><td>0.000030</td><td>0.00183</td><td>0.000714</td><td><strong>0.001411</strong></td></tr>
+<tr><td>60</td><td>0.00045</td><td>0.000238</td><td>0.00494</td><td>0.001593</td><td>0.00306</td><td>0.000086</td><td>0.00491</td><td>0.001920</td><td><strong>0.003836</strong></td></tr>
+<tr><td>70</td><td>0.00137</td><td>0.000718</td><td>0.01212</td><td>0.003905</td><td>0.00786</td><td>0.000220</td><td>0.01204</td><td>0.004712</td><td><strong>0.009555</strong></td></tr>
+<tr><td>80</td><td>0.00378</td><td>0.001979</td><td>0.02703</td><td>0.008710</td><td>0.01841</td><td>0.000515</td><td>0.02688</td><td>0.010516</td><td><strong>0.021720</strong></td></tr>
+<tr><td>90</td><td>0.00952</td><td>0.004982</td><td>0.05482</td><td>0.017665</td><td>0.03919</td><td>0.001096</td><td>0.05454</td><td>0.021341</td><td><strong>0.045085</strong></td></tr>
+<tr><td>100</td><td>0.02182</td><td>0.011418</td><td>0.10121</td><td>0.032611</td><td>0.07598</td><td>0.002125</td><td>0.10075</td><td>0.039421</td><td><strong>0.085576</strong></td></tr>
+<tr><td>110</td><td>0.04547</td><td>0.023797</td><td>0.17045</td><td>0.054923</td><td>0.13437</td><td>0.003759</td><td>0.16977</td><td>0.066429</td><td><strong>0.148907</strong></td></tr>
+<tr><td>120</td><td>0.08626</td><td>0.045144</td><td>0.26269</td><td>0.084644</td><td>0.21752</td><td>0.006085</td><td>0.26176</td><td>0.102422</td><td><strong>0.238296</strong></td></tr>
+<tr><td>130</td><td>0.14929</td><td>0.078130</td><td>0.37195</td><td>0.119853</td><td>0.32361</td><td>0.009052</td><td>0.37078</td><td>0.145078</td><td><strong>0.352113</strong></td></tr>
+<tr><td>140</td><td>0.23644</td><td>0.123736</td><td>0.48650</td><td>0.156761</td><td>0.44477</td><td>0.012441</td><td>0.48508</td><td>0.189803</td><td><strong>0.482742</strong></td></tr>
+<tr><td>150</td><td>0.34409</td><td>0.180070</td><td>0.59201</td><td>0.190758</td><td>0.56835</td><td>0.015898</td><td>0.59036</td><td>0.230998</td><td><strong>0.617724</strong></td></tr>
+<tr><td>160</td><td>0.46258</td><td>0.242079</td><td>0.67657</td><td>0.218008</td><td>0.68033</td><td>0.019031</td><td>0.67471</td><td>0.264003</td><td><strong>0.743121</strong></td></tr>
+<tr><td>170</td><td>0.57840</td><td>0.302691</td><td>0.73471</td><td>0.236740</td><td>0.76922</td><td>0.021517</td><td>0.73264</td><td>0.286670</td><td><strong>0.847619</strong></td></tr>
+<tr><td>180</td><td>0.67836</td><td>0.355001</td><td>0.76784</td><td>0.247417</td><td>0.82820</td><td>0.023167</td><td>0.76562</td><td>0.299573</td><td><strong>0.925158</strong></td></tr>
+<tr><td>190</td><td>0.75358</td><td>0.394364</td><td>0.78101</td><td>0.251660</td><td>0.85462</td><td>0.023906</td><td>0.77870</td><td>0.304693</td><td><strong>0.974624</strong></td></tr>
+<tr class='highlight'><td>200</td><td>0.80097</td><td>0.419165</td><td>0.77782</td><td>0.250633</td><td>0.84801</td><td>0.023721</td><td>0.77554</td><td>0.303455</td><td><strong>0.996974</strong></td></tr>
+<tr><td>210</td><td>0.82142</td><td>0.429871</td><td>0.75729</td><td>0.244016</td><td>0.80844</td><td>0.022614</td><td>0.75512</td><td>0.295465</td><td><strong>0.991966</strong></td></tr>
+<tr><td>220</td><td>0.81636</td><td>0.427218</td><td>0.71467</td><td>0.230282</td><td>0.73698</td><td>0.020615</td><td>0.71268</td><td>0.278859</td><td><strong>0.956975</strong></td></tr>
+<tr><td>230</td><td>0.78534</td><td>0.410989</td><td>0.64578</td><td>0.208086</td><td>0.63776</td><td>0.017840</td><td>0.64401</td><td>0.251988</td><td><strong>0.888902</strong></td></tr>
+<tr><td>240</td><td>0.72678</td><td>0.380340</td><td>0.55176</td><td>0.177790</td><td>0.51955</td><td>0.014533</td><td>0.55021</td><td>0.215286</td><td><strong>0.787949</strong></td></tr>
+<tr><td>250</td><td>0.64098</td><td>0.335438</td><td>0.44096</td><td>0.142088</td><td>0.39524</td><td>0.011056</td><td>0.43964</td><td>0.172023</td><td><strong>0.660605</strong></td></tr>
+<tr><td>260</td><td>0.53330</td><td>0.279088</td><td>0.32685</td><td>0.105319</td><td>0.27879</td><td>0.007799</td><td>0.32577</td><td>0.127469</td><td><strong>0.519675</strong></td></tr>
+<tr><td>270</td><td>0.41470</td><td>0.217024</td><td>0.22327</td><td>0.071942</td><td>0.18127</td><td>0.005071</td><td>0.22244</td><td>0.087038</td><td><strong>0.381075</strong></td></tr>
+<tr><td>280</td><td>0.29907</td><td>0.156508</td><td>0.13988</td><td>0.045072</td><td>0.10813</td><td>0.003025</td><td>0.13929</td><td>0.054503</td><td><strong>0.259108</strong></td></tr>
+<tr><td>290</td><td>0.19878</td><td>0.104026</td><td>0.08008</td><td>0.025805</td><td>0.05896</td><td>0.001649</td><td>0.07970</td><td>0.031186</td><td><strong>0.162666</strong></td></tr>
+<tr><td>300</td><td>0.12119</td><td>0.063422</td><td>0.04179</td><td>0.013465</td><td>0.02930</td><td>0.000820</td><td>0.04157</td><td>0.016264</td><td><strong>0.093971</strong></td></tr>
+<tr><td>310</td><td>0.06752</td><td>0.035335</td><td>0.01984</td><td>0.006392</td><td>0.01325</td><td>0.000371</td><td>0.01972</td><td>0.007715</td><td><strong>0.049813</strong></td></tr>
+<tr><td>320</td><td>0.03429</td><td>0.017943</td><td>0.00856</td><td>0.002759</td><td>0.00545</td><td>0.000152</td><td>0.00850</td><td>0.003328</td><td><strong>0.024182</strong></td></tr>
+<tr><td>330</td><td>0.01584</td><td>0.008289</td><td>0.00336</td><td>0.001084</td><td>0.00204</td><td>0.000057</td><td>0.00334</td><td>0.001307</td><td><strong>0.010736</strong></td></tr>
+<tr><td>340</td><td>0.00665</td><td>0.003482</td><td>0.00121</td><td>0.000389</td><td>0.00070</td><td>0.000020</td><td>0.00120</td><td>0.000468</td><td><strong>0.004359</strong></td></tr>
+<tr><td>350</td><td>0.00255</td><td>0.001333</td><td>0.00039</td><td>0.000127</td><td>0.00022</td><td>0.000006</td><td>0.00039</td><td>0.000153</td><td><strong>0.001619</strong></td></tr>
+<tr><td>360</td><td>0.00089</td><td>0.000468</td><td>0.00012</td><td>0.000039</td><td>0.00007</td><td>0.000002</td><td>0.00012</td><td>0.000047</td><td><strong>0.000556</strong></td></tr>
+<tr><td>370</td><td>0.00029</td><td>0.000151</td><td>0.00003</td><td>0.000011</td><td>0.00002</td><td>0.000001</td><td>0.00003</td><td>0.000013</td><td><strong>0.000176</strong></td></tr>
+<tr><td>380</td><td>0.00009</td><td>0.000045</td><td>0.00001</td><td>0.000003</td><td>0.00000</td><td>0.000000</td><td>0.00001</td><td>0.000004</td><td><strong>0.000052</strong></td></tr>
+<tr><td>390</td><td>0.00002</td><td>0.000013</td><td>0.00000</td><td>0.000001</td><td>0.00000</td><td>0.000000</td><td>0.00000</td><td>0.000001</td><td><strong>0.000015</strong></td></tr>
+<tr><td>400</td><td>0.00001</td><td>0.000003</td><td>0.00000</td><td>0.000000</td><td>0.00000</td><td>0.000000</td><td>0.00000</td><td>0.000000</td><td><strong>0.000003</strong></td></tr>
+</tbody></table></div>
+<div class='callout info'>Critical offset at #21 = 200 in., Max CDF = 0.996974</div>
+</section>
+<section id='section-h'>
+<h2><span class='sec-num'>H</span> CDF Distribution Across Pavement Width</h2>
+<div class='chart-wrap'>
+<svg viewBox='0 0 900 500' class='chart-svg'>
+<rect x='80' y='40' width='670' height='410' fill='#FAFBFC' stroke='#ccc'/>
+<text x='415' y='20' text-anchor='middle' class='chart-title'>Composite CDF Across Pavement Width</text>
+<path d='M80 450 L96.8 450 L113.5 450 L130.3 450 L147 450 L163.8 450 L180.5 449.9 L197.3 449.8 L214 449.3 L230.8 448.3 L247.5 446.1 L264.3 441.8 L281 434.5 L297.8 423.2 L314.5 407.6 L331.3 388.3 L348 367 L364.8 346.3 L381.5 328.3 L398.3 314.8 L415 306.4 L431.8 302.7 L448.5 303.6 L465.3 309.2 L482 319.7 L498.8 335 L515.5 354.4 L532.3 375.6 L549 396.4 L565.8 414.3 L582.5 428.3 L599.3 437.9 L616 443.9 L632.8 447.2 L649.5 448.8 L666.3 449.5 L683 449.8 L699.8 449.9 L716.5 450 L733.3 450 L750 450' fill='none' stroke='#1F77B4' stroke-width='1.5' opacity='0.7'/>
+<path d='M80 450 L96.8 450 L113.5 450 L130.3 450 L147 449.9 L163.8 449.8 L180.5 449.5 L197.3 448.7 L214 447 L230.8 443.9 L247.5 438.8 L264.3 431.2 L281 421 L297.8 408.9 L314.5 396.3 L331.3 384.6 L348 375.3 L364.8 368.9 L381.5 365.2 L398.3 363.8 L415 364.1 L431.8 366.4 L448.5 371.1 L465.3 378.7 L482 389.1 L498.8 401.3 L515.5 413.9 L532.3 425.3 L549 434.6 L565.8 441.2 L582.5 445.4 L599.3 447.8 L616 449.1 L632.8 449.6 L649.5 449.9 L666.3 450 L683 450 L699.8 450 L716.5 450 L733.3 450 L750 450' fill='none' stroke='#FF7F0E' stroke-width='1.5' opacity='0.7'/>
+<path d='M80 450 L96.8 450 L113.5 450 L130.3 450 L147 450 L163.8 450 L180.5 450 L197.3 449.9 L214 449.8 L230.8 449.6 L247.5 449.3 L264.3 448.7 L281 447.9 L297.8 446.9 L314.5 445.7 L331.3 444.6 L348 443.5 L364.8 442.6 L381.5 442.1 L398.3 441.8 L415 441.9 L431.8 442.3 L448.5 442.9 L465.3 443.9 L482 445 L498.8 446.2 L515.5 447.3 L532.3 448.3 L549 449 L565.8 449.4 L582.5 449.7 L599.3 449.9 L616 449.9 L632.8 450 L649.5 450 L666.3 450 L683 450 L699.8 450 L716.5 450 L733.3 450 L750 450' fill='none' stroke='#2CA02C' stroke-width='1.5' opacity='0.7'/>
+<path d='M80 450 L96.8 450 L113.5 450 L130.3 450 L147 449.9 L163.8 449.8 L180.5 449.3 L197.3 448.4 L214 446.4 L230.8 442.7 L247.5 436.5 L264.3 427.2 L281 414.9 L297.8 400.3 L314.5 385 L331.3 370.8 L348 359.5 L364.8 351.8 L381.5 347.3 L398.3 345.6 L415 346 L431.8 348.7 L448.5 354.4 L465.3 363.6 L482 376.2 L498.8 391 L515.5 406.3 L532.3 420.2 L549 431.3 L565.8 439.3 L582.5 444.4 L599.3 447.4 L616 448.9 L632.8 449.6 L649.5 449.8 L666.3 449.9 L683 450 L699.8 450 L716.5 450 L733.3 450 L750 450' fill='none' stroke='#D62728' stroke-width='1.5' opacity='0.7'/>
+<path d='M80 450 L96.8 450 L113.5 450 L130.3 449.9 L147 449.8 L163.8 449.5 L180.5 448.7 L197.3 446.7 L214 442.6 L230.8 434.5 L247.5 420.7 L264.3 399 L281 368.3 L297.8 329.3 L314.5 284.6 L331.3 238.3 L348 195.3 L364.8 159.5 L381.5 132.9 L398.3 116 L415 108.3 L431.8 110 L448.5 122 L465.3 145.4 L482 180 L498.8 223.6 L515.5 271.9 L532.3 319.4 L549 361.2 L565.8 394.3 L582.5 417.8 L599.3 432.9 L616 441.7 L632.8 446.3 L649.5 448.5 L666.3 449.4 L683 449.8 L699.8 449.9 L716.5 450 L733.3 450 L750 450' fill='none' stroke='#222' stroke-width='2.5'/>
+<line x1='415' y1='40' x2='415' y2='450' stroke='#D62728' stroke-width='1.5' stroke-dasharray='5,3'/>
+<text x='75' y='454' text-anchor='end' class='tick'>0.000000</text>
+<line x1='80' y1='450' x2='750' y2='450' stroke='#eee' stroke-width='0.5'/>
+<text x='75' y='372' text-anchor='end' class='tick'>0.239274</text>
+<line x1='80' y1='368' x2='750' y2='368' stroke='#eee' stroke-width='0.5'/>
+<text x='75' y='290' text-anchor='end' class='tick'>0.478547</text>
+<line x1='80' y1='286' x2='750' y2='286' stroke='#eee' stroke-width='0.5'/>
+<text x='75' y='208' text-anchor='end' class='tick'>0.717821</text>
+<line x1='80' y1='204' x2='750' y2='204' stroke='#eee' stroke-width='0.5'/>
+<text x='75' y='126' text-anchor='end' class='tick'>0.957095</text>
+<line x1='80' y1='122' x2='750' y2='122' stroke='#eee' stroke-width='0.5'/>
+<text x='75' y='44' text-anchor='end' class='tick'>1.196369</text>
+<line x1='80' y1='40' x2='750' y2='40' stroke='#eee' stroke-width='0.5'/>
+<text x='80' y='468' text-anchor='middle' class='tick'>0</text>
+<text x='247.5' y='468' text-anchor='middle' class='tick'>100</text>
+<text x='415' y='468' text-anchor='middle' class='tick'>200</text>
+<text x='582.5' y='468' text-anchor='middle' class='tick'>300</text>
+<text x='750' y='468' text-anchor='middle' class='tick'>400</text>
+<rect x='760' y='50' width='12' height='12' fill='#1F77B4'/>
+<text x='776' y='60' class='legend-text'>B777-9</text>
+<rect x='760' y='68' width='12' height='12' fill='#FF7F0E'/>
+<text x='776' y='78' class='legend-text'>B787-10</text>
+<rect x='760' y='86' width='12' height='12' fill='#2CA02C'/>
+<text x='776' y='96' class='legend-text'>B787-8</text>
+<rect x='760' y='104' width='12' height='12' fill='#D62728'/>
+<text x='776' y='114' class='legend-text'>B787-9</text>
+<line x1='760' y1='128' x2='772' y2='128' stroke='#222' stroke-width='2.5'/>
+<text x='776' y='132' class='legend-text'>Total CDF</text>
+<text x='415' y='495' text-anchor='middle' class='axis-label'>Offset (in.)</text>
+<text x='12' y='245' text-anchor='middle' class='axis-label' transform='rotate(-90,12,245)'>CDF</text>
+</svg></div>
+<div class='chart-wrap'>
+<svg viewBox='0 0 800 194' class='chart-svg'>
+<text x='400' y='20' text-anchor='middle' class='chart-title'>CDF Contribution at Critical Offset (%)</text>
+<text x='175' y='58' text-anchor='end' class='label'>B777-9</text>
+<rect x='180' y='40' width='235.4' height='28' fill='#1F77B4' opacity='0.8' rx='3'/>
+<text x='420.4' y='58' class='tick'>42.0%</text>
+<text x='175' y='94' text-anchor='end' class='label'>B787-10</text>
+<rect x='180' y='76' width='140.8' height='28' fill='#FF7F0E' opacity='0.8' rx='3'/>
+<text x='325.8' y='94' class='tick'>25.1%</text>
+<text x='175' y='130' text-anchor='end' class='label'>B787-8</text>
+<rect x='180' y='112' width='13.3' height='28' fill='#2CA02C' opacity='0.8' rx='3'/>
+<text x='198.3' y='130' class='tick'>2.4%</text>
+<text x='175' y='166' text-anchor='end' class='label'>B787-9</text>
+<rect x='180' y='148' width='170.5' height='28' fill='#D62728' opacity='0.8' rx='3'/>
+<text x='355.5' y='166' class='tick'>30.4%</text>
+</svg></div>
+<h3>CDF Contribution Summary at Critical Offset</h3>
+<table class='data-table'><thead><tr><th>Aircraft</th><th>CDF at Critical Offset</th><th>% of Total</th></tr></thead><tbody>
+<tr><td>B777-9</td><td>0.419165</td><td>42.0%</td></tr>
+<tr><td>B787-10</td><td>0.250633</td><td>25.1%</td></tr>
+<tr><td>B787-8</td><td>0.023721</td><td>2.4%</td></tr>
+<tr><td>B787-9</td><td>0.303455</td><td>30.4%</td></tr>
+<tr class='highlight'><td><strong>Total</strong></td><td><strong>0.996974</strong></td><td><strong>100.0%</strong></td></tr>
+</tbody></table>
+</section>
+<section id='section-i'>
+<h2><span class='sec-num'>I</span> Newton-Raphson Convergence</h2>
+<div class='chart-wrap'>
+<svg viewBox='0 0 850 450' class='chart-svg'>
+<rect x='70' y='40' width='710' height='360' fill='#FAFBFC' stroke='#ccc'/>
+<text x='425' y='20' text-anchor='middle' class='chart-title'>Newton-Raphson Convergence</text>
+<circle cx='70' cy='60.4' r='3' fill='#1F77B4'/>
+<circle cx='425' cy='120.8' r='3' fill='#1F77B4'/>
+<circle cx='780' cy='356.7' r='3' fill='#1F77B4'/>
+<path d='M70 60.4 L425 120.8 L780 356.7' fill='none' stroke='#1F77B4' stroke-width='2'/>
+<circle cx='70' cy='400' r='3' fill='#D62728'/>
+<circle cx='425' cy='98.7' r='3' fill='#D62728'/>
+<circle cx='780' cy='40' r='3' fill='#D62728'/>
+<path d='M70 400 L425 98.7 L780 40' fill='none' stroke='#D62728' stroke-width='2'/>
+<line x1='70' y1='337.1' x2='780' y2='337.1' stroke='#2CA02C' stroke-width='1' stroke-dasharray='6,3'/>
+<text x='65' y='404' text-anchor='end' class='tick' fill='#1F77B4'>10<tspan dy='-5' font-size='7'>-3</tspan></text>
+<text x='65' y='314' text-anchor='end' class='tick' fill='#1F77B4'>10<tspan dy='-5' font-size='7'>-2</tspan></text>
+<text x='65' y='224' text-anchor='end' class='tick' fill='#1F77B4'>10<tspan dy='-5' font-size='7'>-1</tspan></text>
+<text x='65' y='134' text-anchor='end' class='tick' fill='#1F77B4'>10<tspan dy='-5' font-size='7'>0</tspan></text>
+<text x='65' y='44' text-anchor='end' class='tick' fill='#1F77B4'>10<tspan dy='-5' font-size='7'>1</tspan></text>
+<text x='785' y='404' text-anchor='start' class='tick' fill='#D62728'>6.0</text>
+<text x='785' y='314' text-anchor='start' class='tick' fill='#D62728'>7.3</text>
+<text x='785' y='224' text-anchor='start' class='tick' fill='#D62728'>8.6</text>
+<text x='785' y='134' text-anchor='start' class='tick' fill='#D62728'>10.0</text>
+<text x='785' y='44' text-anchor='start' class='tick' fill='#D62728'>11.3</text>
+<text x='70' y='418' text-anchor='middle' class='tick'>1</text>
+<text x='425' y='418' text-anchor='middle' class='tick'>2</text>
+<text x='780' y='418' text-anchor='middle' class='tick'>3</text>
+<text x='425' y='445' text-anchor='middle' class='axis-label'>Iteration</text>
+<text x='12' y='220' text-anchor='middle' class='axis-label' fill='#1F77B4' transform='rotate(-90,12,220)'>|ln(CDF)| (log scale)</text>
+<text x='842' y='220' text-anchor='middle' class='axis-label' fill='#D62728' transform='rotate(90,842,220)'>Thickness (in.)</text>
+<rect x='80' y='45' width='12' height='12' fill='#1F77B4'/>
+<text x='96' y='55' class='legend-text'>|ln(CDF)| error</text>
+<rect x='80' y='62' width='12' height='12' fill='#D62728'/>
+<text x='96' y='72' class='legend-text'>Thickness</text>
+</svg></div>
+<h3>Iteration Log</h3>
+<table class='data-table compact'><thead><tr>
+<th>#</th><th>Thickness (in.)</th><th>CDF<sub>sub</sub></th><th>|ln(CDF)|</th><th>&Delta;t (in.)</th><th>Factor</th><th>Sublayered</th>
+</tr></thead><tbody>
+<tr><td>1</td><td>6.00</td><td>380.448200</td><td>5.94135</td><td>0.00</td><td>0.000</td><td>Yes</td></tr>
+<tr><td>2</td><td>10.43</td><td>3.541347</td><td>1.26451</td><td>0.00</td><td>0.000</td><td>Yes</td></tr>
+<tr><td>3</td><td>11.30</td><td>0.996974</td><td>0.00303</td><td>0.00</td><td>0.000</td><td>Yes</td></tr>
+</tbody></table>
+<h3>Convergence Summary</h3>
+<table class='data-table'><thead><tr><th>Parameter</th><th>Value</th></tr></thead><tbody>
+<tr><td>Final Subgrade CDF</td><td>0.996974</td></tr>
+<tr><td>Final |ln(CDF)|</td><td>0.00303</td></tr>
+<tr><td>Design Layer Final Thickness</td><td>11.30 in.</td></tr>
+<tr><td>Converged</td><td>Yes</td></tr>
+<tr><td>Total Iterations</td><td>3</td></tr>
+<tr><td>Critical Offset Position</td><td>200 in.</td></tr>
+</tbody></table>
+</section>
+<footer>
+<p>Generated by FAARFIELD &mdash; Federal Aviation Administration</p>
+<p><a href='#toc'>&uarr; Back to Table of Contents</a></p>
+</footer>
+</body></html>

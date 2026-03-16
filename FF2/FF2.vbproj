@@ -296,6 +296,7 @@
     <Compile Include="Converters\ThicknessVisibilityConverter.vb" />
     <Compile Include="Converters\WeightConverter.vb" />
     <Compile Include="Libs\AircraftLibrary.vb" />
+    <Compile Include="Libs\HtmlReportGenerator.vb" />
     <Compile Include="Libs\HtmlUtils.vb" />
     <Compile Include="Libs\MaterialLibrary.vb" />
     <Compile Include="Libs\ModuleDrawProfile.vb" />

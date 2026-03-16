@@ -1,4 +1,5 @@
-﻿Imports System.Drawing
+﻿Imports System.Diagnostics
+Imports System.Drawing
 Imports System.IO
 Imports System.Reflection
 Imports SelectPdf
@@ -115,9 +116,9 @@ Namespace Libs
         Public Function wrap_img(src As String, Optional cssclass As String = "") As String
             Dim tmptxt As String
             If cssclass = "" Then
-                tmptxt = "<image src='" + src + "'/>"
+                tmptxt = "<img src='" + src + "'/>"
             Else
-                tmptxt = "<image src='" + src + "' class='" + cssclass + "'/>"
+                tmptxt = "<img src='" + src + "' class='" + cssclass + "'/>"
             End If
             Return tmptxt
         End Function
@@ -128,9 +129,9 @@ Namespace Libs
             'Dim base64String = System.Text.Encoding.UTF8.GetString(src)
             Dim bmpStr = encodeTobase64(src)
             If cssclass = "" Then
-                tmptxt = "<image src='data:image/png;base64," + bmpStr + "' Style='width:80%; margin-left:auto; margin-right:auto;'/>"
+                tmptxt = "<img src='data:image/png;base64," + bmpStr + "'/>"
             Else
-                tmptxt = "<image src='data:image/png;base64," + bmpStr + "' class='" + cssclass + "' Style='width:80%; margin-left:auto; margin-right:auto;'/>"
+                tmptxt = "<img src='data:image/png;base64," + bmpStr + "' class='" + cssclass + "'/>"
             End If
             Return tmptxt
         End Function
@@ -162,6 +163,7 @@ Namespace Libs
 
                 html = html & "<html>"
                 html = html & "<head>"
+                html = html & "<meta charset='UTF-8'>"
                 html = html & "<title>"
                 html = html & reportname
                 html = html & "</title>"
@@ -181,6 +183,19 @@ Namespace Libs
 
             Return html
         End Function
+
+
+        ''' <summary>
+        ''' Saves the HTML report to a file and opens it in the default browser.
+        ''' </summary>
+        Public Sub HtmlToFile(html As String, filepath As String)
+            Try
+                System.IO.File.WriteAllText(filepath, html, System.Text.Encoding.UTF8)
+                Process.Start(New ProcessStartInfo(filepath) With {.UseShellExecute = True})
+            Catch ex As Exception
+                MessageBox.Show("HTML file not created: " & ex.Message, "File Not Saved", MessageBoxButton.OK, MessageBoxImage.Warning)
+            End Try
+        End Sub
 
 
         Public Sub HtmltoPdf(html As String, filepath As String)

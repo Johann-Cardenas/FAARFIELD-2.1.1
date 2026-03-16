@@ -8,14 +8,14 @@ Namespace ValidationRules
             Dim result As Integer
 
             If Not Integer.TryParse(value, result) Then
-                MessageBox.Show("Annual departures must be an integer greater than 0 and less than or equal to 100,000.")
+                MessageBox.Show("Annual departures must be an integer greater than 0 and less than or equal to 500,000.")
                 Return New ValidationResult(False, "Annual departures must be number")
             End If
 
-            If value > 100000 Then
-                MessageBox.Show("Annual departures cannot be greater than 100,000.")
+            If value > 500000 Then
+                MessageBox.Show("Annual departures cannot be greater than 500,000.")
 
-                Return New ValidationResult(False, "Annual departures cannot be greater than 100,000")
+                Return New ValidationResult(False, "Annual departures cannot be greater than 500,000")
             End If
             Return ValidationResult.ValidResult
 

@@ -2099,12 +2099,19 @@
 
                                 <WebBrowser Grid.Row="1"
                                             converters:BrowserBehavior.Html="{Binding DetailedReportHtml}" />
-                                <Button Grid.Row="0"
-                                    Content="Save As PDF"
-                                    Width="100"
-                                    Height="40"
-                                    Command="{Binding OnSectionReportCreatePdf}"
-                                    CommandParameter="DetailedRpt" />
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">
+                                    <Button Content="Save As PDF"
+                                        Width="100"
+                                        Height="40"
+                                        Command="{Binding OnSectionReportCreatePdf}"
+                                        CommandParameter="DetailedRpt" />
+                                    <Button Content="Open in Browser"
+                                        Width="120"
+                                        Height="40"
+                                        Margin="4,0,0,0"
+                                        Command="{Binding OnSectionReportOpenHtml}"
+                                        CommandParameter="DetailedRpt" />
+                                </StackPanel>
                             </Grid>
 
                         </telerik:RadPane>
