@@ -19,7 +19,9 @@
       "Bash(\"C:/Program Files \\(x86\\)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/MSBuild.exe\" \"C:/Users/johan/Box/05 Repositories/FAARFIELD-2.1.1/FAARFIELD.sln\" -p:Configuration=Debug -verbosity:minimal 2>&1 | grep -c \"error BC\")",
       "Bash(grep:*)",
       "Bash(/tmp/summary.txt:*)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(where msbuild.exe)",
+      "Read(//c/Program Files \\(x86\\)/**)"
     ]
   }
 }

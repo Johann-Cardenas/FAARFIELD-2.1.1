@@ -187,7 +187,8 @@ Analysis Engine (FaarFieldAnalysis/)
 |------|------|
 | `FaarFieldAnalysis/clsDetailedReportData.vb` | Data collection classes populated during analysis |
 | `FF2/ViewModels/MainWindowViewModel.vb` | Report HTML generation (`refreshDetailedReport`) and all chart functions |
-| `FF2/Libs/HtmlUtils.vb` | HTML helper class (wrap_p, wrap_div, wrap_table, wrap_bmp_img, CreateHtmlPage, HtmltoPdf) |
+| `FF2/Libs/HtmlUtils.vb` | HTML helper class (wrap_p, wrap_div, wrap_table, wrap_bmp_img, CreateHtmlPage, HtmltoPdf, HtmlToFile) |
+| `FF2/Libs/HtmlReportGenerator.vb` | Standalone HTML report generator with inline SVG charts and modern CSS (parallel to GDI+ pipeline) |
 | `FF2/Resources/Reports.css` | Embedded CSS resource for all report styling |
 | `FF2/Converters/BrowserBehavior.vb` | Attached behavior that binds `DetailedReportHtml` string to WebBrowser |
 | `FF2/Views/MainWindow.xaml` | Contains the WebBrowser control |
@@ -288,7 +289,7 @@ Report-specific classes added beyond the base report styles:
 | `.chart-container`, `.chart-container-wide` | Chart wrapper with border |
 | `.diagram-container` | Cross-section/diagram wrapper |
 
-### Image pipeline
+### Image pipeline (PDF report — GDI+ bitmaps)
 
 ```
 Bitmap (GDI+, System.Drawing)
@@ -300,6 +301,18 @@ Bitmap (GDI+, System.Drawing)
   → HtmlUtils.CreateHtmlPage() wraps with <!DOCTYPE>, <head>, Reports.css, <body>
   → DetailedReportHtml property set → BrowserBehavior navigates WebBrowser
   → PDF: HtmlUtils.HtmltoPdf() uses SelectPdf (Letter, Portrait, 1024px web width)
+```
+
+### Image pipeline (HTML report — native SVG)
+
+```
+HtmlReportGenerator.Generate()  (FF2/Libs/HtmlReportGenerator.vb)
+  → builds complete HTML5 document via StringBuilder
+  → charts rendered as inline <svg> elements (viewBox-based, responsive)
+  → equations rendered as HTML entities + sub/sup tags
+  → CSS inlined in <style> block (CSS Grid, variables, print media queries)
+  → self-contained .html file with zero external dependencies
+  → HtmlUtils.HtmlToFile() writes to disk and opens in default browser
 ```
 
 ### Key design decisions

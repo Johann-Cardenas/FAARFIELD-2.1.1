@@ -517,11 +517,25 @@ Raised the maximum allowable annual departures per aircraft from 100,000 to 500,
 
 The original 100,000 limit was an engineering reasonableness bound with no regulatory citation in the code. This change allows analysis of higher-traffic scenarios. All other input limits (design life 1–50 years per AC 150/5320-6D §302.a, growth rate ±10%) remain unchanged.
 
-### 3. "Open in Browser" HTML export for Detailed Computation Report
+### 3. Native HTML Report with SVG Charts ("Open in Browser")
 
-Added an **Open in Browser** button next to the existing "Save As PDF" button on the Detailed Computation Report pane. This saves the report as a standalone `.html` file and opens it in the default browser, bypassing the IE-based WPF WebBrowser control and SelectPdf renderer limitations.
+Added an **Open in Browser** button next to the existing "Save As PDF" button on the Detailed Computation Report pane. This generates a **completely independent HTML report** (not a re-export of the PDF) using a parallel rendering pipeline with native browser technologies:
+
+- **Inline SVG charts** — All visualizations (fatigue curve, convergence plot, C/P distribution, composite CDF, CDF contribution bars, life ratio bars, ACR bubble chart, per-aircraft CDF, pavement cross-section, C/P concept diagram) are rendered as scalable vector graphics directly in the HTML, replacing the GDI+ bitmap pipeline. Charts scale perfectly at any zoom level and look crisp in print.
+- **Bleasdale piecewise visualization** — When the Bleasdale subgrade model is used, the fatigue curve SVG shows three color-coded zones (endurance limit, Bleasdale curve, power-law tail) with transition markers, dual-color curve segments, and an equation info box.
+- **Clean Unicode** — HTML entities (`&epsilon;`, `&sigma;`, `&times;`, subscripts/superscripts) render natively in any modern browser, eliminating the GDI+ text-to-bitmap Unicode corruption.
+- **Modern CSS** — CSS Grid dashboard, CSS variables for theming, responsive layout, professional typography, hover effects, print-optimized styles.
+- **Clickable table of contents** — All 12 sections (A–L) have anchor links for instant navigation.
+- **Collapsible data tables** — Large per-offset tables use HTML `<details>` elements to keep the report compact.
+- **Self-contained** — The output `.html` file has zero external dependencies (all CSS and SVG are inline).
+
+The existing PDF report (GDI+ bitmaps → SelectPdf) remains completely untouched.
+
+**Files added:**
+- `FF2/Libs/HtmlReportGenerator.vb` — New `HtmlReportGenerator` class (~1400 lines) with `Generate()` method, 10 SVG chart functions, CSS stylesheet, and helper utilities.
 
 **Files modified:**
 - `FF2/Libs/HtmlUtils.vb` — Added `HtmlToFile()` method (saves HTML with UTF-8 encoding, launches default browser).
 - `FF2/Views/MainWindow.xaml` — Added "Open in Browser" button bound to `OnSectionReportOpenHtml` command.
-- `FF2/ViewModels/MainWindowViewModel.vb` — Added `OnSectionReportOpenHtml` command property and `SectionReportOpenHtml` handler (SaveFileDialog for `.html`, calls `HtmlToFile`).
+- `FF2/ViewModels/MainWindowViewModel.vb` — Added `OnSectionReportOpenHtml` command property and `SectionReportOpenHtml` handler. The handler calls `HtmlReportGenerator.Generate()` (not `refreshDetailedReport()`).
+- `FF2/FF2.vbproj` — Added `HtmlReportGenerator.vb` to compilation.

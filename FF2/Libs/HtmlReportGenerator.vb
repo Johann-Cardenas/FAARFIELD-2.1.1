@@ -38,6 +38,9 @@ Namespace Libs
             Dim computedAA As Double = 0.000247 + 0.000245 * Math.Log10(subgradeMod)
             Dim computedBB As Double = 0.0658 * subgradeMod ^ 0.559
 
+            ' Figure counter for sequential numbering
+            Dim figNum As Integer = 0
+
             ' Count aircraft
             Dim nAcCount As Integer = 0
             If rpt.AircraftDetails IsNot Nothing Then
@@ -61,7 +64,7 @@ Namespace Libs
 
             ' ===== Header =====
             sb.AppendLine("<header class='report-header'>")
-            sb.AppendLine("<h1>FAA FAARFIELD Detailed Computation Report</h1>")
+            sb.AppendLine("<h1>FAA FAARFIELD Detailed Computation Report <button id='btn-print' class='btn-action'>Print Report</button></h1>")
             sb.AppendLine("<p class='subtitle'>" & WebEncode(appTitle) & "</p>")
             sb.AppendLine("<div class='header-meta'>")
             sb.AppendLine("<div><strong>Job:</strong> " & WebEncode(jobName) & "</div>")
@@ -82,7 +85,8 @@ Namespace Libs
             ' ===== Dashboard =====
             sb.AppendLine("<section class='dashboard'>")
             If rpt.CDFSweep.MaxCDF > 0 Then
-                AppendCard(sb, "Max Total CDF", Format(rpt.CDFSweep.MaxCDF, "0.000000"), "")
+                Dim cdfClass = If(Math.Abs(rpt.CDFSweep.MaxCDF - 1.0) < 0.05, "success", If(Math.Abs(rpt.CDFSweep.MaxCDF - 1.0) > 0.2, "danger", ""))
+                AppendCard(sb, "Max Total CDF", Format(rpt.CDFSweep.MaxCDF, "0.000000"), "", cdfClass)
             End If
             If rpt.Iterations.Count > 0 Then
                 Dim lastThk = rpt.Iterations(rpt.Iterations.Count - 1).Thickness
@@ -95,8 +99,9 @@ Namespace Libs
             AppendCard(sb, "Subgrade Modulus", Format(subgradeMod, "#,##0"), pressureUnit)
             If rpt.Iterations.Count > 0 Then
                 Dim lastIt = rpt.Iterations(rpt.Iterations.Count - 1)
-                Dim convStr = If(lastIt.CDFErr < CDF.CDFExitErr, "Yes", "No")
-                AppendCard(sb, "Converged / Iterations", convStr & " / " & rpt.Iterations.Count.ToString(), "")
+                Dim converged = lastIt.CDFErr < CDF.CDFExitErr
+                Dim convStr = If(converged, "Yes", "No")
+                AppendCard(sb, "Converged / Iterations", convStr & " / " & rpt.Iterations.Count.ToString(), "", If(converged, "success", "danger"))
             End If
             sb.AppendLine("</section>")
 
@@ -191,6 +196,14 @@ Namespace Libs
                 "wanders as a rigid body. FAARFIELD evaluates " & CDF.NOFF.ToString() & " strips on one side of the nominal " &
                 "wheel path centerline (offsets 0 to " & Format((CDF.NOFF - 1) * CDF.OFFSETINC, "0") & " in.).</p>")
             sb.AppendLine("</div>")
+
+            ' C/P concept diagram (2-panel: Gaussian + single vs dual C/P curves)
+            figNum += 1
+            sb.AppendLine("<figure>")
+            AppendCoverageConceptSVG(sb)
+            sb.AppendLine("<figcaption>Figure " & figNum & ": Gaussian lateral wander and single vs. dual wheel C/P comparison</figcaption>")
+            sb.AppendLine("</figure>")
+
             sb.AppendLine("</section>")
 
             ' ===== Section D: Fatigue Characterization =====
@@ -201,7 +214,11 @@ Namespace Libs
                     "with each aircraft's computed strain and N<sub>fail</sub> plotted as scatter points.</p></div>")
 
                 ' SVG Fatigue Curve
+                figNum += 1
+                sb.AppendLine("<figure>")
                 AppendFatigueCurveSVG(sb, rpt, subgradeMod)
+                sb.AppendLine("<figcaption>Figure " & figNum & ": Subgrade fatigue model with aircraft scatter points</figcaption>")
+                sb.AppendLine("</figure>")
 
                 ' Fatigue parameters table
                 sb.AppendLine("<h3>Aircraft Fatigue Parameters</h3>")
@@ -226,7 +243,11 @@ Namespace Libs
                 sb.AppendLine("</tbody></table>")
 
                 ' SVG Life Ratio Chart
+                figNum += 1
+                sb.AppendLine("<figure>")
                 AppendLifeRatioSVG(sb, rpt)
+                sb.AppendLine("<figcaption>Figure " & figNum & ": Fatigue life reserve ratio per aircraft</figcaption>")
+                sb.AppendLine("</figure>")
 
                 sb.AppendLine("</section>")
             End If
@@ -271,10 +292,21 @@ Namespace Libs
                     AppendParamRow(sb, "CDF at Critical Offset", Format(det.CDFAtCriticalOffset, "0.000000"), "Damage at critical strip")
                     sb.AppendLine("</tbody></table>")
 
+                    ' Pavement cross-section SVG
+                    figNum += 1
+                    sb.AppendLine("<figure>")
+                    AppendPavementCrossSectionSVG(sb, rpt, det, thicknessUnit, lengthUnit)
+                    sb.AppendLine("<figcaption>Figure " & figNum & ": Pavement cross-section for " & WebEncode(det.ACName) & "</figcaption>")
+                    sb.AppendLine("</figure>")
+
                     ' Per-aircraft CDF by offset SVG
                     If rpt.CDFSweep.NAircraftCaptured > 0 Then
                         Dim acColor = ChartColors((ia - 1) Mod ChartColors.Length)
+                        figNum += 1
+                        sb.AppendLine("<figure>")
                         AppendSingleAircraftCDFSvg(sb, det, rpt.CDFSweep.MaxCDFOffset, acColor, lengthUnit)
+                        sb.AppendLine("<figcaption>Figure " & figNum & ": CDF by offset for " & WebEncode(det.ACName) & "</figcaption>")
+                        sb.AppendLine("</figure>")
                     End If
 
                     ' CDF by offset table (collapsible)
@@ -330,7 +362,11 @@ Namespace Libs
             If rpt.CDFSweep.NAircraftCaptured > 0 AndAlso rpt.AircraftDetails IsNot Nothing Then
                 sb.AppendLine("<section id='section-f'>")
                 sb.AppendLine("<h2><span class='sec-num'>F</span> Coverage-to-Pass (C/P) Distribution</h2>")
+                figNum += 1
+                sb.AppendLine("<figure>")
                 AppendCoveragePlotSVG(sb, rpt, lengthUnit)
+                sb.AppendLine("<figcaption>Figure " & figNum & ": C/P ratio distribution across pavement width</figcaption>")
+                sb.AppendLine("</figure>")
                 sb.AppendLine("</section>")
             End If
 
@@ -346,7 +382,8 @@ Namespace Libs
                     If rpt.AircraftDetails IsNot Nothing AndAlso ia <= UBound(rpt.AircraftDetails) AndAlso rpt.AircraftDetails(ia) IsNot Nothing Then
                         acName = rpt.AircraftDetails(ia).ACName
                     End If
-                    sb.Append("<th>" & WebEncode(acName) & " C/P</th><th>" & WebEncode(acName) & " CDF</th>")
+                    Dim shortName = If(acName.Length > 20, acName.Substring(0, 18) & "...", acName)
+                    sb.Append("<th title='" & WebEncode(acName) & "'>" & WebEncode(shortName) & " C/P</th><th title='" & WebEncode(acName) & "'>" & WebEncode(shortName) & " CDF</th>")
                 Next
                 sb.AppendLine("<th>Total CDF</th></tr></thead><tbody>")
 
@@ -373,10 +410,18 @@ Namespace Libs
                 sb.AppendLine("<section id='section-h'>")
                 sb.AppendLine("<h2><span class='sec-num'>H</span> CDF Distribution Across Pavement Width</h2>")
 
+                figNum += 1
+                sb.AppendLine("<figure>")
                 AppendCompositeCDFSvg(sb, rpt, lengthUnit)
+                sb.AppendLine("<figcaption>Figure " & figNum & ": Composite CDF distribution across pavement width</figcaption>")
+                sb.AppendLine("</figure>")
 
                 ' CDF contribution bar chart
+                figNum += 1
+                sb.AppendLine("<figure>")
                 AppendCDFContributionSVG(sb, rpt)
+                sb.AppendLine("<figcaption>Figure " & figNum & ": CDF contribution per aircraft at critical offset</figcaption>")
+                sb.AppendLine("</figure>")
 
                 ' CDF contribution summary table
                 sb.AppendLine("<h3>CDF Contribution Summary at Critical Offset</h3>")
@@ -403,7 +448,11 @@ Namespace Libs
                 sb.AppendLine("<h2><span class='sec-num'>I</span> Newton-Raphson Convergence</h2>")
 
                 If rpt.Iterations.Count >= 2 Then
+                    figNum += 1
+                    sb.AppendLine("<figure>")
                     AppendConvergenceSVG(sb, rpt, thicknessUnit)
+                    sb.AppendLine("<figcaption>Figure " & figNum & ": Newton-Raphson convergence history</figcaption>")
+                    sb.AppendLine("</figure>")
                 End If
 
                 ' Iteration log table
@@ -491,7 +540,11 @@ Namespace Libs
                 sb.AppendLine("<section id='section-l'>")
                 sb.AppendLine("<h2><span class='sec-num'>L</span> ACR vs. Damage Per Departure</h2>")
 
+                figNum += 1
+                sb.AppendLine("<figure>")
                 AppendACRDamageSVG(sb, rpt)
+                sb.AppendLine("<figcaption>Figure " & figNum & ": ACR vs. CDF per departure bubble chart</figcaption>")
+                sb.AppendLine("</figure>")
 
                 ' Summary table
                 sb.AppendLine("<h3>ACR and PCR Summary</h3>")
@@ -524,9 +577,18 @@ Namespace Libs
 
             ' ===== Footer =====
             sb.AppendLine("<footer>")
-            sb.AppendLine("<p>Generated by FAARFIELD &mdash; Federal Aviation Administration</p>")
+            sb.AppendLine("<p>Generated by " & WebEncode(appTitle) & " &mdash; Federal Aviation Administration</p>")
+            sb.AppendLine("<p>" & DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") & "</p>")
             sb.AppendLine("<p><a href='#toc'>&uarr; Back to Table of Contents</a></p>")
             sb.AppendLine("</footer>")
+
+            ' Back-to-top button
+            sb.AppendLine("<button id='btn-top' class='btn-top'>&uarr;</button>")
+
+            ' JavaScript
+            sb.AppendLine("<script>")
+            sb.AppendLine(GetScript())
+            sb.AppendLine("</script>")
 
             sb.AppendLine("</body></html>")
             Return sb.ToString()
@@ -534,8 +596,9 @@ Namespace Libs
 
 #Region "Helper Methods"
 
-        Private Shared Sub AppendCard(sb As StringBuilder, label As String, value As String, unit As String)
-            sb.Append("<div class='card'><div class='card-label'>" & label & "</div>")
+        Private Shared Sub AppendCard(sb As StringBuilder, label As String, value As String, unit As String, Optional extraClass As String = "")
+            Dim cls = "card" & If(extraClass <> "", " " & extraClass, "")
+            sb.Append("<div class='" & cls & "'><div class='card-label'>" & label & "</div>")
             sb.Append("<div class='card-value'>" & value)
             If unit <> "" Then sb.Append(" <span class='card-unit'>" & unit & "</span>")
             sb.AppendLine("</div></div>")
@@ -567,54 +630,162 @@ Namespace Libs
 #Region "SVG Chart: Fatigue Curve"
 
         Private Shared Sub AppendFatigueCurveSVG(sb As StringBuilder, rpt As clsDetailedReportData, subgradeMod As Double)
-            Dim svgW As Integer = 850, svgH As Integer = 500
-            Dim ml As Integer = 80, mr As Integer = 30, mt As Integer = 40, mb As Integer = 60
+            Dim svgW As Integer = 900, svgH As Integer = 550
+            Dim ml As Integer = 80, mr As Integer = 40, mt As Integer = 40, mb As Integer = 60
             Dim pw As Integer = svgW - ml - mr, ph As Integer = svgH - mt - mb
 
             ' Data range
             Dim computedAA As Double = 0.000247 + 0.000245 * Math.Log10(subgradeMod)
             Dim computedBB As Double = 0.0658 * subgradeMod ^ 0.559
 
-            ' Strain range in microstrain: 100 to 10000
-            Dim logStrainMin As Double = 2, logStrainMax As Double = 4 ' log10(microstrain)
-            ' N range: 10^0 to 10^10
-            Dim logNMin As Double = 0, logNMax As Double = 10
+            ' Detect Bleasdale model
+            Dim isBleasdale As Boolean = False
+            If rpt.AircraftDetails IsNot Nothing Then
+                For ia As Integer = 1 To UBound(rpt.AircraftDetails)
+                    If rpt.AircraftDetails(ia) IsNot Nothing AndAlso rpt.AircraftDetails(ia).SubgradeModelUsed = "Bleasdale" Then
+                        isBleasdale = True : Exit For
+                    End If
+                Next
+            End If
+
+            ' Bleasdale parameters
+            Dim a11 As Double = -0.163768916705
+            Dim b11 As Double = 185.192806802
+            Dim c11 As Double = 1.65054449461
+            Dim microAsymptote As Double = 884.3  ' strainAsymptote in microstrain
+            Dim microTransition As Double = 1765.1 ' power-law crossover
+
+            ' Axis ranges
+            Dim logStrainMin As Double, logStrainMax As Double
+            Dim logNMin As Double, logNMax As Double
+            If isBleasdale Then
+                logStrainMin = Math.Log10(microAsymptote) - 0.08
+                logStrainMax = Math.Log10(microTransition) + 0.5
+                logNMin = 0 : logNMax = 8
+            Else
+                logStrainMin = 2 : logStrainMax = 4
+                logNMin = 0 : logNMax = 10
+            End If
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Subgrade fatigue model chart'>")
 
             ' Plot background
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
 
+            ' Bleasdale zone backgrounds
+            If isBleasdale Then
+                Dim xAsymptote = ml + ((Math.Log10(microAsymptote) - logStrainMin) / (logStrainMax - logStrainMin)) * pw
+                Dim xTransition = ml + ((Math.Log10(microTransition) - logStrainMin) / (logStrainMax - logStrainMin)) * pw
+                xAsymptote = Math.Max(ml, Math.Min(ml + pw, xAsymptote))
+                xTransition = Math.Max(ml, Math.Min(ml + pw, xTransition))
+
+                ' Zone A: Endurance limit (green)
+                sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & Fmt(xAsymptote - ml) & "' height='" & ph & "' fill='#4CAF50' opacity='0.07'/>")
+                ' Zone B: Bleasdale curve (blue)
+                sb.AppendLine("<rect x='" & Fmt(xAsymptote) & "' y='" & mt & "' width='" & Fmt(xTransition - xAsymptote) & "' height='" & ph & "' fill='#2E5EA8' opacity='0.07'/>")
+                ' Zone C: Power law (amber)
+                sb.AppendLine("<rect x='" & Fmt(xTransition) & "' y='" & mt & "' width='" & Fmt(ml + pw - xTransition) & "' height='" & ph & "' fill='#D68228' opacity='0.07'/>")
+
+                ' Zone labels
+                sb.AppendLine("<text x='" & Fmt((ml + xAsymptote) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:8px;fill:#388E3C;font-style:italic'>Endurance Limit</text>")
+                sb.AppendLine("<text x='" & Fmt((xAsymptote + xTransition) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:8px;fill:#2E5EA8;font-style:italic'>Bleasdale Curve (Cov &ge; 1,000)</text>")
+                sb.AppendLine("<text x='" & Fmt((xTransition + ml + pw) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:8px;fill:#B4641E;font-style:italic'>Power Law (Cov &lt; 1,000)</text>")
+
+                ' Transition vertical lines
+                sb.AppendLine("<line x1='" & Fmt(xAsymptote) & "' y1='" & mt & "' x2='" & Fmt(xAsymptote) & "' y2='" & (mt + ph) & "' stroke='#388E3C' stroke-width='1.5' stroke-dasharray='6,3' opacity='0.6'/>")
+                sb.AppendLine("<text x='" & Fmt(xAsymptote + 3) & "' y='" & (mt + ph - 5) & "' style='font-size:8px;fill:#388E3C'>" & Format(microAsymptote, "0.0") & " &mu;&epsilon;</text>")
+
+                sb.AppendLine("<line x1='" & Fmt(xTransition) & "' y1='" & mt & "' x2='" & Fmt(xTransition) & "' y2='" & (mt + ph) & "' stroke='#B4641E' stroke-width='1.5' stroke-dasharray='6,3' opacity='0.6'/>")
+                sb.AppendLine("<text x='" & Fmt(xTransition + 3) & "' y='" & (mt + ph - 5) & "' style='font-size:8px;fill:#B4641E'>" & Format(microTransition, "0.0") & " &mu;&epsilon;</text>")
+
+                ' N=1000 horizontal line
+                Dim logN1000 As Double = 3
+                Dim y1000 = mt + ph - ((logN1000 - logNMin) / (logNMax - logNMin)) * ph
+                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y1000) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y1000) & "' stroke='#B4641E' stroke-width='1' stroke-dasharray='4,4' opacity='0.5'/>")
+                sb.AppendLine("<text x='" & (ml + pw - 5) & "' y='" & Fmt(y1000 - 4) & "' text-anchor='end' style='font-size:8px;fill:#B4641E'>N = 1,000</text>")
+            End If
+
             ' Grid lines
-            For i As Integer = 0 To 10
-                Dim y = mt + ph - (i / 10.0) * ph
-                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#e8e8e8' stroke-width='0.5'/>")
-                sb.AppendLine("<text x='" & (ml - 5) & "' y='" & Fmt(y + 4) & "' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>" & i.ToString() & "</tspan></text>")
+            Dim nYDecades = CInt(logNMax - logNMin)
+            For i As Integer = 0 To nYDecades
+                Dim logVal = logNMin + i
+                Dim y = mt + ph - ((logVal - logNMin) / (logNMax - logNMin)) * ph
+                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#e0e0e0' stroke-width='0.5'/>")
+                sb.AppendLine("<text x='" & (ml - 5) & "' y='" & Fmt(y + 4) & "' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>" & CInt(logVal).ToString() & "</tspan></text>")
             Next
-            For i As Integer = 2 To 4
+            ' X ticks
+            Dim logXStart = Math.Ceiling(logStrainMin)
+            Dim logXEnd = Math.Floor(logStrainMax)
+            For i As Integer = CInt(logXStart) To CInt(logXEnd)
                 Dim x = ml + ((i - logStrainMin) / (logStrainMax - logStrainMin)) * pw
-                sb.AppendLine("<line x1='" & Fmt(x) & "' y1='" & mt & "' x2='" & Fmt(x) & "' y2='" & (mt + ph) & "' stroke='#e8e8e8' stroke-width='0.5'/>")
+                sb.AppendLine("<line x1='" & Fmt(x) & "' y1='" & mt & "' x2='" & Fmt(x) & "' y2='" & (mt + ph) & "' stroke='#e0e0e0' stroke-width='0.5'/>")
                 Dim lbl = CInt(10 ^ i)
                 sb.AppendLine("<text x='" & Fmt(x) & "' y='" & (mt + ph + 18) & "' text-anchor='middle' class='tick'>" & Format(lbl, "#,##0") & "</text>")
             Next
 
             ' Fatigue model curve
-            Dim pathD As New StringBuilder("M")
-            Dim nPts As Integer = 200
-            For i As Integer = 0 To nPts
-                Dim logS = logStrainMin + (logStrainMax - logStrainMin) * i / nPts
-                Dim strainAbs As Double = (10 ^ logS) / 1000000.0
-                Dim nFail As Double = 10000 * (computedAA / strainAbs) ^ computedBB
-                Dim logN As Double = Math.Log10(Math.Max(nFail, 1))
-                Dim x = ml + ((logS - logStrainMin) / (logStrainMax - logStrainMin)) * pw
-                Dim y = mt + ph - ((logN - logNMin) / (logNMax - logNMin)) * ph
-                y = Math.Max(mt, Math.Min(mt + ph, y))
-                If i = 0 Then pathD.Append(Fmt(x) & " " & Fmt(y)) Else pathD.Append(" L" & Fmt(x) & " " & Fmt(y))
-            Next
-            sb.AppendLine("<path d='" & pathD.ToString() & "' fill='none' stroke='#1F77B4' stroke-width='2.5'/>")
+            Dim nPts As Integer = 400
+            If isBleasdale Then
+                ' Bleasdale: two-segment curve
+                Dim bleaPath As New StringBuilder("M")
+                Dim powPath As New StringBuilder()
+                Dim bleaStarted As Boolean = False, powStarted As Boolean = False
+                For i As Integer = 0 To nPts
+                    Dim logS = logStrainMin + (logStrainMax - logStrainMin) * i / nPts
+                    Dim microS = 10 ^ logS
+                    Dim strainAbs As Double = microS / 1000000.0
+                    Dim nFail As Double
+                    Dim inner As Double = a11 + b11 * strainAbs
+                    If inner <= 0.0001 Then
+                        nFail = 1.0E+15
+                    ElseIf strainAbs <= 0.001765093 Then
+                        Dim expn As Double = inner ^ (-1.0 / c11)
+                        If expn > 15 Then nFail = 1.0E+15 Else nFail = 10.0 ^ expn
+                    Else
+                        nFail = (0.00414131183 / strainAbs) ^ 8.1
+                    End If
+                    Dim logN As Double = Math.Log10(Math.Max(nFail, 1))
+                    logN = Math.Max(logNMin, Math.Min(logNMax, logN))
+                    Dim x = ml + ((logS - logStrainMin) / (logStrainMax - logStrainMin)) * pw
+                    Dim y = mt + ph - ((logN - logNMin) / (logNMax - logNMin)) * ph
 
-            ' Aircraft scatter points
+                    If strainAbs <= 0.001765093 Then
+                        If Not bleaStarted Then bleaPath.Append(Fmt(x) & " " & Fmt(y)) : bleaStarted = True _
+                        Else bleaPath.Append(" L" & Fmt(x) & " " & Fmt(y))
+                    Else
+                        If Not powStarted Then
+                            ' Add transition point to both
+                            bleaPath.Append(" L" & Fmt(x) & " " & Fmt(y))
+                            powPath.Append("M" & Fmt(x) & " " & Fmt(y))
+                            powStarted = True
+                        Else
+                            powPath.Append(" L" & Fmt(x) & " " & Fmt(y))
+                        End If
+                    End If
+                Next
+                sb.AppendLine("<path d='" & bleaPath.ToString() & "' fill='none' stroke='#1F77B4' stroke-width='2.5'/>")
+                If powPath.Length > 0 Then
+                    sb.AppendLine("<path d='" & powPath.ToString() & "' fill='none' stroke='#B4641E' stroke-width='2.5' stroke-dasharray='8,4'/>")
+                End If
+            Else
+                ' Standard model: single curve
+                Dim pathD As New StringBuilder("M")
+                For i As Integer = 0 To nPts
+                    Dim logS = logStrainMin + (logStrainMax - logStrainMin) * i / nPts
+                    Dim strainAbs As Double = (10 ^ logS) / 1000000.0
+                    Dim nFail As Double = 10000 * (computedAA / strainAbs) ^ computedBB
+                    Dim logN As Double = Math.Log10(Math.Max(nFail, 1))
+                    Dim x = ml + ((logS - logStrainMin) / (logStrainMax - logStrainMin)) * pw
+                    Dim y = mt + ph - ((logN - logNMin) / (logNMax - logNMin)) * ph
+                    y = Math.Max(mt, Math.Min(mt + ph, y))
+                    If i = 0 Then pathD.Append(Fmt(x) & " " & Fmt(y)) Else pathD.Append(" L" & Fmt(x) & " " & Fmt(y))
+                Next
+                sb.AppendLine("<path d='" & pathD.ToString() & "' fill='none' stroke='#1F77B4' stroke-width='2.5'/>")
+            End If
+
+            ' Aircraft scatter points with label collision avoidance
+            Dim placedLabels As New List(Of Tuple(Of Double, Double))
             If rpt.AircraftDetails IsNot Nothing Then
                 For ia As Integer = 1 To UBound(rpt.AircraftDetails)
                     If rpt.AircraftDetails(ia) Is Nothing Then Continue For
@@ -625,9 +796,21 @@ Namespace Libs
                     Dim logN = Math.Log10(Math.Max(det.NtoFail, 1))
                     Dim x = ml + ((logS - logStrainMin) / (logStrainMax - logStrainMin)) * pw
                     Dim y = mt + ph - ((logN - logNMin) / (logNMax - logNMin)) * ph
+                    x = Math.Max(ml, Math.Min(ml + pw, x))
+                    y = Math.Max(mt, Math.Min(mt + ph, y))
                     Dim clr = ChartColors((ia - 1) Mod ChartColors.Length)
-                    sb.AppendLine("<circle cx='" & Fmt(x) & "' cy='" & Fmt(y) & "' r='5' fill='" & clr & "' stroke='white' stroke-width='1.5'/>")
-                    sb.AppendLine("<text x='" & Fmt(x + 8) & "' y='" & Fmt(y + 4) & "' class='label'>" & WebEncode(det.ACName) & "</text>")
+                    sb.AppendLine("<circle cx='" & Fmt(x) & "' cy='" & Fmt(y) & "' r='5' fill='" & clr & "' stroke='white' stroke-width='1.5'>")
+                    sb.AppendLine("<title>" & WebEncode(det.ACName) & ": strain=" & Format(micro, "0.0") & " microstrain, Nfail=" & Format(det.NtoFail, "0.00E+00") & "</title>")
+                    sb.AppendLine("</circle>")
+                    ' Label collision avoidance
+                    Dim labelY = y + 4
+                    For Each placed In placedLabels
+                        If Math.Abs(x - placed.Item1) < 60 AndAlso Math.Abs(labelY - placed.Item2) < 12 Then
+                            labelY = placed.Item2 + 14
+                        End If
+                    Next
+                    placedLabels.Add(Tuple.Create(x, labelY))
+                    sb.AppendLine("<text x='" & Fmt(x + 8) & "' y='" & Fmt(labelY) & "' class='label'>" & WebEncode(det.ACName) & "</text>")
 
                     ' Repetitions horizontal dashed line
                     If det.TotalRepetitions > 0 Then
@@ -645,7 +828,18 @@ Namespace Libs
             sb.AppendLine("<text x='15' y='" & Fmt(mt + ph / 2) & "' text-anchor='middle' class='axis-label' transform='rotate(-90,15," & Fmt(mt + ph / 2) & ")'>Allowable Repetitions (N<tspan dy='-4' font-size='8'>fail</tspan><tspan dy='4'>)</tspan></text>")
 
             ' Title
-            sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>Subgrade Fatigue Model</text>")
+            Dim titleText = If(isBleasdale, "Subgrade Fatigue Model (Bleasdale Piecewise)", "Subgrade Fatigue Model")
+            sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>" & titleText & "</text>")
+
+            ' Bleasdale equation box
+            If isBleasdale Then
+                sb.AppendLine("<rect x='" & (ml + pw - 260) & "' y='" & (mt + ph - 80) & "' width='255' height='75' fill='white' stroke='#ccc' rx='4' opacity='0.9'/>")
+                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 64) & "' style='font-size:8px;fill:#333;font-weight:600'>Bleasdale (Cov &ge; 1,000):</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 52) & "' style='font-size:7.5px;fill:#555;font-family:Cambria Math,serif'>N = 10^((a + b&middot;&epsilon;)^(-1/c))</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 38) & "' style='font-size:8px;fill:#333;font-weight:600'>Power Law (Cov &lt; 1,000):</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 26) & "' style='font-size:7.5px;fill:#555;font-family:Cambria Math,serif'>N = (0.00414 / &epsilon;)^8.1</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 12) & "' style='font-size:7px;fill:#888'>Asymptote: " & Format(microAsymptote, "0.0") & " &mu;&epsilon;  |  Transition: " & Format(microTransition, "0.0") & " &mu;&epsilon;</text>")
+            End If
 
             sb.AppendLine("</svg></div>")
         End Sub
@@ -671,7 +865,7 @@ Namespace Libs
             Dim pw = svgW - ml - mr
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Fatigue life reserve diverging bar chart'>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>Fatigue Life Reserve (N<tspan dy='-4' font-size='8'>fail</tspan><tspan dy='4'> / Repetitions)</tspan></text>")
 
             Dim maxLogRatio As Double = 0
@@ -726,18 +920,31 @@ Namespace Libs
             Dim yMax = maxCDF * 1.2
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='CDF vs offset chart for " & WebEncode(det.ACName) & "'>")
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>" & WebEncode(det.ACName) & " &mdash; CDF vs Offset</text>")
 
-            ' Data path
+            ' Data path with filled area
             Dim pathD As New StringBuilder("M")
+            Dim fillPath As New StringBuilder("M")
+            Dim firstX As Double = ml
+            Dim lastX As Double = ml
             For ioff As Integer = 1 To CDF.NOFF
                 Dim offsetVal = (ioff - 1) * CDF.OFFSETINC
                 Dim x = ml + (offsetVal / ((CDF.NOFF - 1) * CDF.OFFSETINC)) * pw
                 Dim y = mt + ph - (det.CDFByOffset(ioff) / yMax) * ph
-                If ioff = 1 Then pathD.Append(Fmt(x) & " " & Fmt(y)) Else pathD.Append(" L" & Fmt(x) & " " & Fmt(y))
+                If ioff = 1 Then
+                    pathD.Append(Fmt(x) & " " & Fmt(y))
+                    fillPath.Append(Fmt(x) & " " & Fmt(mt + ph) & " L" & Fmt(x) & " " & Fmt(y))
+                    firstX = x
+                Else
+                    pathD.Append(" L" & Fmt(x) & " " & Fmt(y))
+                    fillPath.Append(" L" & Fmt(x) & " " & Fmt(y))
+                End If
+                lastX = x
             Next
+            fillPath.Append(" L" & Fmt(lastX) & " " & Fmt(mt + ph) & " Z")
+            sb.AppendLine("<path d='" & fillPath.ToString() & "' fill='" & acColor & "' opacity='0.08'/>")
             sb.AppendLine("<path d='" & pathD.ToString() & "' fill='none' stroke='" & acColor & "' stroke-width='2'/>")
 
             ' Critical offset marker
@@ -787,7 +994,7 @@ Namespace Libs
             Dim yMax = maxCP * 1.15
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Coverage-to-pass distribution chart'>")
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
             sb.AppendLine("<text x='" & Fmt(ml + pw / 2) & "' y='20' text-anchor='middle' class='chart-title'>Coverage-to-Pass (C/P) Distribution</text>")
 
@@ -859,7 +1066,7 @@ Namespace Libs
             Dim yMax = maxCDF * 1.2
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Composite CDF distribution across pavement width'>")
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
             sb.AppendLine("<text x='" & Fmt(ml + pw / 2) & "' y='20' text-anchor='middle' class='chart-title'>Composite CDF Across Pavement Width</text>")
 
@@ -876,14 +1083,27 @@ Namespace Libs
                 sb.AppendLine("<path d='" & pathD.ToString() & "' fill='none' stroke='" & clr & "' stroke-width='1.5' opacity='0.7'/>")
             Next
 
-            ' Total CDF (thick black)
+            ' Total CDF (thick black) with filled area
             Dim totalPath As New StringBuilder("M")
+            Dim totalFill As New StringBuilder("M")
+            Dim totalFirstX As Double = ml
+            Dim totalLastX As Double = ml
             For ioff As Integer = 1 To CDF.NOFF
                 Dim offsetVal = (ioff - 1) * CDF.OFFSETINC
                 Dim x = ml + (offsetVal / ((CDF.NOFF - 1) * CDF.OFFSETINC)) * pw
                 Dim y = mt + ph - (rpt.CDFSweep.CDFTotalPerOffset(ioff) / yMax) * ph
-                If ioff = 1 Then totalPath.Append(Fmt(x) & " " & Fmt(y)) Else totalPath.Append(" L" & Fmt(x) & " " & Fmt(y))
+                If ioff = 1 Then
+                    totalPath.Append(Fmt(x) & " " & Fmt(y))
+                    totalFill.Append(Fmt(x) & " " & Fmt(mt + ph) & " L" & Fmt(x) & " " & Fmt(y))
+                    totalFirstX = x
+                Else
+                    totalPath.Append(" L" & Fmt(x) & " " & Fmt(y))
+                    totalFill.Append(" L" & Fmt(x) & " " & Fmt(y))
+                End If
+                totalLastX = x
             Next
+            totalFill.Append(" L" & Fmt(totalLastX) & " " & Fmt(mt + ph) & " Z")
+            sb.AppendLine("<path d='" & totalFill.ToString() & "' fill='#222' opacity='0.06'/>")
             sb.AppendLine("<path d='" & totalPath.ToString() & "' fill='none' stroke='#222' stroke-width='2.5'/>")
 
             ' Critical offset
@@ -945,7 +1165,7 @@ Namespace Libs
             Dim pw = svgW - ml - mr
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='CDF contribution percentage bar chart'>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>CDF Contribution at Critical Offset (%)</text>")
 
             Dim yStart = 40
@@ -996,7 +1216,7 @@ Namespace Libs
             If maxThk = minThk Then maxThk = minThk + 1
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Newton-Raphson convergence chart'>")
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>Newton-Raphson Convergence</text>")
 
@@ -1028,6 +1248,7 @@ Namespace Libs
             If logThresh >= minErr AndAlso logThresh <= maxErr Then
                 Dim yThresh = mt + ph - ((logThresh - minErr) / (maxErr - minErr)) * ph
                 sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(yThresh) & "' x2='" & (ml + pw) & "' y2='" & Fmt(yThresh) & "' stroke='#2CA02C' stroke-width='1' stroke-dasharray='6,3'/>")
+                sb.AppendLine("<text x='" & (ml + pw - 5) & "' y='" & Fmt(yThresh - 4) & "' text-anchor='end' style='font-size:8px;fill:#2CA02C'>Threshold = " & Format(CDF.CDFExitErr, "0.000") & "</text>")
             End If
 
             ' Left Y axis ticks
@@ -1095,7 +1316,7 @@ Namespace Libs
             Dim maxDep = pts.Max(Function(p) p.Item3)
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='ACR vs CDF per departure bubble chart'>")
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>ACR vs. CDF per Departure</text>")
 
@@ -1104,7 +1325,9 @@ Namespace Libs
                 Dim logV = Math.Log10(pt.Item2)
                 Dim y = mt + ph - ((logV - minLogCPD) / (maxLogCPD - minLogCPD)) * ph
                 Dim r = 8 + 20 * (pt.Item3 / maxDep)
-                sb.AppendLine("<circle cx='" & Fmt(x) & "' cy='" & Fmt(y) & "' r='" & Fmt(r) & "' fill='" & pt.Item5 & "' opacity='0.6' stroke='" & pt.Item5 & "' stroke-width='1.5'/>")
+                sb.AppendLine("<circle cx='" & Fmt(x) & "' cy='" & Fmt(y) & "' r='" & Fmt(r) & "' fill='" & pt.Item5 & "' opacity='0.6' stroke='" & pt.Item5 & "' stroke-width='1.5'>")
+                sb.AppendLine("<title>" & WebEncode(pt.Item4) & ": ACR=" & Format(pt.Item1, "0.0") & ", CDF/dep=" & Format(pt.Item2, "0.00E+00") & ", Dep=" & Format(pt.Item3, "#,##0") & "</title>")
+                sb.AppendLine("</circle>")
                 sb.AppendLine("<text x='" & Fmt(x) & "' y='" & Fmt(y - r - 4) & "' text-anchor='middle' class='label'>" & WebEncode(pt.Item4) & "</text>")
             Next
 
@@ -1119,7 +1342,288 @@ Namespace Libs
                 sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#eee' stroke-width='0.5'/>")
             Next
 
+            ' X ticks for ACR
+            Dim nXT As Integer = 5
+            For i As Integer = 0 To nXT
+                Dim val = minACR + (maxACR - minACR) * i / nXT
+                Dim x = ml + (i / CDbl(nXT)) * pw
+                sb.AppendLine("<text x='" & Fmt(x) & "' y='" & (mt + ph + 18) & "' text-anchor='middle' class='tick'>" & Format(val, "0.0") & "</text>")
+                sb.AppendLine("<line x1='" & Fmt(x) & "' y1='" & mt & "' x2='" & Fmt(x) & "' y2='" & (mt + ph) & "' stroke='#eee' stroke-width='0.5'/>")
+            Next
+
+            ' Bubble size legend
+            sb.AppendLine("<rect x='" & (ml + pw - 155) & "' y='" & (mt + 5) & "' width='150' height='40' fill='white' stroke='#ccc' rx='4' opacity='0.9'/>")
+            sb.AppendLine("<circle cx='" & (ml + pw - 140) & "' cy='" & (mt + 20) & "' r='6' fill='#999' opacity='0.5'/>")
+            sb.AppendLine("<circle cx='" & (ml + pw - 120) & "' cy='" & (mt + 20) & "' r='12' fill='#999' opacity='0.5'/>")
+            sb.AppendLine("<text x='" & (ml + pw - 105) & "' y='" & (mt + 24) & "' class='tick'>Bubble size = Ann. Departures</text>")
+
             sb.AppendLine("</svg></div>")
+        End Sub
+
+#End Region
+
+#Region "SVG Diagram: Pavement Cross-Section"
+
+        Private Shared Sub AppendPavementCrossSectionSVG(sb As StringBuilder, rpt As clsDetailedReportData, det As clsAircraftDetail, thkUnit As String, lenUnit As String)
+            Dim svgW As Integer = 850, svgH As Integer = 450
+            Dim layers = rpt.SublayerData.DesignLayers
+            If layers.Count < 2 Then Return
+
+            ' Calculate total depth (excluding semi-infinite subgrade)
+            Dim totalDepth As Double = 0
+            For i As Integer = 0 To layers.Count - 2
+                totalDepth += layers(i).Thickness
+            Next
+            If totalDepth <= 0 Then Return
+            Dim displayDepth = totalDepth * 1.35
+
+            ' Layout
+            Dim leftX As Integer = 50, leftW As Integer = 300
+            Dim rightX As Integer = 430, rightW As Integer = 360
+            Dim topY As Integer = 50, availH As Integer = svgH - 100
+            Dim pxPerIn As Double = availH / displayDepth
+
+            ' Layer colors
+            Dim layerColors() As String = {"#505050", "#C2B280", "#D2B48C", "#8B7765", "#789A5A"}
+
+            sb.AppendLine("<div class='chart-wrap'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Pavement cross-section diagram for " & WebEncode(det.ACName) & "'>")
+            sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='25' text-anchor='middle' class='chart-title'>Pavement Cross-Section &mdash; " & WebEncode(det.ACName) & "</text>")
+
+            ' === Left panel: Layer stack ===
+            Dim yOff As Double = topY
+            For i As Integer = 0 To layers.Count - 1
+                Dim lyr = layers(i)
+                Dim h As Double
+                If i < layers.Count - 1 Then
+                    h = lyr.Thickness * pxPerIn
+                Else
+                    h = availH - (yOff - topY) ' subgrade fills rest
+                End If
+                Dim clrIdx = Math.Min(i, layerColors.Length - 1)
+                sb.AppendLine("<rect x='" & leftX & "' y='" & Fmt(yOff) & "' width='" & leftW & "' height='" & Fmt(h) & "' fill='" & layerColors(clrIdx) & "' opacity='0.7' stroke='#444' stroke-width='0.5'/>")
+
+                ' Label inside layer
+                Dim label As String
+                If i < layers.Count - 1 Then
+                    label = "Layer " & (i + 1).ToString() & ": " & Format(lyr.Thickness, "0.0") & " " & thkUnit & ", E=" & Format(lyr.Modulus, "#,##0")
+                Else
+                    label = "Subgrade: E=" & Format(lyr.Modulus, "#,##0") & " " & "psi"
+                End If
+                If h > 16 Then
+                    sb.AppendLine("<text x='" & Fmt(leftX + leftW / 2) & "' y='" & Fmt(yOff + h / 2 + 4) & "' text-anchor='middle' fill='white' style='font-size:9px;font-weight:600'>" & label & "</text>")
+                End If
+
+                ' Dimension annotation (right of layer stack)
+                If i < layers.Count - 1 Then
+                    sb.AppendLine("<text x='" & (leftX + leftW + 8) & "' y='" & Fmt(yOff + h / 2 + 4) & "' class='tick'>" & Format(lyr.Thickness, "0.00") & """</text>")
+                End If
+                yOff += h
+            Next
+
+            ' === Right panel: Stress projection ===
+            Dim subgradeY = topY + totalDepth * pxPerIn
+            ' Background
+            sb.AppendLine("<rect x='" & rightX & "' y='" & topY & "' width='" & rightW & "' height='" & Fmt(subgradeY - topY) & "' fill='#96969620' rx='2'/>")
+
+            ' Surface and subgrade lines
+            sb.AppendLine("<line x1='" & rightX & "' y1='" & topY & "' x2='" & (rightX + rightW) & "' y2='" & topY & "' stroke='#333' stroke-width='2'/>")
+            sb.AppendLine("<text x='" & (rightX + 5) & "' y='" & (topY - 5) & "' class='tick'>Surface</text>")
+            sb.AppendLine("<line x1='" & rightX & "' y1='" & Fmt(subgradeY) & "' x2='" & (rightX + rightW) & "' y2='" & Fmt(subgradeY) & "' stroke='#789A5A' stroke-width='2'/>")
+            sb.AppendLine("<text x='" & (rightX + 5) & "' y='" & Fmt(subgradeY + 14) & "' class='tick' fill='#789A5A'>Subgrade (Eval Depth = " & Format(rpt.SublayerData.EvalDepthSubgrade, "0.0") & " " & thkUnit & ")</text>")
+
+            ' Tire at surface
+            Dim midX = rightX + rightW / 2
+            Dim tireWidthPx = Math.Max(20, Math.Min(rightW * 0.3, det.TireWidth * pxPerIn * 0.5))
+            sb.AppendLine("<rect x='" & Fmt(midX - tireWidthPx / 2) & "' y='" & Fmt(topY - 12) & "' width='" & Fmt(tireWidthPx) & "' height='12' fill='#333' rx='2'/>")
+            sb.AppendLine("<text x='" & Fmt(midX) & "' y='" & Fmt(topY - 16) & "' text-anchor='middle' class='tick' fill='#FF7F0E'>TW=" & Format(det.TireWidth, "0.0") & """</text>")
+
+            ' 45-degree stress spread lines
+            Dim projWidthPx = det.ProjectedTireWidthAtSubgrade * pxPerIn * 0.5
+            projWidthPx = Math.Max(tireWidthPx + 20, Math.Min(rightW * 0.85, projWidthPx))
+            sb.AppendLine("<line x1='" & Fmt(midX - tireWidthPx / 2) & "' y1='" & topY & "' x2='" & Fmt(midX - projWidthPx / 2) & "' y2='" & Fmt(subgradeY) & "' stroke='#D62728' stroke-width='1.5' stroke-dasharray='6,3' opacity='0.7'/>")
+            sb.AppendLine("<line x1='" & Fmt(midX + tireWidthPx / 2) & "' y1='" & topY & "' x2='" & Fmt(midX + projWidthPx / 2) & "' y2='" & Fmt(subgradeY) & "' stroke='#D62728' stroke-width='1.5' stroke-dasharray='6,3' opacity='0.7'/>")
+
+            ' Projected width bar at subgrade
+            sb.AppendLine("<line x1='" & Fmt(midX - projWidthPx / 2) & "' y1='" & Fmt(subgradeY) & "' x2='" & Fmt(midX + projWidthPx / 2) & "' y2='" & Fmt(subgradeY) & "' stroke='#D62728' stroke-width='2'/>")
+            sb.AppendLine("<text x='" & Fmt(midX) & "' y='" & Fmt(subgradeY + 28) & "' text-anchor='middle' class='tick' fill='#D62728'>Proj. Width = " & Format(det.ProjectedTireWidthAtSubgrade, "0.0") & " " & lenUnit & "</text>")
+
+            ' Gaussian wander bell curve (above surface)
+            Dim sigma As Double = 30.435
+            Dim gaussH As Double = 35
+            Dim gaussPath As New StringBuilder("M")
+            Dim nG As Integer = 100
+            For i As Integer = 0 To nG
+                Dim xPx = rightX + i * rightW / nG
+                Dim xInches = (xPx - midX) / (pxPerIn * 0.5)
+                Dim gVal = Math.Exp(-0.5 * (xInches / sigma) ^ 2)
+                Dim yPx = topY - 15 - gVal * gaussH
+                If i = 0 Then gaussPath.Append(Fmt(xPx) & " " & Fmt(yPx)) Else gaussPath.Append(" L" & Fmt(xPx) & " " & Fmt(yPx))
+            Next
+            sb.AppendLine("<path d='" & gaussPath.ToString() & "' fill='none' stroke='#1F77B4' stroke-width='1.5' opacity='0.6'/>")
+            sb.AppendLine("<text x='" & Fmt(midX + 30) & "' y='" & Fmt(topY - 15 - gaussH + 5) & "' class='tick' fill='#1F77B4'>&sigma;=30.4""</text>")
+
+            ' Depth annotation
+            sb.AppendLine("<text x='" & (rightX + rightW + 5) & "' y='" & Fmt(topY + (subgradeY - topY) / 2 + 4) & "' class='tick'>D=" & Format(totalDepth, "0.0") & """</text>")
+
+            sb.AppendLine("</svg></div>")
+        End Sub
+
+#End Region
+
+#Region "SVG Diagram: Coverage Concept"
+
+        Private Shared Function NormalCDFApprox(x As Double) As Double
+            ' Polynomial approximation of the standard normal CDF
+            If x < -8 Then Return 0
+            If x > 8 Then Return 1
+            Dim t As Double = 1.0 / (1.0 + 0.2316419 * Math.Abs(x))
+            Dim d As Double = 0.3989422804014327
+            Dim p As Double = d * Math.Exp(-x * x / 2.0) * t * ((((1.330274429 * t - 1.821255978) * t + 1.781477937) * t - 0.356563782) * t + 0.31938153)
+            If x >= 0 Then Return 1 - p Else Return p
+        End Function
+
+        Private Shared Function GaussArea(a As Double, b As Double, sigma As Double) As Double
+            Return NormalCDFApprox(b / sigma) - NormalCDFApprox(a / sigma)
+        End Function
+
+        Private Shared Sub AppendCoverageConceptSVG(sb As StringBuilder)
+            Dim svgW As Integer = 850, svgH As Integer = 520
+            Dim sigma As Double = 30.435
+            Dim exTW As Double = 16 ' example tire width
+            Dim dualSpacing As Double = 40 ' example dual spacing
+
+            sb.AppendLine("<div class='chart-wrap'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Coverage-to-pass concept diagram showing Gaussian wander and single vs dual wheel comparison'>")
+
+            ' === Panel A: Gaussian wander + single tire ===
+            Dim panelAY As Integer = 20
+            sb.AppendLine("<text x='425' y='" & panelAY & "' text-anchor='middle' class='chart-title'>Panel A: Gaussian Lateral Wander</text>")
+
+            Dim axisY = panelAY + 130
+            Dim midX As Double = 425
+            Dim pxPerIn As Double = 2.5
+
+            ' Gaussian bell curve
+            Dim gPath As New StringBuilder("M")
+            Dim gFill As New StringBuilder("M")
+            Dim gaussAmp As Double = 90
+            For i As Integer = 0 To 200
+                Dim xPx = midX - 250 + i * 2.5
+                Dim xIn = (xPx - midX) / pxPerIn
+                Dim gVal = Math.Exp(-0.5 * (xIn / sigma) ^ 2)
+                Dim yPx = axisY - gVal * gaussAmp
+                If i = 0 Then
+                    gPath.Append(Fmt(xPx) & " " & Fmt(yPx))
+                    gFill.Append(Fmt(xPx) & " " & axisY & " L" & Fmt(xPx) & " " & Fmt(yPx))
+                Else
+                    gPath.Append(" L" & Fmt(xPx) & " " & Fmt(yPx))
+                    gFill.Append(" L" & Fmt(xPx) & " " & Fmt(yPx))
+                End If
+            Next
+            gFill.Append(" L" & Fmt(midX + 250) & " " & axisY & " Z")
+            sb.AppendLine("<path d='" & gFill.ToString() & "' fill='#1F77B4' opacity='0.08'/>")
+            sb.AppendLine("<path d='" & gPath.ToString() & "' fill='none' stroke='#1F77B4' stroke-width='2'/>")
+
+            ' Axis line
+            sb.AppendLine("<line x1='" & Fmt(midX - 260) & "' y1='" & axisY & "' x2='" & Fmt(midX + 260) & "' y2='" & axisY & "' stroke='#666' stroke-width='1'/>")
+
+            ' Sigma annotations
+            For s As Integer = 1 To 3
+                Dim xOff = s * sigma * pxPerIn
+                sb.AppendLine("<line x1='" & Fmt(midX + xOff) & "' y1='" & axisY & "' x2='" & Fmt(midX + xOff) & "' y2='" & (axisY + 6) & "' stroke='#666'/>")
+                sb.AppendLine("<line x1='" & Fmt(midX - xOff) & "' y1='" & axisY & "' x2='" & Fmt(midX - xOff) & "' y2='" & (axisY + 6) & "' stroke='#666'/>")
+                sb.AppendLine("<text x='" & Fmt(midX + xOff) & "' y='" & (axisY + 16) & "' text-anchor='middle' class='tick'>" & s & "&sigma;</text>")
+                sb.AppendLine("<text x='" & Fmt(midX - xOff) & "' y='" & (axisY + 16) & "' text-anchor='middle' class='tick'>-" & s & "&sigma;</text>")
+            Next
+
+            ' Tire rectangle at center
+            Dim tirePx = exTW * pxPerIn
+            sb.AppendLine("<rect x='" & Fmt(midX - tirePx / 2) & "' y='" & Fmt(axisY - 8) & "' width='" & Fmt(tirePx) & "' height='16' fill='#333' opacity='0.3' rx='2'/>")
+            sb.AppendLine("<text x='" & Fmt(midX) & "' y='" & Fmt(axisY + 30) & "' text-anchor='middle' class='tick' fill='#FF7F0E'>Tire (TW=" & exTW & """)</text>")
+
+            ' Evaluation strip shading at offset 30"
+            Dim evalOff As Double = 30
+            Dim evalXL = midX + (evalOff - exTW / 2) * pxPerIn
+            Dim evalXR = midX + (evalOff + exTW / 2) * pxPerIn
+            sb.AppendLine("<rect x='" & Fmt(evalXL) & "' y='" & Fmt(axisY - gaussAmp) & "' width='" & Fmt(evalXR - evalXL) & "' height='" & Fmt(gaussAmp) & "' fill='#FF8C00' opacity='0.2'/>")
+            sb.AppendLine("<line x1='" & Fmt(midX + evalOff * pxPerIn) & "' y1='" & Fmt(axisY - gaussAmp - 5) & "' x2='" & Fmt(midX + evalOff * pxPerIn) & "' y2='" & axisY & "' stroke='#D62728' stroke-dasharray='4,2' stroke-width='1'/>")
+            sb.AppendLine("<text x='" & Fmt(midX + evalOff * pxPerIn) & "' y='" & Fmt(axisY - gaussAmp - 8) & "' text-anchor='middle' class='tick' fill='#D62728'>Eval strip @ 30""</text>")
+
+            ' === Panel B: Single vs Dual C/P curves ===
+            Dim panelBY = axisY + 50
+            sb.AppendLine("<text x='425' y='" & Fmt(panelBY) & "' text-anchor='middle' class='chart-title'>Panel B: C/P Curves &mdash; Single vs Dual Wheel</text>")
+
+            Dim cpPlotL As Integer = 80, cpPlotW As Integer = 690, cpPlotH As Integer = 160
+            Dim cpPlotT = panelBY + 15
+            sb.AppendLine("<rect x='" & cpPlotL & "' y='" & Fmt(cpPlotT) & "' width='" & cpPlotW & "' height='" & cpPlotH & "' fill='#FAFBFC' stroke='#ccc'/>")
+
+            ' Compute max C/P for scaling
+            Dim maxCPAny As Double = 0
+            For offs As Integer = 0 To 200
+                Dim cpSingle = GaussArea(offs - exTW / 2, offs + exTW / 2, sigma)
+                Dim cpDual = GaussArea(offs - dualSpacing / 2 - exTW / 2, offs - dualSpacing / 2 + exTW / 2, sigma) +
+                             GaussArea(offs + dualSpacing / 2 - exTW / 2, offs + dualSpacing / 2 + exTW / 2, sigma)
+                maxCPAny = Math.Max(maxCPAny, Math.Max(cpSingle, cpDual))
+            Next
+            Dim cpScale = cpPlotH * 0.85 / maxCPAny
+
+            ' Single wheel curve
+            Dim singlePath As New StringBuilder("M")
+            For offs As Integer = 0 To 200
+                Dim cp = GaussArea(offs - exTW / 2, offs + exTW / 2, sigma)
+                Dim xP = cpPlotL + offs / 200.0 * cpPlotW
+                Dim yP = cpPlotT + cpPlotH - cp * cpScale
+                If offs = 0 Then singlePath.Append(Fmt(xP) & " " & Fmt(yP)) Else singlePath.Append(" L" & Fmt(xP) & " " & Fmt(yP))
+            Next
+            sb.AppendLine("<path d='" & singlePath.ToString() & "' fill='none' stroke='#1F77B4' stroke-width='2'/>")
+
+            ' Dual wheel curve
+            Dim dualPath As New StringBuilder("M")
+            For offs As Integer = 0 To 200
+                Dim cp = GaussArea(offs - dualSpacing / 2 - exTW / 2, offs - dualSpacing / 2 + exTW / 2, sigma) +
+                         GaussArea(offs + dualSpacing / 2 - exTW / 2, offs + dualSpacing / 2 + exTW / 2, sigma)
+                Dim xP = cpPlotL + offs / 200.0 * cpPlotW
+                Dim yP = cpPlotT + cpPlotH - cp * cpScale
+                If offs = 0 Then dualPath.Append(Fmt(xP) & " " & Fmt(yP)) Else dualPath.Append(" L" & Fmt(xP) & " " & Fmt(yP))
+            Next
+            sb.AppendLine("<path d='" & dualPath.ToString() & "' fill='none' stroke='#FF7F0E' stroke-width='2'/>")
+
+            ' Individual dual wheel contributions (dashed)
+            For wSign As Integer = -1 To 1 Step 2
+                Dim wPath As New StringBuilder("M")
+                For offs As Integer = 0 To 200
+                    Dim cp = GaussArea(offs + wSign * dualSpacing / 2 - exTW / 2, offs + wSign * dualSpacing / 2 + exTW / 2, sigma)
+                    Dim xP = cpPlotL + offs / 200.0 * cpPlotW
+                    Dim yP = cpPlotT + cpPlotH - cp * cpScale
+                    If offs = 0 Then wPath.Append(Fmt(xP) & " " & Fmt(yP)) Else wPath.Append(" L" & Fmt(xP) & " " & Fmt(yP))
+                Next
+                sb.AppendLine("<path d='" & wPath.ToString() & "' fill='none' stroke='#FF7F0E' stroke-width='1' stroke-dasharray='4,3' opacity='0.5'/>")
+            Next
+
+            ' X axis ticks for Panel B
+            For i As Integer = 0 To 4
+                Dim val = i * 50
+                Dim xT = cpPlotL + val / 200.0 * cpPlotW
+                sb.AppendLine("<text x='" & Fmt(xT) & "' y='" & Fmt(cpPlotT + cpPlotH + 14) & "' text-anchor='middle' class='tick'>" & val & "</text>")
+            Next
+            sb.AppendLine("<text x='" & Fmt(cpPlotL + cpPlotW / 2) & "' y='" & Fmt(cpPlotT + cpPlotH + 28) & "' text-anchor='middle' class='axis-label'>Offset from centerline (in.)</text>")
+            sb.AppendLine("<text x='" & (cpPlotL - 10) & "' y='" & Fmt(cpPlotT + cpPlotH / 2) & "' text-anchor='middle' class='axis-label' transform='rotate(-90," & (cpPlotL - 10) & "," & Fmt(cpPlotT + cpPlotH / 2) & ")'>C/P</text>")
+
+            ' Legend
+            Dim legY = cpPlotT + 10
+            sb.AppendLine("<line x1='" & (cpPlotL + cpPlotW - 160) & "' y1='" & Fmt(legY + 6) & "' x2='" & (cpPlotL + cpPlotW - 140) & "' y2='" & Fmt(legY + 6) & "' stroke='#1F77B4' stroke-width='2'/>")
+            sb.AppendLine("<text x='" & (cpPlotL + cpPlotW - 135) & "' y='" & Fmt(legY + 10) & "' class='legend-text'>Single wheel</text>")
+            sb.AppendLine("<line x1='" & (cpPlotL + cpPlotW - 160) & "' y1='" & Fmt(legY + 22) & "' x2='" & (cpPlotL + cpPlotW - 140) & "' y2='" & Fmt(legY + 22) & "' stroke='#FF7F0E' stroke-width='2'/>")
+            sb.AppendLine("<text x='" & (cpPlotL + cpPlotW - 135) & "' y='" & Fmt(legY + 26) & "' class='legend-text'>Dual wheel (sum)</text>")
+            sb.AppendLine("<line x1='" & (cpPlotL + cpPlotW - 160) & "' y1='" & Fmt(legY + 38) & "' x2='" & (cpPlotL + cpPlotW - 140) & "' y2='" & Fmt(legY + 38) & "' stroke='#FF7F0E' stroke-width='1' stroke-dasharray='4,3' opacity='0.5'/>")
+            sb.AppendLine("<text x='" & (cpPlotL + cpPlotW - 135) & "' y='" & Fmt(legY + 42) & "' class='legend-text'>Individual wheels</text>")
+
+            ' Border
+            sb.AppendLine("<rect x='1' y='1' width='" & (svgW - 2) & "' height='" & (svgH - 2) & "' fill='none' stroke='#d1d5db' rx='4'/>")
+
+            sb.AppendLine("</svg></div>")
+            ' Caption now handled by <figcaption> wrapping in Generate()
         End Sub
 
 #End Region
@@ -1141,7 +1645,7 @@ Namespace Libs
   --primary-light: #e8eef6;
   --accent: #D62728;
   --text: #2c3e50;
-  --text-light: #6c7a89;
+  --text-light: #556270;
   --border: #d5dce6;
   --bg: #ffffff;
   --bg-alt: #f8f9fb;
@@ -1195,7 +1699,11 @@ body {
   border-radius: var(--radius);
   padding: 14px 16px;
   text-align: center;
+  transition: box-shadow 0.15s ease;
 }
+.card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.card.success { border-top: 3px solid var(--success); }
+.card.danger { border-top: 3px solid var(--accent); }
 .card-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); margin-bottom: 4px; }
 .card-value { font-size: 20px; font-weight: 700; color: var(--primary); }
 .card-unit { font-size: 12px; font-weight: 400; color: var(--text-light); }
@@ -1216,6 +1724,7 @@ body {
 
 /* Section headings */
 section { margin-bottom: 36px; page-break-inside: avoid; }
+section + section { border-top: 1px solid var(--border); padding-top: 30px; }
 section > h2 {
   font-size: 18px;
   color: var(--primary);
@@ -1258,11 +1767,19 @@ h4 { font-size: 14px; color: var(--text-light); margin: 14px 0 8px; }
   padding: 6px 10px;
   border-bottom: 1px solid var(--border);
 }
+.data-table tbody tr { transition: background 0.15s ease; }
 .data-table tbody tr:hover { background: var(--primary-light); }
+.data-table tbody tr:nth-child(even) { background: var(--bg-alt); }
+.data-table tbody tr:nth-child(even):hover { background: var(--primary-light); }
 .data-table.compact td, .data-table.compact th { padding: 4px 8px; font-size: 12px; }
 .highlight { background: #fff8e1 !important; }
 .highlight td { font-weight: 600; }
 .table-scroll { overflow-x: auto; margin-bottom: 16px; }
+.table-scroll th:first-child, .table-scroll td:first-child {
+  position: sticky; left: 0; background: white; z-index: 1;
+}
+.table-scroll tr:nth-child(even) td:first-child { background: var(--bg-alt); }
+.table-scroll .highlight td:first-child { background: #fff8e1; }
 .param-table td:first-child { font-weight: 600; white-space: nowrap; }
 
 /* Equation cards */
@@ -1307,6 +1824,10 @@ h4 { font-size: 14px; color: var(--text-light); margin: 14px 0 8px; }
   color: var(--accent);
   font-weight: 600;
 }
+
+/* Figures */
+figure { margin: 16px 0; text-align: center; }
+figcaption { font-size: 12px; color: var(--text-light); margin-top: 6px; font-style: italic; }
 
 /* Charts */
 .chart-wrap {
@@ -1371,6 +1892,21 @@ details summary {
 details[open] summary { border-bottom: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; }
 details > table, details > div { margin: 0; }
 
+/* Buttons */
+.btn-action {
+  background: var(--primary); color: white; border: none;
+  padding: 8px 16px; border-radius: var(--radius); cursor: pointer;
+  font-size: 12px; margin-left: 12px;
+}
+.btn-action:hover { opacity: 0.85; }
+.btn-top {
+  position: fixed; bottom: 30px; right: 30px;
+  background: var(--primary); color: white; border: none;
+  width: 40px; height: 40px; border-radius: 50%;
+  font-size: 18px; cursor: pointer; display: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
 /* Footer */
 footer {
   text-align: center;
@@ -1388,7 +1924,51 @@ footer a { color: var(--primary); text-decoration: none; }
   .toc { break-after: page; }
   section { break-inside: avoid; }
   .dashboard { grid-template-columns: repeat(3, 1fr); }
-  details[open] summary ~ * { display: block !important; }
+  details { border: none; }
+  details > summary { display: none; }
+  details > table, details > div { display: block !important; }
+  .chart-svg { max-width: 100%; border: none; }
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  .callout, .equation-card, .steps, .aircraft-block { break-inside: avoid; }
+  thead { display: table-header-group; }
+  footer a[href]::after { content: none; }
+  .btn-action, .btn-top { display: none !important; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  body { padding: 12px 16px; }
+  .dashboard { grid-template-columns: repeat(2, 1fr); }
+  .header-meta { flex-direction: column; gap: 6px; }
+  .toc ol { columns: 1; }
+  .chart-svg { max-width: 100%; }
+}
+"
+        End Function
+
+#End Region
+
+
+#Region "JavaScript"
+
+        Private Shared Function GetScript() As String
+            Return "
+document.querySelectorAll('.toc a[href^=""#""]').forEach(function(a) {
+  a.addEventListener('click', function(e) {
+    e.preventDefault();
+    var target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({behavior:'smooth'});
+  });
+});
+var btnPrint = document.getElementById('btn-print');
+if (btnPrint) btnPrint.addEventListener('click', function() { window.print(); });
+var topBtn = document.getElementById('btn-top');
+if (topBtn) {
+  window.addEventListener('scroll', function() {
+    topBtn.style.display = window.scrollY > 400 ? 'block' : 'none';
+  });
+  topBtn.addEventListener('click', function() { window.scrollTo({top:0,behavior:'smooth'}); });
 }
 "
         End Function

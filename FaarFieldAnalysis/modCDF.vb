@@ -681,7 +681,7 @@ FAILURELAW:
                     det.GearType = AC(LI).libGear
                     det.GrossLoad = GL(IA)
                     det.TireWidth = TW(IA)
-                    det.TirePressure = WT(IA)
+                    det.TirePressure = AC(LI).libCP
                     det.AnnualDepartures = RepsAnnual(IA)
                     det.TotalRepetitions = Reps(IA)
                     det.VerticalStrain = gSTRAIN(IA)
