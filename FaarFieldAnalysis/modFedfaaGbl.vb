@@ -850,6 +850,14 @@ Public Module FEDFAA1
         Dim II, J As Short, Flag As Boolean
         Static I As Short
 
+        ' Transfer RDEC properties from section model to engine globals
+        gFlexuralMod(ISect) = section.RdecFlexuralMod
+        gAirVoids(ISect) = section.RdecAirVoids
+        gAsphaltContentByVol(ISect) = section.RdecAsphaltContentByVol
+        gPNMS(ISect) = section.RdecPNMS
+        gPPCS(ISect) = section.RdecPPCS
+        gP200(ISect) = section.RdecP200
+
         gFlexuralMod1 = gFlexuralMod(ISect)
         gAirVoids1 = gAirVoids(ISect)
         gAsphaltContentByVol1 = gAsphaltContentByVol(ISect)

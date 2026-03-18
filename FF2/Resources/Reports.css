@@ -72,7 +72,7 @@ table, th, td {
 }
 
 tr:nth-child(even) {
-    background-color: #F8F9FA;
+    background-color: #EEF2F8;
 }
 
 tr:hover {

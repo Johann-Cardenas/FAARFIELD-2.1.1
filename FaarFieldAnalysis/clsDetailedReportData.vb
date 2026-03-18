@@ -1,7 +1,7 @@
 Option Explicit On
 
 ''' <summary>
-''' Data collection classes for the Detailed Computation Report.
+''' Data collection classes for the CM Report (Computational Mechanics).
 ''' Captures intermediate computational values during LEAF design,
 ''' CDF computation, and ACR/PCR analysis for reporting.
 ''' </summary>
@@ -14,6 +14,19 @@ Public Class clsDetailedReportData
     Public ACRDetails As New List(Of clsACRDetail)
     Public PCRRounds As New List(Of clsPCRRound)
     Public IsPopulated As Boolean = False
+
+    ' Asphalt CDF data (section-level)
+    Public AsphaltCDFTotal As Single            ' CDFAsp — total asphalt CDF for the section
+    Public AsphaltCDFComputed As Boolean = False ' Whether asphalt CDF was actually computed
+    Public AsphaltModel As String = "N/A"       ' "RDEC" or "AI"
+    Public RdecFlexuralMod As Single            ' Flexural modulus (psi)
+    Public RdecAirVoids As Single               ' Air voids (%)
+    Public RdecAsphaltContent As Single         ' Asphalt content by volume (%)
+    Public RdecVoidParameter As Single          ' Voids / (Voids + AsphaltContent)
+    Public RdecPNMS As Single                   ' Nominal max sieve passing (%)
+    Public RdecPPCS As Single                   ' P-200 coarse (%)
+    Public RdecP200 As Single                   ' Fraction passing #200 sieve (%)
+    Public RdecGradationParameter As Single     ' (PNMS - PPCS) / P200
 
     Public Sub Clear()
         AircraftDetails = Nothing
@@ -57,6 +70,18 @@ Public Class clsAircraftDetail
     Public CtoPAfterGearAdj As Single
     Public CDFByOffset(CDF.NOFF) As Double
     Public CtoPByOffset(CDF.NOFF) As Single
+
+    ' Gear geometry for visualization (1-indexed arrays)
+    Public WheelX() As Single       ' libTX — lateral X position of each wheel (inches)
+    Public WheelY() As Single       ' libTY — longitudinal Y position of each wheel (inches)
+    Public NWheels As Integer        ' libNTires — number of tires
+    Public DualSpacing As Single     ' libB — dual wheel spacing (inches)
+    Public GearSpacing As Single     ' libTG — gear spacing (inches)
+
+    ' Asphalt CDF per aircraft
+    Public AsphaltCDF As Double         ' HMA layer CDF for this aircraft
+    Public AsphaltNtoFail As Double     ' N_fail for HMA fatigue (RDEC or AI)
+    Public AsphaltStrain As Double      ' Horizontal tensile strain in HMA layer
 
 End Class
 
@@ -116,6 +141,19 @@ Public Class clsSublayerData
     Public DesignLayers As New List(Of clsLayerInfo)
     Public ExpandedSublayers As New List(Of clsLayerInfo)
     Public EvalDepthSubgrade As Double
+
+    ' Aggregate sublayering parameters (captured from FAAModulusThick)
+    Public HasAggregateSublayers As Boolean = False
+    Public BaseCoeffC As Single         ' C coefficient for P-209 base
+    Public BaseCoeffD As Single         ' D coefficient for P-209 base
+    Public SubbaseCoeffC As Single      ' C coefficient for P-154 subbase
+    Public SubbaseCoeffD As Single      ' D coefficient for P-154 subbase
+    Public BaseModUnder As Single       ' Modulus of layer below aggregate base (psi)
+    Public SubbaseModUnder As Single    ' Modulus of layer below aggregate subbase (psi)
+    Public BaseSublayerCount As Integer ' Number of sublayers in base
+    Public SubbaseSublayerCount As Integer ' Number of sublayers in subbase
+    Public BaseSublayers As New List(Of clsLayerInfo)    ' Individual base sublayers (bottom-up computed)
+    Public SubbaseSublayers As New List(Of clsLayerInfo)  ' Individual subbase sublayers (bottom-up computed)
 
 End Class
 

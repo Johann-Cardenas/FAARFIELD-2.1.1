@@ -214,6 +214,19 @@
                            VerticalAlignment="Center" />
             </StackPanel>
 
+            <StackPanel x:Key="AboutButton"
+                        Orientation="Horizontal">
+                <Border Width="24" Height="24" CornerRadius="12"
+                        Background="#00897B" Margin="0,0,4,0">
+                    <TextBlock Text="i" FontSize="14" FontWeight="Bold"
+                               Foreground="White" FontFamily="Georgia"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Margin="0,-1,0,0"/>
+                </Border>
+                <TextBlock Text="About"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
             <StackPanel x:Key="SelectAllButton"
                         Orientation="Horizontal">
                 <Image Source="Resources\ic_select_all.png"

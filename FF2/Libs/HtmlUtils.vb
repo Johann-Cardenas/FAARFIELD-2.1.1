@@ -212,7 +212,7 @@ Namespace Libs
                         [Enum].Parse(GetType(PdfPageOrientation),
                         pdf_orientation, True), PdfPageOrientation)
 
-                Dim webPageWidth As Integer = 1024
+                Dim webPageWidth As Integer = 1400
 
                 Dim webPageHeight As Integer = 0
 

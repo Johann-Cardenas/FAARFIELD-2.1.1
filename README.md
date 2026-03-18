@@ -539,3 +539,344 @@ The existing PDF report (GDI+ bitmaps → SelectPdf) remains completely untouche
 - `FF2/Views/MainWindow.xaml` — Added "Open in Browser" button bound to `OnSectionReportOpenHtml` command.
 - `FF2/ViewModels/MainWindowViewModel.vb` — Added `OnSectionReportOpenHtml` command property and `SectionReportOpenHtml` handler. The handler calls `HtmlReportGenerator.Generate()` (not `refreshDetailedReport()`).
 - `FF2/FF2.vbproj` — Added `HtmlReportGenerator.vb` to compilation.
+
+### 4. CM Report rename and gear configuration visualization
+
+Renamed **"Detailed Computation Report"** to **"CM Report"** (Computational Mechanics) across all user-facing strings. Internal property names (`DetailedReportHtml`, `DetailedReportIsHidden`, `SerializationTag="DetailedReport"`) remain unchanged for serialization compatibility.
+
+**UI changes:**
+- Report tab now displays "CM Report" with a SemiBold font, an info icon (ⓘ in FAA blue), and a multi-line tooltip explaining the report's purpose.
+- PDF and HTML default filenames use "CM Report" instead of "Detailed Computation Report".
+
+**Gear configuration visualization** added to Section E of both the PDF (GDI+ bitmap) and HTML (native SVG) report pipelines:
+- Plan view of wheel positions with tire contact patches drawn as semi-transparent circles.
+- CDF offset strips (41 dashed vertical lines at 10-inch intervals) with the critical strip highlighted in red.
+- Gaussian lateral wander overlay (σ=30.435 in.) as a translucent filled bell curve.
+- Dimension annotations for dual spacing, tandem spacing, and contact area.
+- Coordinate labels at each wheel showing (X, Y) in the gear coordinate system.
+
+**Data model extensions** (`clsAircraftDetail` in `clsDetailedReportData.vb`):
+- `WheelX()`, `WheelY()` — lateral/longitudinal position of each wheel (from `libTX`/`libTY`)
+- `NWheels` — number of tires (from `libNTires`)
+- `DualSpacing`, `GearSpacing` — gear geometry (from `libB`/`libTG`)
+- Fixed population of `TandemSpacing` (from `libTS`) and `ContactArea` (computed from gross load, tire count, contact pressure)
+
+**Files modified:**
+- `FaarFieldAnalysis/clsDetailedReportData.vb` — Added 5 fields to `clsAircraftDetail`, updated doc comment.
+- `FaarFieldAnalysis/modCDF.vb` — Populated `WheelX`/`WheelY`, `DualSpacing`, `GearSpacing`, `TandemSpacing`, `ContactArea` during CDF computation.
+- `FF2/Views/MainWindow.xaml` — Replaced RadPane `Header` attribute with StackPanel content (CM Report + ⓘ icon + tooltip).
+- `FF2/ViewModels/DetailedReportViewModel.vb` — Renamed tree node to "CM Report".
+- `FF2/ViewModels/MainWindowViewModel.vb` — Renamed user-facing strings (5 locations), added `DrawGearConfiguration()` (900×600 GDI+, 2x supersampling), inserted gear chart in Section E.
+- `FF2/Libs/HtmlReportGenerator.vb` — Renamed user-facing strings (2 locations), added `AppendGearConfigSVG()`, inserted SVG gear chart in Section E.
+
+### 5. About window
+
+Added an **About** button to the main toolbar (left of the Help button) that opens a custom borderless dialog window with a teal gradient header. The window provides:
+
+- **Beta disclosure** — Prominent amber notice stating this is a customized beta version, not the official FAA release, with guidance that results should be independently verified.
+- **Credits** — Customization by Johann Cardenas for computational mechanics research; original FAA authors acknowledged (Dr. Izydor Kawa, Y. G. Chen, Qiang Wang, Kairat Assemblayev).
+- **License** — Permissive use with full liability disclaimer; original FAARFIELD IP remains with the FAA.
+- **Version display** — Shows `v2.1.1-CM` and the build date from `BuildDate.txt`.
+- **Draggable borderless chrome** — Custom window style with drop shadow, rounded corners, and teal close button.
+
+**Files added:**
+- `FF2/Views/AboutWindow.xaml` — WPF window with teal gradient header, beta disclosure, credits, license, and styled close button.
+- `FF2/Views/AboutWindow.xaml.vb` — Code-behind: build date loading, close handler, drag support.
+
+**Files modified:**
+- `FF2/Application.xaml` — Added `AboutButton` resource (teal circle icon with "About" text).
+- `FF2/Views/MainWindow.xaml` — Added About button to toolbar with `ItemAlignment="Right"`.
+- `FF2/ViewModels/MainWindowViewModel.vb` — Added `OnAbout_Command` property and `OnAbout` handler.
+- `FF2/FF2.vbproj` — Added `AboutWindow.xaml` and `AboutWindow.xaml.vb` to compilation.
+
+### 6. Analysis progress banner and auto-tab switching
+
+Added a visual progress banner to the **Status tab** in the Structure window's right panel. When the user clicks **Run** (for any analysis module — Thickness Design, Life, PCR, etc.), the UI now:
+
+1. **Automatically switches** to the Status tab regardless of which tab (Status/Gear/Structure) was active. (The `SelectedTabIndex = 0` switch already existed in `RunAnalysis.RunOrCancel()`; no change needed.)
+2. **Shows an indeterminate progress bar** in a blue-themed banner with an hourglass icon, the elapsed time (HH:MM:SS in Consolas), and a sub-text line that updates every second with the latest analysis status from `MessageText`.
+3. **Transitions to a green "completed" banner** when the analysis finishes — full progress bar, check mark icon, and "Completed in HH:MM:SS — results are ready for review."
+4. **Shows an amber "canceled" banner** if the user clicks Cancel during analysis.
+
+The legacy overlay TextBoxes (RunningTime, StopWatch, CrossSection) are preserved in the XAML at zero opacity for data-binding compatibility but are no longer visually displayed — their information is now integrated into the progress banner.
+
+**Files modified:**
+- `FF2/Views/MainWindow.xaml` — Redesigned Status tab with Grid layout, progress banner (icon + status text + elapsed timer + ProgressBar + sub-text), and repositioned message display. Legacy TextBoxes hidden at 1x1px with Opacity=0.
+- `FF2/ViewModels/MainWindowViewModel.vb` — Added 11 progress banner properties (`ProgressBannerVisibility`, `ProgressBannerBackground`, `ProgressIcon`, `ProgressStatusText`, `ProgressTextBrush`, `ProgressIsIndeterminate`, `ProgressValue`, `ProgressBarBrush`, `ProgressSubText`, `ProgressSubTextVisibility`, `ProgressSubTextBrush`) and 4 helper methods (`ShowProgressRunning`, `ShowProgressCompleted`, `ShowProgressCanceled`, `HideProgressBanner`). Modified `RunButton_Click` to activate running/canceled states and `dispatcherTimer_Tick` to update sub-text during analysis and show completion state.
+
+### 7. Gear tab visualization modernization
+
+Rewrote the `PaintGear()` method in `FF2/Libs/ModuleDrawProfile.vb` with modern GDI+ rendering techniques. The gear configuration drawing in the right-panel Gear tab now features:
+
+- **Anti-aliased rendering** with ClearType text hints and high-quality bicubic interpolation.
+- **Teal gradient header bar** (#004D40 → #00796B) displaying the aircraft name, gear type badge (e.g., "Dual Tandem"), and wheel/tire summary.
+- **Dot grid background** on warm gray (#FCFCFA) for a clean, modern appearance.
+- **Modernized axes** with labeled "Lateral" / "Longitudinal" headings and unit annotations (in. or mm).
+- **Rounded-rectangle tire imprints** with gradient fills (deep gray → medium gray), replacing the original flat rectangles.
+- **Numbered wheel labels** (white text centered on each tire) for easy identification.
+- **Coordinate annotations** in Consolas 6.5pt showing (X, Y) values at each wheel position.
+- **Mirrored wheels** rendered with softer transparency to visually distinguish the mirror plane.
+- **Evaluation point markers** as red dots with stroke, preserving original evaluation-point display.
+- **Dimension annotations** with dashed lines for dual spacing (B) and tandem spacing (Ts).
+- **Legend box** (bottom-left) with entries for tire imprint, mirrored wheel, and evaluation point.
+
+The original coordinate transform logic is fully preserved — scale, scaleRatio, ScaledPictureBox, B-52/A380 special cases, US Customary/Metric branching, and mirrored-wheel rendering all function identically.
+
+**Files modified:**
+- `FF2/Libs/ModuleDrawProfile.vb` — Complete rewrite of `PaintGear()` (lines 44–370). Original `PaintUserDefinedGear()` unchanged.
+
+### 8. Aggregate sublayer modulus documentation in CM Report
+
+Added a comprehensive explanation of the **unbound aggregate sublayering procedure** to Section A of both the PDF (GDI+ bitmap) and HTML (native SVG) CM Report pipelines. When aggregate base (P-209) or subbase (P-154) layers are present, the report now shows:
+
+- **Explanation note** — Why aggregate layers don't have a single fixed modulus and how FAARFIELD subdivides them into sublayers with depth-dependent moduli computed bottom-up.
+- **Mathematical formula** — The empirical sublayer modulus reduction formula: E_i = E_{i-1} × (f1 - f2), where f1 and f2 depend on sublayer thickness and the C/D coefficients.
+- **Parameters table** — C, D coefficients, modulus of layer below, and sublayer count for each aggregate type present (P-209: C=10.52, D=2.0; P-154: C=6.88, D=1.56).
+- **Sublayer detail tables** — Individual sublayer thickness and computed modulus, showing the modulus gradient from bottom to top, with the reference "layer below" modulus highlighted.
+- **Modulus-depth profile chart** — Visual step chart with left panel showing stacked layer bars (colored by type, aggregate layers shaded by modulus magnitude) and right panel showing the teal step-line tracing modulus at each depth. Aggregate sublayers highlighted with translucent fill.
+
+**Data model extensions** (`clsSublayerData` in `clsDetailedReportData.vb`):
+- `HasAggregateSublayers`, `BaseCoeffC`, `BaseCoeffD`, `SubbaseCoeffC`, `SubbaseCoeffD` — Sublayering formula coefficients.
+- `BaseModUnder`, `SubbaseModUnder` — Modulus of the layer below each aggregate layer.
+- `BaseSublayerCount`, `SubbaseSublayerCount` — Number of sublayers per aggregate type.
+- `BaseSublayers`, `SubbaseSublayers` — `List(Of clsLayerInfo)` with individual sublayer thickness/modulus.
+
+**Files modified:**
+- `FaarFieldAnalysis/clsDetailedReportData.vb` — Extended `clsSublayerData` with 10 new fields for sublayering parameters and per-sublayer data.
+- `FaarFieldAnalysis/modStrDesignFlex.vb` — Populated sublayering parameters (C, D, ModUnder, sublayer lists) from `BaseMod()`, `SubbaseMod()`, `TSS_P209()`, `TSS_P154()` during report data capture.
+- `FF2/ViewModels/MainWindowViewModel.vb` — Added `DrawModulusDepthProfile()` (850×500 GDI+, 2x supersampling). Inserted explanation, formula, parameter tables, sublayer detail tables, and chart in Section A of the PDF report.
+- `FF2/Libs/HtmlReportGenerator.vb` — Added `AppendSublayerModulusSection()`, `AppendModulusDepthSVG()`, `SvgDepthToY()`, `SvgModToX()`, `IsAggregateSublayer()`, `Fmt()`. Inserted explanation, formula, parameter tables, sublayer detail tables, and SVG chart in Section A of the HTML report. Added CSS for `.sublayer-modulus-section`, `.modulus-depth-svg`, `.sublayer-main-eq`, `.sublayer-detail`, `.ref-row`, `.mod-label`, `.fig-caption`.
+
+### 9. Gross weight guardrail override
+
+Changed the gross weight validation in `FaarFieldModel/AirplaneInfo.vb` (line ~505) from a hard block to a user-overridable warning. Previously, entering a gross taxi weight outside the 0.6×–1.25× default range triggered a `MessageBox.Show` that silently reverted the value. Now the dialog shows:
+
+- The allowed range (min/max in both lb and kg)
+- The entered value that is out of range
+- **Yes** to override the limit and continue with the entered value (for research purposes)
+- **No** to revert to the previous value
+
+**Files modified:**
+- `FaarFieldModel/AirplaneInfo.vb` — Replaced two `MessageBox.Show` + hard revert blocks with a single `MessageBoxButtons.YesNo` dialog that allows the user to proceed.
+
+---
+
+### 10. Asphalt (HMA) CDF documentation in CM Report
+
+Added asphalt layer fatigue characterization to both the PDF (GDI+) and HTML (SVG) CM Report pipelines. FAARFIELD computes asphalt CDF in parallel with subgrade CDF using horizontal tensile strain at the bottom of the HMA layer. Two fatigue models are supported:
+
+- **RDEC model** — Rate of Dissipated Energy Change: `PV = 44.422 × ε^5.14 × (E×0.0068948)^2.993 × VP^1.85 × GP^(-0.4063)`; `N_fail = 0.4801 × PV^(-0.90074)`. Uses mix-specific volumetric and gradation parameters (air voids, asphalt content, PNMS, PPCS, P200).
+- **AI model** — Asphalt Institute: `AA = 2.68 - 5.0×log10(ε)`; `BB = 2.665×log10(E_asp)`; `N_fail = 10^(AA-BB)`.
+
+The report now includes in Section D (Fatigue Characterization):
+- RDEC or AI equation rendering (bitmap in PDF, styled HTML in browser report)
+- RDEC mix parameters table (flexural modulus, air voids, asphalt content, void/gradation parameters)
+- Per-aircraft asphalt CDF table (HMA strain, N_fail_HMA, CDF_HMA vs CDF_Subgrade, governing indicator)
+- CDF comparison summary (total asphalt CDF vs total subgrade CDF with governing mode)
+- Explanatory note on the role of asphalt CDF in the design process
+
+**Data model extensions** (`FaarFieldAnalysis/clsDetailedReportData.vb`):
+- `clsDetailedReportData`: `AsphaltCDFTotal`, `AsphaltCDFComputed`, `AsphaltModel`, RDEC parameters (`RdecFlexuralMod`, `RdecAirVoids`, `RdecAsphaltContent`, `RdecVoidParameter`, `RdecPNMS`, `RdecPPCS`, `RdecP200`, `RdecGradationParameter`)
+- `clsAircraftDetail`: `AsphaltCDF`, `AsphaltNtoFail`, `AsphaltStrain`
+
+**Data capture** (`FaarFieldAnalysis/modStrDesignFlex.vb`):
+- Per-aircraft asphalt N_fail and strain captured immediately after `LeafCDFFlex` with `Overflow=False` (before subgrade computation overwrites `gNtoFail()`)
+- Section-level CDFAsp total and RDEC parameters captured at the report data finalization point
+
+**Files modified:**
+- `FaarFieldAnalysis/clsDetailedReportData.vb` — Added 11 section-level and 3 per-aircraft fields
+- `FaarFieldAnalysis/modStrDesignFlex.vb` — Added asphalt data capture at two pipeline stages
+- `FF2/ViewModels/MainWindowViewModel.vb` — Added D.2 Asphalt (HMA) Layer Fatigue subsection in Section D
+- `FF2/Libs/HtmlReportGenerator.vb` — Added D.2 subsection with equation cards, RDEC parameters table, per-aircraft CDF table, CDF comparison cards, and new CSS classes
+
+---
+
+### 11. High-quality vector PDF export
+
+Rerouted the CM Report PDF export from the GDI+ bitmap pipeline to the SVG-based HTML pipeline (`HtmlReportGenerator.Generate()`). Previously, "Save As PDF" rendered all charts as raster bitmaps (GDI+ → base64 PNG → SelectPdf), producing blurry charts especially at zoom. Now the PDF is generated from the same HTML/SVG source as "Open in Browser", giving:
+
+- **Vector SVG charts** — infinitely sharp at any zoom level, no pixelation
+- **Native HTML text** — crisp labels and annotations instead of text-rendered-to-pixels
+- **Consistent output** — PDF and HTML reports are now identical in content and visual quality
+
+Additional improvements for all report types:
+- Increased SelectPdf web page width from 1024px to 1400px for higher-fidelity rendering of all reports (Summary, Structure, CDF Graph, PCR, etc.)
+- Enhanced print/PDF media queries: `page-break-inside: avoid` on figures, tables, equations, CDF comparison cards; `shape-rendering: geometricPrecision` on SVGs; `color-adjust: exact` for backgrounds
+
+**Files modified:**
+- `FF2/ViewModels/MainWindowViewModel.vb` — `SectionReportCreatePdf()`: CM Report now calls `HtmlReportGenerator.Generate()` instead of `refreshDetailedReport()`
+- `FF2/Libs/HtmlUtils.vb` — `HtmltoPdf()`: web page width 1024→1400
+- `FF2/Libs/HtmlReportGenerator.vb` — Enhanced `@media print` CSS rules for PDF optimization
+
+---
+
+### 12. Visual enhancement of all FAARFIELD reports
+
+Improved visual quality and PDF rendering fidelity across all 7 report types.
+
+**CM Report (SVG pipeline fix + polish):**
+- Added explicit `width`/`height` attributes to all 12 SVG elements in the HTML report. SelectPdf's WebKit engine cannot infer dimensions from `viewBox` alone, causing SVGs to render as ~50px thumbnails in PDF. With explicit dimensions, SVGs render at full size in PDF while CSS `width:100%; max-width` keeps them responsive in the browser.
+- Changed dashboard CSS from `grid-template-columns: repeat(auto-fit, ...)` to `display: flex; flex-wrap: wrap` for SelectPdf WebKit compatibility.
+- Added `<title>` child elements to all SVG charts for browser tooltip accessibility.
+- Added consistent `#FAFBFC` plot-area backgrounds to Life Ratio and CDF Contribution bar charts.
+- Added CSS hover interactivity on chart data points and bars (`.chart-svg circle:hover`, `.chart-svg rect.bar:hover`).
+- Enhanced print media queries: `page-break-inside: avoid` on `svg` and `figure` elements.
+
+**CDF Graph report:**
+- Re-enabled Y-axis gridlines (were commented out).
+- Changed chart rendering from 96 DPI to 192 DPI (2x supersampling) for crisper text and lines.
+- Changed image encoding from BMP to PNG (smaller file size, alpha channel support).
+- Added descriptive chart caption below the graph.
+
+**PCR Graph report:**
+- Changed chart rendering from 96 DPI to 192 DPI (2x supersampling).
+- Changed image encoding from BMP to PNG.
+- Added descriptive chart caption below the graph.
+
+**Structure Report:**
+- Changed pavement profile bitmap encoding from BMP to PNG in `BitmapImage2Bitmap()`.
+
+**All tabular reports (Summary, Structure, PCR, Airport Master Record):**
+- Increased zebra-stripe contrast from `#F8F9FA` to `#EEF2F8` in `Reports.css`.
+
+**Files modified:**
+- `FF2/Libs/HtmlReportGenerator.vb` — SVG width/height attributes, `<title>` elements, dashboard flexbox, plot backgrounds, hover CSS, print CSS
+- `FF2/ViewModels/MainWindowViewModel.vb` — CDF/PCR graph 2x supersampling, BMP→PNG encoding (3 locations), chart captions, re-enabled gridlines
+- `FF2/Resources/Reports.css` — Improved table zebra-stripe contrast
+
+---
+
+## Backlog — Engineering reasonableness guardrails to review
+
+The original FAARFIELD code contains numerous hard-coded limits and engineering reasonableness checks. As the codebase is customized, each of these assumptions should be reviewed to determine whether it should be retained, relaxed, or made configurable. The list below catalogues every guardrail identified in the source.
+
+### Input validation limits
+
+| # | Parameter | Limit | Location | Status | Notes |
+|---|-----------|-------|----------|--------|-------|
+| 1 | **Annual departures** | Max 100,000 per aircraft | `FaarFieldModel/AirplaneInfo.vb` ~L439 | Raised to 500,000 | Original FAA limit; no regulatory citation in code |
+| 2 | **Annual growth rate** | –10% to +10% | `FaarFieldModel/AirplaneInfo.vb` ~L461 | Active | Resets to 0% if exceeded; user warned via MessageBox |
+| 3 | **Max wheels per gear** | 56 | `AMClassLib/frmGear.vb` L15 (`NMaxWheels`) | Active | Data-structure hard limit |
+
+### Minimum layer thickness — new structures (design mode)
+
+These are enforced in `FF2/ViewModels/MainWindowViewModel.vb` ~L5636–5785 and vary by material type, design type, and aircraft weight category.
+
+| # | Material | Design type | Aircraft category | Min thickness (in) | Notes |
+|---|----------|-------------|-------------------|--------------------|-------|
+| 4 | P-401/P-403 HMA Surface | New Flexible / HMA on Aggregate | Light (≤12,500 lb) | 3 | |
+| 5 | P-401/P-403 HMA Surface | New Flexible / HMA on Aggregate | Heavy (>12,500 lb) | 4 | |
+| 6 | P-401/P-403 HMA Surface | Overlay variants | — | 2–3 | Varies by overlay type |
+| 7 | P-401/P-403 Stabilized / P-304 / P-306 | New Flexible (light) | Light | 5 | |
+| 8 | P-401/P-403 Stabilized / P-304 / P-306 | New Rigid | — | 5 | |
+| 9 | P-401/P-403 Stabilized / P-304 / P-306 | Other | — | 2–3 | |
+| 10 | P-209 Crushed Aggregate / P-211 Lime Rock / P-154 | New Flexible / New Rigid (thickness design) | — | 6 | Also enforced post-design in `UpdateManager.vb` L19 |
+| 11 | P-209 / P-211 / P-154 | Other | — | 4 | |
+| 12 | P-208 Crushed Aggregate / P-219 Recycled Concrete | New Flexible (thickness design) | — | 6 | |
+| 13 | P-208 / P-219 | New Rigid (light) | Light | 3 | |
+| 14 | P-208 / P-219 | New Rigid (heavy) | Heavy (>12,500 lb) | 6 | |
+| 15 | P-208 / P-219 | Overlay | — | 4 | |
+| 16 | PCC Surface | When `g3inchPCC` flag enabled | — | 3 | `modFedfaaGbl.vb` ~L1465 |
+| 17 | HMA Surface | When `g2inchHMA` flag enabled | — | 2 | `modFedfaaGbl.vb` ~L1461 |
+
+### Sublayer thickness — WES formula (during sublayering)
+
+Enforced in `FaarFieldAnalysis/modCDF.vb` ~L879–896.
+
+| # | Material | Min per sublayer (in) | Notes |
+|---|----------|-----------------------|-------|
+| 18 | P-209 Crushed Aggregate | 10 | WES formula sublayering |
+| 19 | P-154 Uncrushed Aggregate | 8 | WES formula sublayering |
+
+### Aircraft weight category thresholds
+
+Defined in `FaarFieldAnalysis/modFedfaaGbl.vb` ~L1319–1344. These thresholds trigger different minimum-thickness requirements and Advisory Circular notes.
+
+| # | Category | Weight threshold (lb) | Effect |
+|---|----------|-----------------------|--------|
+| 20 | Light aircraft | ≤12,500 | Allows thinner minimums (3 in HMA, 3 in P-208 base) |
+| 21 | Heavy aircraft | >60,000 | Triggers heavier base requirements |
+| 22 | Very heavy aircraft | ≥100,000 | Triggers AC Note 320 (new flexible) / Note 328 (new rigid) |
+
+### Computational strain floors and ceilings
+
+These prevent numerical instability (divide-by-zero, log of zero) in fatigue calculations.
+
+| # | Parameter | Floor/Ceiling | Location | Notes |
+|---|-----------|---------------|----------|-------|
+| 23 | Asphalt strain | Floor: 1×10⁻⁶ | `modCDF.vb` ~L286 | Prevents log/divide-by-zero in AI/RDEC fatigue |
+| 24 | Subgrade strain | Floor: 1×10⁻⁴ | `modCDF.vb` ~L325 | Triggers overflow flag if below; halves thickness |
+| 25 | PCC subgrade critical strain | Ceiling: 0.001765093 | `modCDF.vb` ~L388 | Threshold for foundation vs. PCC failure mode |
+| 26 | Equivalent thickness | Floor: 0.4 in | `modCDF.vb` ~L797 | Minimum for aggregate equivalent thickness calc |
+
+### Modulus bounds
+
+| # | Parameter | Range | Location | Notes |
+|---|-----------|-------|----------|-------|
+| 27 | Base/subbase modulus (equiv. thickness calc) | 200,000–700,000 psi | `modCDF.vb` ~L787 | Clamped for WES equivalent thickness formula |
+
+### Convergence and solver controls
+
+| # | Parameter | Value | Location | Notes |
+|---|-----------|-------|----------|-------|
+| 28 | CDF convergence tolerance | \|ln(CDF)\| < 0.005 | `modCDF.vb` ~L99 (`CDFExitErr`) | Newton-Raphson exit criterion |
+| 29 | Sublayer activation threshold | \|ln(CDF)\| < 0.69 (CDF 0.5–2.0) | `modCDF.vb` ~L103 (`CDFErrCntrl`) | Triggers aggregate sublayering |
+
+### Interface bonding bounds
+
+| # | Parameter | Range | Location | Notes |
+|---|-----------|-------|----------|-------|
+| 30 | Interface bonding parameter | 0.001–0.99 (scaled to 0.001–100 stiffness) | `AMClassLib/modPG.vb` ~L157 | Bounds penalty stiffness for layer interfaces |
+
+### Discretization constants
+
+These are fixed grid sizes in the LEAF/CDF solver, not strictly "guardrails" but hard-coded assumptions that limit resolution.
+
+| # | Parameter | Value | Location | Notes |
+|---|-----------|-------|----------|-------|
+| 31 | Lateral offsets for CDF sweep | 41 offsets | `ACNClassLib/clsLEAF.vb` L61 (`NOFF`) | 0–400 in at 10-in steps |
+| 32 | Offset spacing | 10 inches | `ACNClassLib/clsLEAF.vb` L63 (`OFFSETINC`) | Fixed increment |
+| 33 | Longitudinal nodes (tandem) | 1,800 | `ACNClassLib/clsLEAF.vb` L62 (`NNodesLong`) | For tandem gear CDF |
+| 34 | Max layers (flexible) | 24 | `ACNClassLib/clsLEAF.vb` (`MaxNPLayers`) | Structural layer limit |
+| 35 | Max layers (modulus tracking) | 32 | `ACNClassLib/clsLEAF.vb` (`MaxModulusNPLayers`) | Including sublayers |
+
+### Material property bounds
+
+| # | Parameter | Range | Location | Notes |
+|---|-----------|-------|----------|-------|
+| 36 | PCC flexural strength (R) | 500–1,000 psi (3.45–6.9 MPa) | `Material.vb` ~L299 | Default 650 psi; hard reset to default if exceeded |
+| 37 | Subgrade modulus | 1,000–50,000 psi (6.89–344.74 MPa) | `Material.vb` ~L434 | Default 15,000 psi |
+| 38 | Variable (Flexible) modulus | 150,000–400,000 psi | `Material.vb` ~L416 | Stabilized base range |
+| 39 | Variable (Rigid) modulus | 250,000–700,000 psi | `Material.vb` ~L425 | Lean concrete/econocrete |
+| 40 | Subgrade K-value | 20.9–440.4 pci (5.7–119.5 MN/m³) | `Material.vb` ~L344 | Default 172.4 pci |
+
+### Solver/design controls
+
+| # | Parameter | Value | Location | Notes |
+|---|-----------|-------|----------|-------|
+| 41 | Max design iterations | 25 loops | `modStrDesignFlex.vb` ~L516 | Abort with warning if not converged |
+| 42 | Max thickness delta/iteration | 50 in | `modStrDesignFlex.vb` ~L509 | Prevents wild oscillation |
+| 43 | CDF reduction threshold | CDF < 0.3 → 80% thickness | `modStrDesignFlex.vb` ~L186 | Not applied during life computation |
+| 44 | Compaction departure threshold | 6,000 | `modCDF.vb` ~L28 | gCompactionDeparture |
+
+### Capacity limits
+
+| # | Parameter | Value | Location | Notes |
+|---|-----------|-------|----------|-------|
+| 45 | Max aircraft per section | 80 | `modFedfaaGbl.vb` ~L229 | MaxSectAC; historical limit (was 10, then 30, then 40, now 80) |
+| 46 | Max sections per job | 100 | `modFedfaaGbl.vb` ~L228 | MaxSects |
+| 47 | Max jobs | 100 | `modFedfaaGbl.vb` ~L227 | MaxJobs |
+
+### Gross weight validation
+
+| # | Parameter | Range | Location | Notes |
+|---|-----------|-------|----------|-------|
+| 48 | Gross weight | 0.6×–1.25× default weight | `AirplaneInfo.vb` ~L492 | Dynamic per-aircraft |
+
+### How to use this list
+
+Each item above should be evaluated for one of three dispositions:
+
+1. **Retain** — The limit reflects a genuine physical or regulatory constraint (e.g., AC 150/5320-6 requirements). Document the citation.
+2. **Make configurable** — The limit is reasonable but should be user-adjustable for research or non-standard applications. Move to a settings/options panel.
+3. **Remove** — The limit was a legacy software constraint (e.g., array sizing) with no engineering basis and can be eliminated.

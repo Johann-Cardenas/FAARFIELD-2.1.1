@@ -714,6 +714,19 @@ FAILURELAW:
                     End If
                     det.NGearLoads = If(AC(LI).libGear = "WFBF" Or AC(LI).libGear = "WFBN", 2, If(AC(LI).libGear = "X", AC(LI).libNGroups, 1))
 
+                    ' Capture gear geometry for CM Report visualization
+                    det.NWheels = AC(LI).libNTires
+                    ReDim det.WheelX(AC(LI).libNTires)
+                    ReDim det.WheelY(AC(LI).libNTires)
+                    For iw As Integer = 1 To AC(LI).libNTires
+                        det.WheelX(iw) = AC(LI).libTX(iw)
+                        det.WheelY(iw) = AC(LI).libTY(iw)
+                    Next
+                    det.DualSpacing = AC(LI).libB
+                    det.GearSpacing = AC(LI).libTG
+                    det.TandemSpacing = AC(LI).libTS
+                    det.ContactArea = CSng(GL(IA) / AC(LI).libNTires / AC(LI).libCP)
+
                     ' Capture per-offset data
                     For IOFF = 1 To NOFF
                         det.CDFByOffset(IOFF) = lclCDF(IA, IOFF)

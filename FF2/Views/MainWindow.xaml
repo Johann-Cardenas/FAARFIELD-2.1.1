@@ -77,6 +77,10 @@
                 ToolTip="Display FAARFIELD help documentation."
                 Command="{Binding OnHelp_Command}"
                 telerik:RadToolBar.ItemAlignment="Right" />
+            <Button Content="{StaticResource AboutButton}"
+                ToolTip="About this customized version of FAARFIELD."
+                Command="{Binding OnAbout_Command}"
+                telerik:RadToolBar.ItemAlignment="Right" />
         </telerik:RadToolBar>
 
         <telerik:RadDocking ShowResizePreview="True" x:Name="Docking" GeneratedItemsFactory="{StaticResource NonTransparentWindowsGeneratedItemsFactory}" telerik:RadDocking.SerializationTag="MainDockingTag" Width="{Binding ActualWidth, ElementName=FaarField}">
@@ -764,54 +768,98 @@
                                                                   Width="520"
                                                                   VerticalAlignment="Top"
                                                                   HorizontalAlignment="Stretch">
-                                                                <TextBox IsReadOnly="True"
-                                                                         VerticalAlignment="Top"
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                    <RowDefinition Height="*"/>
+                                                                </Grid.RowDefinitions>
+
+                                                                <!-- Progress banner (visible during and after analysis) -->
+                                                                <Border Grid.Row="0"
+                                                                        Visibility="{Binding ProgressBannerVisibility}"
+                                                                        Margin="4,4,4,0"
+                                                                        CornerRadius="4"
+                                                                        Padding="12,10"
+                                                                        Background="{Binding ProgressBannerBackground}">
+                                                                    <StackPanel>
+                                                                        <!-- Header row: status icon + text + elapsed time -->
+                                                                        <Grid>
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="Auto"/>
+                                                                                <ColumnDefinition Width="*"/>
+                                                                                <ColumnDefinition Width="Auto"/>
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock Grid.Column="0"
+                                                                                       Text="{Binding ProgressIcon}"
+                                                                                       FontSize="16"
+                                                                                       VerticalAlignment="Center"
+                                                                                       Margin="0,0,8,0"/>
+                                                                            <TextBlock Grid.Column="1"
+                                                                                       Text="{Binding ProgressStatusText}"
+                                                                                       FontSize="12"
+                                                                                       FontWeight="SemiBold"
+                                                                                       Foreground="{Binding ProgressTextBrush}"
+                                                                                       FontFamily="Segoe UI"
+                                                                                       VerticalAlignment="Center"/>
+                                                                            <TextBlock Grid.Column="2"
+                                                                                       Text="{Binding TimerText}"
+                                                                                       FontSize="14"
+                                                                                       FontWeight="SemiBold"
+                                                                                       FontFamily="Consolas"
+                                                                                       Foreground="{Binding ProgressTextBrush}"
+                                                                                       Visibility="{Binding TimerVisibility}"
+                                                                                       VerticalAlignment="Center"/>
+                                                                        </Grid>
+                                                                        <!-- Progress bar -->
+                                                                        <ProgressBar Height="6"
+                                                                                     Margin="0,8,0,0"
+                                                                                     IsIndeterminate="{Binding ProgressIsIndeterminate}"
+                                                                                     Value="{Binding ProgressValue}"
+                                                                                     Maximum="100"
+                                                                                     Foreground="{Binding ProgressBarBrush}"
+                                                                                     Background="#E0E0E0"
+                                                                                     BorderThickness="0"/>
+                                                                        <!-- Subtitle (cross-section info, iteration, etc.) -->
+                                                                        <TextBlock Text="{Binding ProgressSubText}"
+                                                                                   FontSize="10"
+                                                                                   Foreground="{Binding ProgressSubTextBrush}"
+                                                                                   FontFamily="Segoe UI"
+                                                                                   Margin="0,4,0,0"
+                                                                                   Visibility="{Binding ProgressSubTextVisibility}"/>
+                                                                    </StackPanel>
+                                                                </Border>
+
+                                                                <!-- Main message display -->
+                                                                <TextBox Grid.Row="1"
+                                                                         IsReadOnly="True"
+                                                                         VerticalAlignment="Stretch"
                                                                          TextWrapping="Wrap"
                                                                          VerticalScrollBarVisibility="Auto"
                                                                          BorderThickness="0"
-                                                                         Text="{Binding MessageText}" />
+                                                                         Margin="4,4,4,0"
+                                                                         Text="{Binding MessageText}"/>
+
+                                                                <!-- Legacy overlays (kept for RunningTime/Stopwatch positional compat) -->
                                                                 <TextBox Name="RunningTime"
-														                 IsReadOnly="true"
-														                 Margin="-385,-300,0,0"
-														                 Foreground="Blue"
-														                 Background="White"
-														                 BorderBrush="white"
-														                 BorderThickness="0"
-														                 Height="30"
-														                 Width="130"
-														                 Text="{Binding RunningTimeText}"
-														                 Visibility="{Binding RunningTimeVisibility}" />
+                                                                         IsReadOnly="true"
+                                                                         Foreground="Blue" Background="White"
+                                                                         BorderBrush="white" BorderThickness="0"
+                                                                         Height="1" Width="1" Opacity="0"
+                                                                         Text="{Binding RunningTimeText}"
+                                                                         Visibility="{Binding RunningTimeVisibility}" />
                                                                 <TextBox Name="StopWatch"
-														                 IsReadOnly="true"
-														                 Margin="-185,-300,0,0"
-														                 Foreground="Blue"
-														                 BorderBrush="white"
-														                 BorderThickness="0"
-														                 Height="30"
-														                 Width="130"
-														                 Text="{Binding StopwatchText}"
-														                 Visibility="{Binding StopwatchVisibility}" />
-                                                                <TextBox Name="Timer"
-														                 Margin="-185,-300,0,0"
-														                 Foreground="Blue"
-														                 BorderBrush="white"
-														                 BorderThickness="0"
-														                 Height="30"
-														                 Width="130"
-														                 IsReadOnly="True"
-														                 Text="{Binding TimerText}"
-														                 Visibility="{Binding TimerVisibility}" />
+                                                                         IsReadOnly="true"
+                                                                         Foreground="Blue"
+                                                                         BorderBrush="white" BorderThickness="0"
+                                                                         Height="1" Width="1" Opacity="0"
+                                                                         Text="{Binding StopwatchText}"
+                                                                         Visibility="{Binding StopwatchVisibility}" />
                                                                 <TextBox Name="CrossSection"
-														                 IsReadOnly="true"
-														                 Margin="-385,-250,-270,0"
-														                 Foreground="Blue"
-														                 Background="White"
-														                 BorderBrush="white"
-														                 BorderThickness="0"
-														                 Height="30"
-														                 Width="400"
-														                 Text="{Binding CrossSectionText}"
-														                 Visibility="{Binding CrossSectionVisibility}" />
+                                                                         IsReadOnly="true"
+                                                                         Foreground="Blue" Background="White"
+                                                                         BorderBrush="white" BorderThickness="0"
+                                                                         Height="1" Width="1" Opacity="0"
+                                                                         Text="{Binding CrossSectionText}"
+                                                                         Visibility="{Binding CrossSectionVisibility}" />
                                                             </Grid>
                                                         </TabItem>
 
@@ -1656,6 +1704,10 @@
                                             <Button Canvas.Top="570"
                                             Canvas.Left="400"
                                             Command="{Binding DeleteCurrentEval}">Delete Eval. Point</Button>
+                                            <Button Canvas.Top="570"
+                                            Canvas.Left="600"
+                                            Foreground="Red"
+                                            Command="{Binding OnDeleteUserDefinedAircraft}">Delete Aircraft</Button>
 
                                         </Canvas>
                                     </GroupBox>
@@ -2083,10 +2135,18 @@
 
                         </telerik:RadPane>
 
-                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Detailed Computation Report"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}"
                                         IsHidden="{Binding DetailedReportIsHidden,  Mode=TwoWay}"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="DetailedReport">
+                            <telerik:RadPane.Header>
+                                <StackPanel Orientation="Horizontal"
+                                            ToolTip="CM Report — Computational Mechanics&#x0a;A detailed computational trace of the pavement design process.&#x0a;This is a supplementary report not part of the standard FAARFIELD output.">
+                                    <TextBlock Text="CM Report" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <TextBlock Text=" &#x24D8;" FontSize="12" Foreground="#2E5EA8"
+                                               VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                </StackPanel>
+                            </telerik:RadPane.Header>
 
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -2342,6 +2402,63 @@
                                         </ComboBox>
                                     </Canvas>
                                 </StackPanel>
+
+                                <!-- RDEC Mix Properties Panel - visible only when CalculateHmaCdf = Yes -->
+                                <StackPanel Orientation="Vertical"
+                                            Visibility="{Binding Path=CurrentJob.DesignOptions.CalculateHmaCdf, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <Canvas Width="240" Height="30">
+                                        <TextBlock Canvas.Top="5" Canvas.Left="5"
+                                                   FontWeight="Bold" FontSize="12"
+                                                   Text="RDEC Mix Properties" />
+                                        <Button Canvas.Top="3" Canvas.Left="170"
+                                                Width="20" Height="20"
+                                                FontSize="10" Content="&#x2139;"
+                                                ToolTip="Show info about RDEC mix properties"
+                                                Command="{Binding ToggleRdecInfo_Command}" />
+                                    </Canvas>
+                                    <TextBlock Visibility="{Binding RdecInfoVisible}"
+                                               TextWrapping="Wrap" Margin="5,0,5,5"
+                                               FontSize="10" Foreground="Gray"
+                                               Text="Default values are for a standard P-401 HMA mix per FAA AC 150/5320-6. Modify to match your specific asphalt mix design." />
+                                    <Canvas Width="240" Height="35">
+                                        <Label Canvas.Top="5" Canvas.Left="5" FontSize="11">Flexural Modulus (psi):</Label>
+                                        <TextBox Canvas.Top="5" Canvas.Left="155" Width="75" Height="24"
+                                                 Text="{Binding Path=CurrentSectionView.Section.RdecFlexuralMod, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                    </Canvas>
+                                    <Canvas Width="240" Height="35">
+                                        <Label Canvas.Top="5" Canvas.Left="5" FontSize="11">Air Voids (%):</Label>
+                                        <TextBox Canvas.Top="5" Canvas.Left="155" Width="75" Height="24"
+                                                 Text="{Binding Path=CurrentSectionView.Section.RdecAirVoids, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                    </Canvas>
+                                    <Canvas Width="240" Height="35">
+                                        <Label Canvas.Top="5" Canvas.Left="5" FontSize="11">Asphalt Content (% vol):</Label>
+                                        <TextBox Canvas.Top="5" Canvas.Left="155" Width="75" Height="24"
+                                                 Text="{Binding Path=CurrentSectionView.Section.RdecAsphaltContentByVol, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                    </Canvas>
+                                    <Canvas Width="240" Height="35">
+                                        <Label Canvas.Top="5" Canvas.Left="5" FontSize="11">Passing NMS (%):</Label>
+                                        <TextBox Canvas.Top="5" Canvas.Left="155" Width="75" Height="24"
+                                                 Text="{Binding Path=CurrentSectionView.Section.RdecPNMS, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                    </Canvas>
+                                    <Canvas Width="240" Height="35">
+                                        <Label Canvas.Top="5" Canvas.Left="5" FontSize="11">Passing PCS (%):</Label>
+                                        <TextBox Canvas.Top="5" Canvas.Left="155" Width="75" Height="24"
+                                                 Text="{Binding Path=CurrentSectionView.Section.RdecPPCS, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                    </Canvas>
+                                    <Canvas Width="240" Height="35">
+                                        <Label Canvas.Top="5" Canvas.Left="5" FontSize="11">Passing #200 (%):</Label>
+                                        <TextBox Canvas.Top="5" Canvas.Left="155" Width="75" Height="24"
+                                                 Text="{Binding Path=CurrentSectionView.Section.RdecP200, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                    </Canvas>
+                                    <Canvas Width="240" Height="35">
+                                        <Button Canvas.Top="5" Canvas.Left="5"
+                                                Width="160" Height="24"
+                                                FontSize="11"
+                                                Content="Reset to P-401 Defaults"
+                                                Command="{Binding ResetRdecDefaults_Command}" />
+                                    </Canvas>
+                                </StackPanel>
+
                                 <StackPanel  Orientation="Vertical">
                                     <Canvas Width="240"
                                         Height="55">

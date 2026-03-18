@@ -55,7 +55,7 @@ Namespace Libs
             sb.AppendLine("<head>")
             sb.AppendLine("<meta charset='UTF-8'>")
             sb.AppendLine("<meta name='viewport' content='width=device-width, initial-scale=1.0'>")
-            sb.AppendLine("<title>FAARFIELD Detailed Computation Report — " & WebEncode(jobName) & "</title>")
+            sb.AppendLine("<title>FAARFIELD CM Report — " & WebEncode(jobName) & "</title>")
             sb.AppendLine("<style>")
             sb.AppendLine(GetCss())
             sb.AppendLine("</style>")
@@ -64,7 +64,7 @@ Namespace Libs
 
             ' ===== Header =====
             sb.AppendLine("<header class='report-header'>")
-            sb.AppendLine("<h1>FAA FAARFIELD Detailed Computation Report <button id='btn-print' class='btn-action'>Print Report</button></h1>")
+            sb.AppendLine("<h1>FAA FAARFIELD CM Report — Computational Mechanics <button id='btn-print' class='btn-action'>Print Report</button></h1>")
             sb.AppendLine("<p class='subtitle'>" & WebEncode(appTitle) & "</p>")
             sb.AppendLine("<div class='header-meta'>")
             sb.AppendLine("<div><strong>Job:</strong> " & WebEncode(jobName) & "</div>")
@@ -142,6 +142,12 @@ Namespace Libs
 
             sb.AppendLine("<div class='callout info'>Evaluation Depth at Subgrade = " &
                 Format(rpt.SublayerData.EvalDepthSubgrade, "0.00") & " " & thicknessUnit & "</div>")
+
+            ' A.3 Aggregate sublayer modulus explanation
+            If rpt.SublayerData.HasAggregateSublayers Then
+                AppendSublayerModulusSection(sb, rpt.SublayerData, thicknessUnit, pressureUnit)
+            End If
+
             sb.AppendLine("</section>")
 
             ' ===== Section B: Design Equations =====
@@ -249,6 +255,101 @@ Namespace Libs
                 sb.AppendLine("<figcaption>Figure " & figNum & ": Fatigue life reserve ratio per aircraft</figcaption>")
                 sb.AppendLine("</figure>")
 
+                ' D.2 Asphalt (HMA) Fatigue Characterization
+                If rpt.AsphaltCDFComputed Then
+                    sb.AppendLine("<div class='asphalt-fatigue-section'>")
+                    sb.AppendLine("<h3>D.2 Asphalt (HMA) Layer Fatigue</h3>")
+
+                    sb.AppendLine("<div class='callout info'><p>In addition to subgrade rutting, FAARFIELD evaluates fatigue cracking of the " &
+                        "hot-mix asphalt (HMA) surface layer. The governing failure mode for design is typically subgrade rutting " &
+                        "(CDF<sub>subgrade</sub> &rarr; 1.0), but the asphalt CDF is computed in parallel using " &
+                        "the horizontal tensile strain at the bottom of the HMA layer.</p></div>")
+
+                    If rpt.AsphaltModel = "RDEC" Then
+                        ' RDEC equation card
+                        sb.AppendLine("<div class='equation-card rdec-model'>")
+                        sb.AppendLine("<h4>RDEC Asphalt Fatigue Model</h4>")
+                        sb.AppendLine("<div class='eq'>PV = 44.422 &times; &epsilon;<sup>5.14</sup> &times; (E &times; 0.0068948)<sup>2.993</sup> &times; VP<sup>1.85</sup> &times; GP<sup>&minus;0.4063</sup></div>")
+                        sb.AppendLine("<div class='eq'>N<sub>fail</sub> = 0.4801 &times; PV<sup>&minus;0.90074</sup></div>")
+                        sb.AppendLine("<div class='eq-note'>")
+                        sb.AppendLine("<strong>&epsilon;</strong> = horizontal tensile strain at bottom of HMA<br/>")
+                        sb.AppendLine("<strong>E</strong> = flexural modulus (psi &times; 0.0068948 &rarr; MPa)<br/>")
+                        sb.AppendLine("<strong>VP</strong> = V<sub>a</sub> / (V<sub>a</sub> + V<sub>b</sub>) &nbsp;(void parameter)<br/>")
+                        sb.AppendLine("<strong>GP</strong> = (PNMS &minus; PPCS) / P200 &nbsp;(gradation parameter)")
+                        sb.AppendLine("</div></div>")
+
+                        ' RDEC mix parameters table
+                        sb.AppendLine("<h4>RDEC Mix Parameters</h4>")
+                        sb.AppendLine("<table class='data-table param-table'><thead><tr>")
+                        sb.AppendLine("<th>Parameter</th><th>Symbol</th><th>Value</th><th>Description</th>")
+                        sb.AppendLine("</tr></thead><tbody>")
+                        AppendParamRow4(sb, "Flexural Modulus", "E", Format(rpt.RdecFlexuralMod, "#,##0") & " psi", "HMA flexural stiffness at design conditions")
+                        AppendParamRow4(sb, "Air Voids", "V<sub>a</sub>", Format(rpt.RdecAirVoids, "0.0") & " %", "Percent air voids in HMA mix")
+                        AppendParamRow4(sb, "Asphalt Content", "V<sub>b</sub>", Format(rpt.RdecAsphaltContent, "0.0") & " %", "Asphalt content by volume")
+                        AppendParamRow4(sb, "Void Parameter", "VP", Format(rpt.RdecVoidParameter, "0.0000"), "V<sub>a</sub> / (V<sub>a</sub> + V<sub>b</sub>)")
+                        AppendParamRow4(sb, "Nom. Max Sieve Passing", "PNMS", Format(rpt.RdecPNMS, "0.0") & " %", "Percent passing nominal maximum sieve")
+                        AppendParamRow4(sb, "Primary Control Sieve", "PPCS", Format(rpt.RdecPPCS, "0.0") & " %", "Percent passing primary control sieve")
+                        AppendParamRow4(sb, "P-200 Fraction", "P200", Format(rpt.RdecP200, "0.0") & " %", "Percent passing #200 sieve")
+                        AppendParamRow4(sb, "Gradation Parameter", "GP", Format(rpt.RdecGradationParameter, "0.000"), "(PNMS &minus; PPCS) / P200")
+                        sb.AppendLine("</tbody></table>")
+                    Else
+                        ' AI equation card
+                        sb.AppendLine("<div class='equation-card ai-model'>")
+                        sb.AppendLine("<h4>Asphalt Institute (AI) Fatigue Model</h4>")
+                        sb.AppendLine("<div class='eq'>AA = 2.68 &minus; 5.0 &times; log<sub>10</sub>(&epsilon;)</div>")
+                        sb.AppendLine("<div class='eq'>BB = 2.665 &times; log<sub>10</sub>(E<sub>asp</sub>)</div>")
+                        sb.AppendLine("<div class='eq'>N<sub>fail</sub> = 10<sup>(AA &minus; BB)</sup></div>")
+                        sb.AppendLine("<div class='eq-note'>&epsilon; = horizontal tensile strain at bottom of HMA<br/>E<sub>asp</sub> = asphalt surface modulus (psi)</div>")
+                        sb.AppendLine("</div>")
+                    End If
+
+                    ' Per-aircraft asphalt CDF table
+                    sb.AppendLine("<h4>Asphalt CDF Per Aircraft</h4>")
+                    sb.AppendLine("<table class='data-table'><thead><tr>")
+                    sb.AppendLine("<th>Aircraft</th><th>HMA Strain (&mu;&epsilon;)</th><th>N<sub>fail,HMA</sub></th><th>Repetitions</th><th>CDF<sub>HMA</sub></th><th>CDF<sub>Subgrade</sub></th><th>Governing</th>")
+                    sb.AppendLine("</tr></thead><tbody>")
+                    For ia As Integer = 1 To UBound(rpt.AircraftDetails)
+                        If rpt.AircraftDetails(ia) Is Nothing Then Continue For
+                        Dim det = rpt.AircraftDetails(ia)
+                        Dim governing As String = "&mdash;"
+                        If det.AsphaltCDF > 0 AndAlso det.MaxCDF > 0 Then
+                            governing = If(det.MaxCDF >= det.AsphaltCDF, "<span class='badge-subgrade'>Subgrade</span>", "<span class='badge-asphalt'>Asphalt</span>")
+                        End If
+                        sb.AppendLine("<tr>")
+                        sb.Append("<td>" & WebEncode(det.ACName) & "</td>")
+                        sb.Append("<td>" & If(det.AsphaltStrain > 0, Format(det.AsphaltStrain * 1000000, "0.00"), "&mdash;") & "</td>")
+                        sb.Append("<td>" & If(det.AsphaltNtoFail > 0, Format(det.AsphaltNtoFail, "0.000E+00"), "&mdash;") & "</td>")
+                        sb.Append("<td>" & Format(det.TotalRepetitions, "#,##0") & "</td>")
+                        sb.Append("<td>" & If(det.AsphaltCDF > 0, Format(det.AsphaltCDF, "0.000E+00"), "&mdash;") & "</td>")
+                        sb.Append("<td>" & Format(det.MaxCDF, "0.000000") & "</td>")
+                        sb.Append("<td>" & governing & "</td>")
+                        sb.AppendLine("</tr>")
+                    Next
+                    sb.AppendLine("</tbody></table>")
+
+                    ' Asphalt CDF summary comparison
+                    Dim govLabel As String = If(rpt.CDFSweep.MaxCDF >= rpt.AsphaltCDFTotal, "Subgrade Rutting", "Asphalt Fatigue")
+                    sb.AppendLine("<div class='cdf-comparison'>")
+                    sb.AppendLine("<div class='cdf-compare-card subgrade-card'>")
+                    sb.AppendLine("<div class='cdf-compare-label'>CDF<sub>Subgrade</sub></div>")
+                    sb.AppendLine("<div class='cdf-compare-value'>" & Format(rpt.CDFSweep.MaxCDF, "0.000000") & "</div>")
+                    sb.AppendLine("</div>")
+                    sb.AppendLine("<div class='cdf-compare-vs'>vs</div>")
+                    sb.AppendLine("<div class='cdf-compare-card asphalt-card'>")
+                    sb.AppendLine("<div class='cdf-compare-label'>CDF<sub>Asphalt</sub></div>")
+                    sb.AppendLine("<div class='cdf-compare-value'>" & Format(rpt.AsphaltCDFTotal, "0.000000") & "</div>")
+                    sb.AppendLine("</div>")
+                    sb.AppendLine("<div class='cdf-compare-governing'>Governing: <strong>" & govLabel & "</strong></div>")
+                    sb.AppendLine("</div>")
+
+                    sb.AppendLine("<div class='callout note'><p>FAARFIELD uses the governing failure mode (typically subgrade rutting) " &
+                        "for thickness design convergence (CDF &rarr; 1.0). The asphalt CDF is computed in parallel " &
+                        "but does not directly control the design thickness unless it exceeds the subgrade CDF. " &
+                        "Monitoring the asphalt CDF is valuable for evaluating HMA layer fatigue life under different traffic mixes.</p></div>")
+
+                    sb.AppendLine("</div>") ' close asphalt-fatigue-section
+                End If
+
                 sb.AppendLine("</section>")
             End If
 
@@ -291,6 +392,15 @@ Namespace Libs
                     AppendParamRow(sb, "Max CDF (this aircraft)", Format(det.MaxCDF, "0.000000"), "Peak damage contribution")
                     AppendParamRow(sb, "CDF at Critical Offset", Format(det.CDFAtCriticalOffset, "0.000000"), "Damage at critical strip")
                     sb.AppendLine("</tbody></table>")
+
+                    ' Gear configuration SVG
+                    If det.NWheels > 0 AndAlso det.WheelX IsNot Nothing Then
+                        figNum += 1
+                        sb.AppendLine("<figure>")
+                        AppendGearConfigSVG(sb, det, rpt.CDFSweep.MaxCDFOffset, lengthUnit)
+                        sb.AppendLine("<figcaption>Figure " & figNum & ": Gear configuration for " & WebEncode(det.ACName) & "</figcaption>")
+                        sb.AppendLine("</figure>")
+                    End If
 
                     ' Pavement cross-section SVG
                     figNum += 1
@@ -608,6 +718,10 @@ Namespace Libs
             sb.AppendLine("<tr><td>" & param & "</td><td>" & value & "</td><td>" & desc & "</td></tr>")
         End Sub
 
+        Private Shared Sub AppendParamRow4(sb As StringBuilder, param As String, symbol As String, value As String, desc As String)
+            sb.AppendLine("<tr><td>" & param & "</td><td>" & symbol & "</td><td>" & value & "</td><td>" & desc & "</td></tr>")
+        End Sub
+
         Private Shared Sub AppendLayerTable(sb As StringBuilder, title As String, layers As List(Of clsLayerInfo), thkUnit As String, presUnit As String)
             If title <> "" Then sb.AppendLine("<h3>" & title & "</h3>")
             sb.AppendLine("<table class='data-table'><thead><tr><th>Layer #</th><th>Thickness (" & thkUnit & ")</th><th>Modulus (" & presUnit & ")</th><th>LCode</th></tr></thead><tbody>")
@@ -623,6 +737,299 @@ Namespace Libs
         Private Shared Function WebEncode(s As String) As String
             If s Is Nothing Then Return ""
             Return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("""", "&quot;")
+        End Function
+
+#End Region
+
+#Region "Sublayer Modulus Explanation"
+
+        Private Shared Sub AppendSublayerModulusSection(sb As StringBuilder, sld As clsSublayerData, thkUnit As String, presUnit As String)
+            sb.AppendLine("<div class='sublayer-modulus-section'>")
+            sb.AppendLine("<h3>Unbound Aggregate Modulus &mdash; Sublayering Procedure</h3>")
+
+            ' Explanation
+            sb.AppendLine("<div class='callout note'>")
+            sb.AppendLine("<p>Unbound aggregate layers (crushed base and uncrushed subbase) do not have a single " &
+                "fixed modulus. FAARFIELD subdivides each aggregate layer into sublayers and computes a " &
+                "depth-dependent modulus for each using an empirical formula. The modulus of each sublayer " &
+                "depends on the modulus of the material below it &mdash; sublayers near the bottom (close to the subgrade) " &
+                "have lower moduli, while sublayers near the top have higher moduli. The computation proceeds from " &
+                "the bottom of the aggregate layer upward.</p>")
+            sb.AppendLine("</div>")
+
+            ' Formula card
+            sb.AppendLine("<div class='equation-card'>")
+            sb.AppendLine("<h4>Sublayer Modulus Reduction Formula</h4>")
+            sb.AppendLine("<div class='eq'>f<sub>1</sub> = 1 + C &times; ln(t) / ln(10)</div>")
+            sb.AppendLine("<div class='eq'>f<sub>2</sub> = D &times; ln(E<sub>i&minus;1</sub>) &times; ln(t) / ln&sup2;(10)</div>")
+            sb.AppendLine("<div class='eq sublayer-main-eq'>E<sub>i</sub> = E<sub>i&minus;1</sub> &times; (f<sub>1</sub> &minus; f<sub>2</sub>)</div>")
+            sb.AppendLine("<div class='eq-note'>where <var>t</var> = sublayer thickness (" & thkUnit & "), " &
+                "<var>E<sub>i&minus;1</sub></var> = modulus of the layer below (" & presUnit & "). " &
+                "Applied iteratively from the bottom sublayer upward.</div>")
+            sb.AppendLine("</div>")
+
+            ' Parameters comparison table
+            If sld.BaseSublayerCount > 0 OrElse sld.SubbaseSublayerCount > 0 Then
+                sb.AppendLine("<table class='data-table param-compare'>")
+                sb.AppendLine("<thead><tr><th>Parameter</th>")
+                If sld.BaseSublayerCount > 0 Then sb.AppendLine("<th>P-209 Crushed Base</th>")
+                If sld.SubbaseSublayerCount > 0 Then sb.AppendLine("<th>P-154 Uncrushed Subbase</th>")
+                sb.AppendLine("</tr></thead><tbody>")
+
+                ' C
+                sb.Append("<tr><td>C (thickness factor)</td>")
+                If sld.BaseSublayerCount > 0 Then sb.Append("<td>" & Format(sld.BaseCoeffC, "0.00") & "</td>")
+                If sld.SubbaseSublayerCount > 0 Then sb.Append("<td>" & Format(sld.SubbaseCoeffC, "0.00") & "</td>")
+                sb.AppendLine("</tr>")
+
+                ' D
+                sb.Append("<tr><td>D (modulus interaction)</td>")
+                If sld.BaseSublayerCount > 0 Then sb.Append("<td>" & Format(sld.BaseCoeffD, "0.00") & "</td>")
+                If sld.SubbaseSublayerCount > 0 Then sb.Append("<td>" & Format(sld.SubbaseCoeffD, "0.00") & "</td>")
+                sb.AppendLine("</tr>")
+
+                ' E below
+                sb.Append("<tr><td>E<sub>below</sub> (" & presUnit & ")</td>")
+                If sld.BaseSublayerCount > 0 Then sb.Append("<td>" & Format(sld.BaseModUnder, "#,##0") & "</td>")
+                If sld.SubbaseSublayerCount > 0 Then sb.Append("<td>" & Format(sld.SubbaseModUnder, "#,##0") & "</td>")
+                sb.AppendLine("</tr>")
+
+                ' Sublayer count
+                sb.Append("<tr><td>Number of sublayers</td>")
+                If sld.BaseSublayerCount > 0 Then sb.Append("<td>" & sld.BaseSublayerCount.ToString() & "</td>")
+                If sld.SubbaseSublayerCount > 0 Then sb.Append("<td>" & sld.SubbaseSublayerCount.ToString() & "</td>")
+                sb.AppendLine("</tr>")
+
+                sb.AppendLine("</tbody></table>")
+            End If
+
+            ' Base sublayer detail table
+            If sld.BaseSublayers.Count > 0 Then
+                sb.AppendLine("<h4>P-209 Crushed Aggregate Base &mdash; Sublayer Moduli</h4>")
+                sb.AppendLine("<table class='data-table sublayer-detail'><thead><tr>" &
+                    "<th>Sublayer</th><th>Thickness (" & thkUnit & ")</th><th>Modulus (" & presUnit & ")</th>" &
+                    "</tr></thead><tbody>")
+                For si As Integer = 0 To sld.BaseSublayers.Count - 1
+                    Dim bsl = sld.BaseSublayers(si)
+                    Dim posLabel As String = If(si = 0, " (top)", If(si = sld.BaseSublayers.Count - 1, " (bottom)", ""))
+                    sb.AppendLine("<tr><td>" & (si + 1).ToString() & posLabel & "</td>" &
+                        "<td>" & Format(bsl.Thickness, "0.00") & "</td>" &
+                        "<td>" & Format(bsl.Modulus, "#,##0") & "</td></tr>")
+                Next
+                sb.AppendLine("<tr class='ref-row'><td>&darr; Layer below</td><td>&mdash;</td>" &
+                    "<td>" & Format(sld.BaseModUnder, "#,##0") & "</td></tr>")
+                sb.AppendLine("</tbody></table>")
+            End If
+
+            ' Subbase sublayer detail table
+            If sld.SubbaseSublayers.Count > 0 Then
+                sb.AppendLine("<h4>P-154 Uncrushed Aggregate Subbase &mdash; Sublayer Moduli</h4>")
+                sb.AppendLine("<table class='data-table sublayer-detail'><thead><tr>" &
+                    "<th>Sublayer</th><th>Thickness (" & thkUnit & ")</th><th>Modulus (" & presUnit & ")</th>" &
+                    "</tr></thead><tbody>")
+                For si As Integer = 0 To sld.SubbaseSublayers.Count - 1
+                    Dim ssl = sld.SubbaseSublayers(si)
+                    Dim posLabel As String = If(si = 0, " (top)", If(si = sld.SubbaseSublayers.Count - 1, " (bottom)", ""))
+                    sb.AppendLine("<tr><td>" & (si + 1).ToString() & posLabel & "</td>" &
+                        "<td>" & Format(ssl.Thickness, "0.00") & "</td>" &
+                        "<td>" & Format(ssl.Modulus, "#,##0") & "</td></tr>")
+                Next
+                sb.AppendLine("<tr class='ref-row'><td>&darr; Layer below</td><td>&mdash;</td>" &
+                    "<td>" & Format(sld.SubbaseModUnder, "#,##0") & "</td></tr>")
+                sb.AppendLine("</tbody></table>")
+            End If
+
+            ' SVG modulus-depth profile
+            AppendModulusDepthSVG(sb, sld, thkUnit, presUnit)
+
+            sb.AppendLine("<p class='fig-caption'>Modulus vs. depth profile for the expanded sublayer structure. " &
+                "Aggregate layers are subdivided and their moduli computed bottom&rarr;up using the empirical reduction formula. " &
+                "The teal step line traces the modulus at each sublayer depth.</p>")
+            sb.AppendLine("</div>")
+        End Sub
+
+
+        Private Shared Sub AppendModulusDepthSVG(sb As StringBuilder, sld As clsSublayerData, thkUnit As String, presUnit As String)
+            Dim allLayers = sld.ExpandedSublayers
+            If allLayers.Count < 2 Then Exit Sub
+
+            Dim svgW As Integer = 800
+            Dim svgH As Integer = 480
+
+            ' Compute depth and modulus ranges
+            Dim depths As New List(Of Single)
+            Dim cumD As Single = 0
+            For i As Integer = 0 To allLayers.Count - 2
+                depths.Add(cumD)
+                cumD += allLayers(i).Thickness
+            Next
+            depths.Add(cumD)
+
+            Dim maxDepth As Single = cumD * 1.15F
+            If maxDepth < 10 Then maxDepth = 10
+
+            Dim minMod As Single = Single.MaxValue
+            Dim maxMod As Single = Single.MinValue
+            For Each sl In allLayers
+                If sl.Modulus > maxMod Then maxMod = sl.Modulus
+                If sl.Modulus < minMod Then minMod = sl.Modulus
+            Next
+            Dim modPadMin As Single = minMod * 0.85F
+            Dim modPadMax As Single = maxMod * 1.1F
+
+            ' Layout
+            Dim layerX As Single = 70
+            Dim layerW As Single = 100
+            Dim plotL As Single = 220
+            Dim plotR As Single = 750
+            Dim plotT As Single = 30
+            Dim plotB As Single = 420
+            Dim plotH As Single = plotB - plotT
+            Dim plotW As Single = plotR - plotL
+
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' width='" & svgW & "' height='" & svgH & "' class='modulus-depth-svg' xmlns='http://www.w3.org/2000/svg'>")
+
+            ' Defs for gradient
+            sb.AppendLine("<defs>")
+            sb.AppendLine("<linearGradient id='agg-grad' x1='0' y1='0' x2='1' y2='0'>")
+            sb.AppendLine("<stop offset='0%' stop-color='#00796B' stop-opacity='0.15'/>")
+            sb.AppendLine("<stop offset='100%' stop-color='#00796B' stop-opacity='0.05'/>")
+            sb.AppendLine("</linearGradient>")
+            sb.AppendLine("</defs>")
+
+            ' Grid lines for modulus axis
+            Dim modStep As Single = CSng(Math.Pow(10, Math.Floor(Math.Log10(modPadMax - modPadMin))))
+            If (modPadMax - modPadMin) / modStep < 3 Then modStep /= 2
+            If (modPadMax - modPadMin) / modStep > 8 Then modStep *= 2
+            Dim mt As Single = CSng(Math.Ceiling(modPadMin / modStep) * modStep)
+            While mt <= modPadMax
+                Dim x As Single = SvgModToX(mt, plotL, modPadMin, modPadMax, plotW)
+                sb.AppendLine("<line x1='" & Fmt(x) & "' y1='" & Fmt(plotT) & "' x2='" & Fmt(x) & "' y2='" & Fmt(plotB) & "' stroke='#e0e0e0' stroke-width='0.5'/>")
+                sb.AppendLine("<text x='" & Fmt(x) & "' y='" & Fmt(plotB + 16) & "' text-anchor='middle' class='tick-label'>" & Format(mt, "#,##0") & "</text>")
+                mt += modStep
+            End While
+
+            ' Depth grid lines at layer interfaces
+            For Each d As Single In depths
+                Dim y As Single = SvgDepthToY(d, plotT, maxDepth, plotH)
+                sb.AppendLine("<line x1='" & Fmt(plotL) & "' y1='" & Fmt(y) & "' x2='" & Fmt(plotR) & "' y2='" & Fmt(y) & "' stroke='#e8e8e8' stroke-width='0.5'/>")
+                ' Connector line from layer column to chart
+                sb.AppendLine("<line x1='" & Fmt(layerX + layerW) & "' y1='" & Fmt(y) & "' x2='" & Fmt(plotL) & "' y2='" & Fmt(y) & "' stroke='#ccc' stroke-width='0.4' stroke-dasharray='3,3'/>")
+                ' Depth label
+                sb.AppendLine("<text x='" & Fmt(layerX - 6) & "' y='" & Fmt(y + 4) & "' text-anchor='end' class='tick-label'>" & Format(d, "0.0") & "</text>")
+            Next
+
+            ' Axes
+            sb.AppendLine("<line x1='" & Fmt(plotL) & "' y1='" & Fmt(plotT) & "' x2='" & Fmt(plotL) & "' y2='" & Fmt(plotB) & "' stroke='#555' stroke-width='1.2'/>")
+            sb.AppendLine("<line x1='" & Fmt(plotL) & "' y1='" & Fmt(plotB) & "' x2='" & Fmt(plotR) & "' y2='" & Fmt(plotB) & "' stroke='#555' stroke-width='1.2'/>")
+            sb.AppendLine("<text x='" & Fmt(plotL + plotW / 2) & "' y='" & Fmt(plotB + 36) & "' text-anchor='middle' class='axis-label'>Modulus (" & presUnit & ")</text>")
+            sb.AppendLine("<text x='14' y='" & Fmt(plotT + plotH / 2) & "' text-anchor='middle' transform='rotate(-90,14," & Fmt(plotT + plotH / 2) & ")' class='axis-label'>Depth (" & thkUnit & ")</text>")
+
+            ' Left panel: layer bars
+            Dim layerColorList() As String = {"#37474F", "#00796B", "#795548", "#A1887F", "#BDBDBD", "#607D8B"}
+            For i As Integer = 0 To allLayers.Count - 2
+                Dim y1 As Single = SvgDepthToY(depths(i), plotT, maxDepth, plotH)
+                Dim y2 As Single = SvgDepthToY(depths(i + 1), plotT, maxDepth, plotH)
+                Dim h As Single = Math.Max(y2 - y1, 2)
+
+                ' Determine if aggregate
+                Dim isAgg As Boolean = IsAggregateSublayer(allLayers(i), sld)
+
+                Dim barCol As String
+                If isAgg Then
+                    ' Brown gradient shade
+                    Dim modRange As Single = maxMod - minMod
+                    If modRange < 100 Then modRange = 100
+                    Dim t As Single = (allLayers(i).Modulus - minMod) / modRange
+                    t = Math.Max(0, Math.Min(1, t))
+                    Dim r As Integer = CInt(161 + (90 - 161) * t * 0.7)
+                    Dim gv As Integer = CInt(136 + (100 - 136) * t * 0.7)
+                    Dim bv As Integer = CInt(127 + (80 - 127) * t * 0.7)
+                    barCol = "#" & r.ToString("X2") & gv.ToString("X2") & bv.ToString("X2")
+                ElseIf i = 0 Then
+                    barCol = layerColorList(0)
+                Else
+                    barCol = layerColorList(Math.Min(i, layerColorList.Length - 1))
+                End If
+
+                sb.AppendLine("<rect x='" & Fmt(layerX) & "' y='" & Fmt(y1) & "' width='" & Fmt(layerW) & "' height='" & Fmt(h) & "' fill='" & barCol & "' fill-opacity='0.8' stroke='#666' stroke-width='0.5'/>")
+
+                ' Thickness label inside bar
+                If h > 14 Then
+                    sb.AppendLine("<text x='" & Fmt(layerX + layerW / 2) & "' y='" & Fmt(y1 + h / 2 + 4) & "' text-anchor='middle' fill='white' class='small-label'>" &
+                        Format(allLayers(i).Thickness, "0.0") & " " & thkUnit & "</text>")
+                End If
+
+                ' Highlight aggregate sublayers in chart area
+                If isAgg Then
+                    Dim xm As Single = SvgModToX(allLayers(i).Modulus, plotL, modPadMin, modPadMax, plotW)
+                    sb.AppendLine("<rect x='" & Fmt(plotL) & "' y='" & Fmt(y1) & "' width='" & Fmt(xm - plotL) & "' height='" & Fmt(h) & "' fill='url(#agg-grad)'/>")
+                End If
+            Next
+
+            ' Step profile line
+            Dim pathD As String = ""
+            For i As Integer = 0 To allLayers.Count - 2
+                Dim y1 As Single = SvgDepthToY(depths(i), plotT, maxDepth, plotH)
+                Dim y2 As Single = SvgDepthToY(depths(i + 1), plotT, maxDepth, plotH)
+                Dim x As Single = SvgModToX(allLayers(i).Modulus, plotL, modPadMin, modPadMax, plotW)
+
+                If i = 0 Then
+                    pathD &= "M" & Fmt(x) & "," & Fmt(y1)
+                Else
+                    pathD &= " L" & Fmt(x) & "," & Fmt(y1)
+                End If
+                pathD &= " L" & Fmt(x) & "," & Fmt(y2)
+
+                ' Modulus label
+                Dim labelX As Single = x + 5
+                Dim anchor As String = "start"
+                If labelX + 50 > plotR Then
+                    labelX = x - 5
+                    anchor = "end"
+                End If
+                sb.AppendLine("<text x='" & Fmt(labelX) & "' y='" & Fmt((y1 + y2) / 2 + 4) & "' text-anchor='" & anchor & "' class='mod-label'>" & Format(allLayers(i).Modulus, "#,##0") & "</text>")
+
+                ' Step connector to next layer
+                If i < allLayers.Count - 2 Then
+                    Dim xNext As Single = SvgModToX(allLayers(i + 1).Modulus, plotL, modPadMin, modPadMax, plotW)
+                    pathD &= " L" & Fmt(xNext) & "," & Fmt(y2)
+                End If
+            Next
+            sb.AppendLine("<path d='" & pathD & "' fill='none' stroke='#00796B' stroke-width='2.5' stroke-linejoin='round'/>")
+
+            ' Dots at layer transitions
+            For i As Integer = 0 To allLayers.Count - 2
+                Dim y1 As Single = SvgDepthToY(depths(i), plotT, maxDepth, plotH)
+                Dim x As Single = SvgModToX(allLayers(i).Modulus, plotL, modPadMin, modPadMax, plotW)
+                sb.AppendLine("<circle cx='" & Fmt(x) & "' cy='" & Fmt(y1) & "' r='3' fill='#00796B' stroke='white' stroke-width='1'/>")
+            Next
+
+            sb.AppendLine("</svg>")
+        End Sub
+
+
+        Private Shared Function IsAggregateSublayer(layer As clsLayerInfo, sld As clsSublayerData) As Boolean
+            For Each bsl In sld.BaseSublayers
+                If Math.Abs(layer.Modulus - bsl.Modulus) < 1 AndAlso layer.LCode = bsl.LCode Then Return True
+            Next
+            For Each ssl In sld.SubbaseSublayers
+                If Math.Abs(layer.Modulus - ssl.Modulus) < 1 AndAlso layer.LCode = ssl.LCode Then Return True
+            Next
+            Return False
+        End Function
+
+
+        Private Shared Function SvgDepthToY(d As Single, plotT As Single, maxDepth As Single, plotH As Single) As Single
+            Return plotT + (d / maxDepth) * plotH
+        End Function
+
+        Private Shared Function SvgModToX(m As Single, plotL As Single, modPadMin As Single, modPadMax As Single, plotW As Single) As Single
+            Return plotL + ((m - modPadMin) / (modPadMax - modPadMin)) * plotW
+        End Function
+
+        Private Shared Function Fmt(v As Single) As String
+            Return Format(v, "0.#")
         End Function
 
 #End Region
@@ -668,7 +1075,8 @@ Namespace Libs
             End If
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Subgrade fatigue model chart'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' width='" & svgW & "' height='" & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Subgrade fatigue model chart'>")
+            sb.AppendLine("<title>Subgrade fatigue model chart</title>")
 
             ' Plot background
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
@@ -865,7 +1273,9 @@ Namespace Libs
             Dim pw = svgW - ml - mr
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Fatigue life reserve diverging bar chart'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' width='" & svgW & "' height='" & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Fatigue life reserve diverging bar chart'>")
+            sb.AppendLine("<title>Fatigue life reserve diverging bar chart</title>")
+            sb.AppendLine("<rect x='" & ml & "' y='30' width='" & pw & "' height='" & (svgH - 50) & "' fill='#FAFBFC' stroke='#ccc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>Fatigue Life Reserve (N<tspan dy='-4' font-size='8'>fail</tspan><tspan dy='4'> / Repetitions)</tspan></text>")
 
             Dim maxLogRatio As Double = 0
@@ -920,7 +1330,8 @@ Namespace Libs
             Dim yMax = maxCDF * 1.2
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='CDF vs offset chart for " & WebEncode(det.ACName) & "'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' width='" & svgW & "' height='" & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='CDF vs offset chart for " & WebEncode(det.ACName) & "'>")
+            sb.AppendLine("<title>CDF vs offset chart for " & WebEncode(det.ACName) & "</title>")
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>" & WebEncode(det.ACName) & " &mdash; CDF vs Offset</text>")
 
@@ -994,7 +1405,8 @@ Namespace Libs
             Dim yMax = maxCP * 1.15
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Coverage-to-pass distribution chart'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' width='" & svgW & "' height='" & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Coverage-to-pass distribution chart'>")
+            sb.AppendLine("<title>Coverage-to-pass distribution chart</title>")
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
             sb.AppendLine("<text x='" & Fmt(ml + pw / 2) & "' y='20' text-anchor='middle' class='chart-title'>Coverage-to-Pass (C/P) Distribution</text>")
 
@@ -1066,7 +1478,8 @@ Namespace Libs
             Dim yMax = maxCDF * 1.2
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Composite CDF distribution across pavement width'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' width='" & svgW & "' height='" & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Composite CDF distribution across pavement width'>")
+            sb.AppendLine("<title>Composite CDF distribution across pavement width</title>")
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
             sb.AppendLine("<text x='" & Fmt(ml + pw / 2) & "' y='20' text-anchor='middle' class='chart-title'>Composite CDF Across Pavement Width</text>")
 
@@ -1165,7 +1578,9 @@ Namespace Libs
             Dim pw = svgW - ml - mr
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='CDF contribution percentage bar chart'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' width='" & svgW & "' height='" & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='CDF contribution percentage bar chart'>")
+            sb.AppendLine("<title>CDF contribution percentage bar chart</title>")
+            sb.AppendLine("<rect x='" & ml & "' y='30' width='" & pw & "' height='" & (svgH - 50) & "' fill='#FAFBFC' stroke='#ccc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>CDF Contribution at Critical Offset (%)</text>")
 
             Dim yStart = 40
@@ -1216,7 +1631,8 @@ Namespace Libs
             If maxThk = minThk Then maxThk = minThk + 1
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Newton-Raphson convergence chart'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' width='" & svgW & "' height='" & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Newton-Raphson convergence chart'>")
+            sb.AppendLine("<title>Newton-Raphson convergence chart</title>")
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>Newton-Raphson Convergence</text>")
 
@@ -1316,7 +1732,8 @@ Namespace Libs
             Dim maxDep = pts.Max(Function(p) p.Item3)
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='ACR vs CDF per departure bubble chart'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' width='" & svgW & "' height='" & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='ACR vs CDF per departure bubble chart'>")
+            sb.AppendLine("<title>ACR vs CDF per departure bubble chart</title>")
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>ACR vs. CDF per Departure</text>")
 
@@ -1387,7 +1804,8 @@ Namespace Libs
             Dim layerColors() As String = {"#505050", "#C2B280", "#D2B48C", "#8B7765", "#789A5A"}
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Pavement cross-section diagram for " & WebEncode(det.ACName) & "'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' width='" & svgW & "' height='" & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Pavement cross-section diagram for " & WebEncode(det.ACName) & "'>")
+            sb.AppendLine("<title>Pavement cross-section diagram for " & WebEncode(det.ACName) & "</title>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='25' text-anchor='middle' class='chart-title'>Pavement Cross-Section &mdash; " & WebEncode(det.ACName) & "</text>")
 
             ' === Left panel: Layer stack ===
@@ -1471,6 +1889,196 @@ Namespace Libs
 
 #End Region
 
+#Region "SVG Diagram: Gear Configuration"
+
+        ''' <summary>
+        ''' Appends an inline SVG plan-view gear configuration diagram showing wheel positions,
+        ''' CDF offset strips, dimension annotations, and Gaussian wander overlay.
+        ''' </summary>
+        Private Shared Sub AppendGearConfigSVG(sb As StringBuilder, det As clsAircraftDetail, criticalOffset As Integer, lengthUnit As String)
+            If det.NWheels = 0 OrElse det.WheelX Is Nothing Then
+                sb.AppendLine("<p class='note-box'>Gear geometry data not available for this aircraft.</p>")
+                Return
+            End If
+
+            Dim svgW As Integer = 800, svgH As Integer = 550
+
+            ' Find coordinate ranges
+            Dim minX As Single = Single.MaxValue, maxX As Single = Single.MinValue
+            Dim minY As Single = Single.MaxValue, maxY As Single = Single.MinValue
+            For i As Integer = 1 To det.NWheels
+                If det.WheelX(i) < minX Then minX = det.WheelX(i)
+                If det.WheelX(i) > maxX Then maxX = det.WheelX(i)
+                If det.WheelY(i) < minY Then minY = det.WheelY(i)
+                If det.WheelY(i) > maxY Then maxY = det.WheelY(i)
+            Next
+            Dim pad As Single = CSng(Math.Max(det.TireWidth * 2, 30))
+            minX -= pad : maxX += pad
+            minY -= pad : maxY += pad
+
+            ' Plot area
+            Dim mL As Integer = 70, mR As Integer = 30, mT As Integer = 30, mB As Integer = 50
+            Dim pW As Integer = svgW - mL - mR
+            Dim pH As Integer = svgH - mT - mB
+
+            ' Uniform scale
+            Dim rangeX As Single = Math.Max(maxX - minX, 1)
+            Dim rangeY As Single = Math.Max(maxY - minY, 1)
+            Dim scX As Single = CSng(pW / rangeX)
+            Dim scY As Single = CSng(pH / rangeY)
+            Dim sc As Single = Math.Min(scX, scY)
+            Dim usedW As Single = rangeX * sc
+            Dim usedH As Single = rangeY * sc
+            Dim offX As Single = mL + (pW - usedW) / 2
+            Dim offY As Single = mT + (pH - usedH) / 2
+
+            Dim toPxX = Function(wx As Single) offX + (wx - minX) * sc
+            Dim toPxY = Function(wy As Single) offY + (maxY - wy) * sc
+
+            sb.AppendLine("<div class='chart-container-wide'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' width='" & svgW & "' height='" & svgH & "' xmlns='http://www.w3.org/2000/svg' style='width:100%;max-width:" & svgW & "px;'>")
+            sb.AppendLine("<title>Gear configuration diagram</title>")
+
+            ' Arrowhead marker
+            sb.AppendLine("<defs><marker id='arrowGear' markerWidth='6' markerHeight='4' refX='3' refY='2' orient='auto'>")
+            sb.AppendLine("<polygon points='0 0, 6 2, 0 4' fill='#666'/></marker></defs>")
+
+            ' CDF offset strips
+            Dim centerX As Single = (minX + pad + maxX - pad) / 2
+            For ioff As Integer = 0 To CDF.NOFF - 1
+                Dim offsetInches As Single = CSng(ioff * CDF.OFFSETINC)
+                Dim stripXpos As Single = centerX + offsetInches
+                If stripXpos >= minX AndAlso stripXpos <= maxX Then
+                    Dim px As Single = toPxX(stripXpos)
+                    If ioff = criticalOffset - 1 Then
+                        sb.AppendLine("<line x1='" & Fmt(px) & "' y1='" & mT & "' x2='" & Fmt(px) & "' y2='" & (mT + pH) & "' stroke='#DC3232' stroke-width='1' stroke-dasharray='4,3' opacity='0.7'/>")
+                        sb.AppendLine("<text x='" & Fmt(px) & "' y='" & (mT - 3) & "' text-anchor='middle' fill='red' style='font-size:9px'>critical</text>")
+                    Else
+                        sb.AppendLine("<line x1='" & Fmt(px) & "' y1='" & mT & "' x2='" & Fmt(px) & "' y2='" & (mT + pH) & "' stroke='#A0A0A0' stroke-width='0.5' stroke-dasharray='3,3' opacity='0.4'/>")
+                    End If
+                    If ioff Mod 5 = 0 Then
+                        sb.AppendLine("<text x='" & Fmt(px) & "' y='" & (mT + pH + 14) & "' text-anchor='middle' fill='gray' style='font-size:9px'>" & Format(offsetInches, "0") & "</text>")
+                    End If
+                End If
+            Next
+
+            ' Gaussian wander overlay
+            Dim sigma As Double = 30.435
+            Dim gaussMax As Double = 1.0 / (sigma * Math.Sqrt(2 * Math.PI))
+            Dim gaussH As Single = 35
+            Dim gaussPath As New System.Text.StringBuilder()
+            Dim firstGauss As Boolean = True
+            For px As Integer = mL To mL + pW
+                Dim wx As Single = minX + CSng((px - offX) / sc)
+                Dim dist As Double = wx - centerX
+                Dim gVal As Double = Math.Exp(-dist * dist / (2 * sigma * sigma)) / (sigma * Math.Sqrt(2 * Math.PI))
+                Dim py As Single = CSng(mT + pH - (gVal / gaussMax) * gaussH)
+                If firstGauss Then
+                    gaussPath.Append("M" & px & "," & Fmt(CSng(mT + pH)))
+                    gaussPath.Append(" L" & px & "," & Fmt(py))
+                    firstGauss = False
+                Else
+                    gaussPath.Append(" L" & px & "," & Fmt(py))
+                End If
+            Next
+            gaussPath.Append(" L" & (mL + pW) & "," & Fmt(CSng(mT + pH)) & " Z")
+            sb.AppendLine("<path d='" & gaussPath.ToString() & "' fill='rgba(46,94,168,0.08)' stroke='rgba(46,94,168,0.4)' stroke-width='1'/>")
+
+            ' Wheels
+            Dim tireR As Single = det.TireWidth / 2
+            For i As Integer = 1 To det.NWheels
+                Dim cx As Single = toPxX(det.WheelX(i))
+                Dim cy As Single = toPxY(det.WheelY(i))
+                Dim rPx As Single = tireR * sc
+                rPx = CSng(Math.Max(rPx, 6))
+                rPx = CSng(Math.Min(rPx, 35))
+                sb.AppendLine("<circle cx='" & Fmt(cx) & "' cy='" & Fmt(cy) & "' r='" & Fmt(rPx) & "' fill='rgba(46,94,168,0.45)' stroke='#2E5EA8' stroke-width='1'/>")
+                sb.AppendLine("<text x='" & Fmt(cx + rPx + 3) & "' y='" & Fmt(cy + 3) & "' style='font-size:9px'>(" & Format(det.WheelX(i), "0.0") & ", " & Format(det.WheelY(i), "0.0") & ")</text>")
+            Next
+
+            ' Dual spacing dimension
+            If det.DualSpacing > 0 AndAlso det.NWheels >= 2 Then
+                Dim w1 As Integer = 1, w2 As Integer = 2
+                For i As Integer = 1 To det.NWheels - 1
+                    For j As Integer = i + 1 To det.NWheels
+                        If Math.Abs(det.WheelY(i) - det.WheelY(j)) < 1 AndAlso Math.Abs(det.WheelX(i) - det.WheelX(j)) > 1 Then
+                            w1 = i : w2 = j
+                            GoTo FoundDualSVG
+                        End If
+                    Next
+                Next
+FoundDualSVG:
+                Dim px1 As Single = toPxX(det.WheelX(w1))
+                Dim px2 As Single = toPxX(det.WheelX(w2))
+                Dim py As Single = toPxY(det.WheelY(w1)) - tireR * sc - 12
+                py = CSng(Math.Max(py, mT + 5))
+                sb.AppendLine("<line x1='" & Fmt(px1) & "' y1='" & Fmt(py) & "' x2='" & Fmt(px2) & "' y2='" & Fmt(py) & "' stroke='#666' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & Fmt(px1) & "' y1='" & Fmt(py - 3) & "' x2='" & Fmt(px1) & "' y2='" & Fmt(py + 3) & "' stroke='#666' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & Fmt(px2) & "' y1='" & Fmt(py - 3) & "' x2='" & Fmt(px2) & "' y2='" & Fmt(py + 3) & "' stroke='#666' stroke-width='0.8'/>")
+                sb.AppendLine("<text x='" & Fmt((px1 + px2) / 2) & "' y='" & Fmt(py - 4) & "' text-anchor='middle' fill='#666' style='font-size:9px'>" & Format(det.DualSpacing, "0.0") & """ dual</text>")
+            End If
+
+            ' Tandem spacing dimension
+            If det.TandemSpacing > 0 AndAlso det.NWheels >= 2 Then
+                Dim w1 As Integer = 1, w2 As Integer = 2
+                For i As Integer = 1 To det.NWheels - 1
+                    For j As Integer = i + 1 To det.NWheels
+                        If Math.Abs(det.WheelX(i) - det.WheelX(j)) < 1 AndAlso Math.Abs(det.WheelY(i) - det.WheelY(j)) > 1 Then
+                            w1 = i : w2 = j
+                            GoTo FoundTandemSVG
+                        End If
+                    Next
+                Next
+FoundTandemSVG:
+                Dim py1 As Single = toPxY(det.WheelY(w1))
+                Dim py2 As Single = toPxY(det.WheelY(w2))
+                Dim px As Single = toPxX(det.WheelX(w1)) + tireR * sc + 15
+                px = CSng(Math.Min(px, mL + pW - 5))
+                sb.AppendLine("<line x1='" & Fmt(px) & "' y1='" & Fmt(py1) & "' x2='" & Fmt(px) & "' y2='" & Fmt(py2) & "' stroke='#666' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & Fmt(px - 3) & "' y1='" & Fmt(py1) & "' x2='" & Fmt(px + 3) & "' y2='" & Fmt(py1) & "' stroke='#666' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & Fmt(px - 3) & "' y1='" & Fmt(py2) & "' x2='" & Fmt(px + 3) & "' y2='" & Fmt(py2) & "' stroke='#666' stroke-width='0.8'/>")
+                sb.AppendLine("<text x='" & Fmt(px + 5) & "' y='" & Fmt((py1 + py2) / 2 + 3) & "' fill='#666' style='font-size:9px'>" & Format(det.TandemSpacing, "0.0") & """ tandem</text>")
+            End If
+
+            ' Contact area annotation
+            If det.ContactArea > 0 Then
+                sb.AppendLine("<text x='" & mL & "' y='" & (mT + pH + 30) & "' fill='#666' style='font-size:9px'>Contact area: " & Format(det.ContactArea, "0.0") & " " & WebEncode(lengthUnit) & "&sup2;</text>")
+            End If
+
+            ' Sigma annotation
+            sb.AppendLine("<text x='" & mL & "' y='" & (mT + pH + 42) & "' fill='#2E5EA8' style='font-size:9px'>&sigma; = 30.435 in. (Gaussian lateral wander)</text>")
+
+            ' Axes
+            sb.AppendLine("<line x1='" & mL & "' y1='" & mT & "' x2='" & mL & "' y2='" & (mT + pH) & "' stroke='black' stroke-width='1'/>")
+            sb.AppendLine("<line x1='" & mL & "' y1='" & (mT + pH) & "' x2='" & (mL + pW) & "' y2='" & (mT + pH) & "' stroke='black' stroke-width='1'/>")
+            sb.AppendLine("<text x='" & (mL + pW / 2) & "' y='" & (svgH - 5) & "' text-anchor='middle' style='font-size:11px'>Lateral position (" & WebEncode(lengthUnit) & ")</text>")
+
+            ' Y-axis label
+            sb.AppendLine("<text x='15' y='" & (mT + pH / 2) & "' text-anchor='middle' transform='rotate(-90,15," & (mT + pH / 2) & ")' style='font-size:11px'>Longitudinal (" & WebEncode(lengthUnit) & ")</text>")
+
+            ' Title
+            sb.AppendLine("<text x='" & (svgW / 2) & "' y='18' text-anchor='middle' style='font-size:13px;font-weight:bold'>Gear Configuration: " & WebEncode(det.ACName) & " (" & WebEncode(det.GearType) & ")</text>")
+
+            ' Legend
+            Dim lgX As Integer = svgW - mR - 170
+            Dim lgY As Integer = mT + 8
+            sb.AppendLine("<circle cx='" & (lgX + 5) & "' cy='" & (lgY + 5) & "' r='5' fill='rgba(46,94,168,0.45)' stroke='#2E5EA8'/>")
+            sb.AppendLine("<text x='" & (lgX + 14) & "' y='" & (lgY + 9) & "' style='font-size:9px'>Tire contact patch</text>")
+            lgY += 16
+            sb.AppendLine("<line x1='" & lgX & "' y1='" & (lgY + 5) & "' x2='" & (lgX + 10) & "' y2='" & (lgY + 5) & "' stroke='#A0A0A0' stroke-dasharray='3,3'/>")
+            sb.AppendLine("<text x='" & (lgX + 14) & "' y='" & (lgY + 9) & "' fill='gray' style='font-size:9px'>CDF offset strips</text>")
+            lgY += 16
+            sb.AppendLine("<line x1='" & lgX & "' y1='" & (lgY + 5) & "' x2='" & (lgX + 10) & "' y2='" & (lgY + 5) & "' stroke='#DC3232' stroke-dasharray='4,3'/>")
+            sb.AppendLine("<text x='" & (lgX + 14) & "' y='" & (lgY + 9) & "' fill='red' style='font-size:9px'>Critical strip</text>")
+            lgY += 16
+            sb.AppendLine("<rect x='" & lgX & "' y='" & lgY & "' width='10' height='10' fill='rgba(46,94,168,0.08)' stroke='rgba(46,94,168,0.4)'/>")
+            sb.AppendLine("<text x='" & (lgX + 14) & "' y='" & (lgY + 9) & "' fill='#2E5EA8' style='font-size:9px'>Gaussian wander</text>")
+
+            sb.AppendLine("</svg></div>")
+        End Sub
+
+#End Region
+
 #Region "SVG Diagram: Coverage Concept"
 
         Private Shared Function NormalCDFApprox(x As Double) As Double
@@ -1494,7 +2102,8 @@ Namespace Libs
             Dim dualSpacing As Double = 40 ' example dual spacing
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Coverage-to-pass concept diagram showing Gaussian wander and single vs dual wheel comparison'>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' width='" & svgW & "' height='" & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Coverage-to-pass concept diagram showing Gaussian wander and single vs dual wheel comparison'>")
+            sb.AppendLine("<title>Coverage-to-pass concept diagram</title>")
 
             ' === Panel A: Gaussian wander + single tire ===
             Dim panelAY As Integer = 20
@@ -1688,12 +2297,14 @@ body {
 
 /* Dashboard cards */
 .dashboard {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 30px;
 }
 .card {
+  flex: 1 1 155px;
+  max-width: 200px;
   background: var(--bg-alt);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1847,6 +2458,8 @@ figcaption { font-size: 12px; color: var(--text-light); margin-top: 6px; font-st
 .chart-svg .tick { font: 9px 'Segoe UI', sans-serif; fill: var(--text-light); }
 .chart-svg .label { font: 10px 'Segoe UI', sans-serif; fill: var(--text); }
 .chart-svg .legend-text { font: 10px 'Segoe UI', sans-serif; fill: var(--text); }
+.chart-svg circle:hover { opacity: 0.9; stroke-width: 2.5; cursor: pointer; }
+.chart-svg rect.bar:hover { opacity: 0.9; cursor: pointer; }
 
 /* Steps */
 .steps {
@@ -1918,28 +2531,94 @@ footer {
 }
 footer a { color: var(--primary); text-decoration: none; }
 
-/* Print */
+/* Sublayer modulus section */
+.sublayer-modulus-section { margin-top: 24px; }
+.sublayer-modulus-section h3 { color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 6px; }
+.sublayer-main-eq { font-size: 16px !important; font-weight: 600; color: var(--primary); }
+.callout.note {
+  background: #e8f5e9;
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.param-compare td:not(:first-child) { text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sublayer-detail { max-width: 500px; }
+.sublayer-detail .ref-row { background: #fff8e1; font-style: italic; }
+.modulus-depth-svg {
+  width: 100%;
+  max-width: 800px;
+  margin: 16px auto;
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: white;
+}
+.modulus-depth-svg .tick-label { font-size: 10px; fill: #666; font-family: 'Segoe UI', sans-serif; }
+.modulus-depth-svg .axis-label { font-size: 11px; fill: #444; font-family: 'Segoe UI', sans-serif; font-weight: 600; }
+.modulus-depth-svg .small-label { font-size: 9px; font-family: 'Segoe UI', sans-serif; }
+.modulus-depth-svg .mod-label { font-size: 10px; fill: #00796B; font-family: 'Segoe UI', sans-serif; font-weight: 600; }
+.fig-caption { font-size: 12px; color: var(--text-light); text-align: center; margin: 8px 0 20px; font-style: italic; }
+
+/* Print / PDF */
 @media print {
   body { max-width: 100%; padding: 10px; font-size: 11px; }
   .toc { break-after: page; }
   section { break-inside: avoid; }
-  .dashboard { grid-template-columns: repeat(3, 1fr); }
+  .dashboard { justify-content: flex-start; }
+  .card { flex: 0 1 180px; max-width: 200px; }
+  svg { page-break-inside: avoid; }
+  figure { page-break-inside: avoid; }
   details { border: none; }
   details > summary { display: none; }
   details > table, details > div { display: block !important; }
   .chart-svg { max-width: 100%; border: none; }
+  svg { max-width: 100%; height: auto; shape-rendering: geometricPrecision; }
+  figure { break-inside: avoid; page-break-inside: avoid; margin: 12px 0; }
+  table { break-inside: avoid; page-break-inside: avoid; }
+  h2, h3, h4 { break-after: avoid; page-break-after: avoid; }
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
-  .callout, .equation-card, .steps, .aircraft-block { break-inside: avoid; }
+  color-adjust: exact;
+  .callout, .equation-card, .steps, .aircraft-block { break-inside: avoid; page-break-inside: avoid; }
+  .cdf-comparison { break-inside: avoid; page-break-inside: avoid; }
   thead { display: table-header-group; }
   footer a[href]::after { content: none; }
   .btn-action, .btn-top { display: none !important; }
 }
 
+/* Asphalt CDF comparison */
+.cdf-comparison {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin: 24px 0;
+  flex-wrap: wrap;
+}
+.cdf-compare-card {
+  text-align: center;
+  padding: 16px 28px;
+  border-radius: var(--radius);
+  min-width: 180px;
+}
+.subgrade-card { background: #e8f5e9; border: 2px solid #4caf50; }
+.asphalt-card { background: #fff3e0; border: 2px solid #ff9800; }
+.cdf-compare-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); margin-bottom: 4px; }
+.cdf-compare-value { font-size: 22px; font-weight: 700; font-family: 'Consolas', monospace; }
+.cdf-compare-vs { font-size: 16px; font-weight: 600; color: var(--text-light); }
+.cdf-compare-governing { width: 100%; text-align: center; font-size: 15px; margin-top: 4px; }
+.badge-subgrade { background: #4caf50; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+.badge-asphalt { background: #ff9800; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+.rdec-model, .ai-model { border-left-color: #ff9800; }
+
 /* Responsive */
 @media (max-width: 768px) {
   body { padding: 12px 16px; }
-  .dashboard { grid-template-columns: repeat(2, 1fr); }
+  .dashboard { justify-content: flex-start; }
+  .card { flex: 1 1 140px; max-width: 48%; }
   .header-meta { flex-direction: column; gap: 6px; }
   .toc ol { columns: 1; }
   .chart-svg { max-width: 100%; }

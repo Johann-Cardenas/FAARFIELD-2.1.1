@@ -21,7 +21,7 @@ Namespace ViewModels
 
         Sub New(section As ISection, sectionView As SectionViewModel, viewModel As MainWindowViewModel)
             Parent = sectionView
-            Name = "Detailed Computation Report"
+            Name = "CM Report"
             IsExpanded = True
             FaarFieldViewModel = viewModel
         End Sub

@@ -164,7 +164,7 @@ The following summarizes the core algorithms implemented in the VB.NET source. S
 - **ACR:** For each subgrade category (A/B/C/D), design reference base thickness with subject aircraft traffic, then find DSWL (Design Single Wheel Load) producing 36,500 coverages. ACR = 2 × DSWL_kg / 100.
 - **PCR:** Elimination algorithm — each round finds critical aircraft, computes MGW (CDF=1.0), then ACR at MGW. Early exit when critical aircraft has max ACR.
 
-## Detailed Computation Report — architecture reference
+## CM Report (Computational Mechanics) — architecture reference
 
 The Detailed Computation Report is a custom HTML report rendered inside the WPF WebBrowser control. It documents the full computational trace of a flexible pavement thickness design. This section maps every file, function, and class involved so you can quickly locate and modify any part.
 
@@ -199,7 +199,7 @@ Analysis Engine (FaarFieldAnalysis/)
 | Class | Purpose |
 |-------|---------|
 | `clsDetailedReportData` | Top-level container: AircraftDetails(), Iterations, CDFSweep, SublayerData, ACRDetails, PCRRounds |
-| `clsAircraftDetail` | Per-aircraft: strain, NtoFail, CDF, C/P, gear params, CDFByOffset(NOFF), CtoPByOffset(NOFF) |
+| `clsAircraftDetail` | Per-aircraft: strain, NtoFail, CDF, C/P, gear params, CDFByOffset(NOFF), CtoPByOffset(NOFF), WheelX/Y, NWheels, DualSpacing, GearSpacing |
 | `clsIterationRecord` | Per-iteration: Thickness, CDFMAX, CDFErr, DELT, Factor, SubLayered |
 | `clsCDFSweepData` | Full sweep: CDFPerAircraftPerOffset(nac,noff), CDFTotalPerOffset(noff), CtoPPerAircraftPerOffset(nac,noff) |
 | `clsSublayerData` | DesignLayers, ExpandedSublayers (List of clsLayerInfo), EvalDepthSubgrade |
@@ -218,7 +218,7 @@ This function builds the full HTML string. It reads from `FEDFAA1.gDetailedRepor
 5. **Section B** — 4 equation images rendered via `DrawEquationImage()`: subgrade failure model, CDF formula, C/P Gaussian integral, convergence criterion. Each embedded as base64 PNG in a `.math-block` div.
 6. **Section C** — `DrawCoverageConceptDiagram()` — educational 4-panel diagram (Gaussian wander, C/P curve, 41-strip visualization, multi-wheel superposition).
 7. **Section D** — `DrawFatigueCurve()` + fatigue parameters table + `DrawLifeRatioChart()`.
-8. **Section E** — Per-aircraft loop: `DrawPavementCrossSection()`, gear parameters table, `DrawSingleAircraftCDFChart()`, `DrawWheelCPVisualization()`, step-by-step computation walkthrough (`.step-list` with CSS counters).
+8. **Section E** — Per-aircraft loop: `DrawGearConfiguration()` (plan view of wheel positions with CDF strips and Gaussian wander), `DrawPavementCrossSection()`, gear parameters table, `DrawSingleAircraftCDFChart()`, `DrawWheelCPVisualization()`, step-by-step computation walkthrough (`.step-list` with CSS counters).
 9. **Section F** — `DrawCoveragePlot()` (C/P distribution for all aircraft).
 10. **Section G** — Full CDF sweep table (41 offsets × all aircraft). Critical offset highlighted.
 11. **Section H** — `DrawCompositeCDFChart()` + `DrawCDFContributionChart()`.
@@ -242,7 +242,8 @@ All charts use 2x supersampling via `ScaleTransform(2,2)` + `SupersampleBitmap()
 | `DrawCoveragePlot` | ~10438 | 850×450 | C/P ratio vs offset for all aircraft |
 | `DrawCoverageConceptDiagram` | ~10614 | 950×1000 | 4-panel educational diagram (Gaussian wander, C/P curve, strips, superposition) |
 | `DrawWheelCPVisualization` | ~10855 | 900×520 | Per-aircraft C/P with inferred wheel contributions + gear schematic |
-| `DrawACRDamageChart` | ~11116 | 850×500 | ACR vs CDF-per-departure bubble chart |
+| `DrawGearConfiguration` | ~11745 | 900×600 | Plan view of wheel positions, CDF offset strips, Gaussian wander, dimension annotations |
+| `DrawACRDamageChart` | ~11916 | 850×500 | ACR vs CDF-per-departure bubble chart |
 | `DrawCDFContributionChart` | ~11272 | 800×dynamic | Horizontal bar chart — % CDF contribution per aircraft at critical offset |
 | `DrawLifeRatioChart` | ~11380 | 800×dynamic | Diverging bar chart — N_fail/Repetitions ratio (green=reserve, red=overstressed) |
 
@@ -309,6 +310,7 @@ Bitmap (GDI+, System.Drawing)
 HtmlReportGenerator.Generate()  (FF2/Libs/HtmlReportGenerator.vb)
   → builds complete HTML5 document via StringBuilder
   → charts rendered as inline <svg> elements (viewBox-based, responsive)
+  → gear configuration via AppendGearConfigSVG() (wheels, CDF strips, Gaussian wander)
   → equations rendered as HTML entities + sub/sup tags
   → CSS inlined in <style> block (CSS Grid, variables, print media queries)
   → self-contained .html file with zero external dependencies

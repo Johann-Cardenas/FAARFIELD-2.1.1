@@ -81,5 +81,12 @@ Namespace Interfaces
         Property SavedAirportMasterRecordhtml As String
         Property SavedCDFgraph As String
 
+        Property RdecFlexuralMod As Single
+        Property RdecAirVoids As Single
+        Property RdecAsphaltContentByVol As Single
+        Property RdecPNMS As Single
+        Property RdecPPCS As Single
+        Property RdecP200 As Single
+
     End Interface
 End Namespace

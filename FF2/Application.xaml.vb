@@ -13,6 +13,12 @@
         Dim window As New Views.MainWindow()
         window.Show()
 
+        ' Show About dialog on startup — user must acknowledge before continuing
+        Dim aboutWindow As New Views.AboutWindow()
+        aboutWindow.Owner = window
+        aboutWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner
+        aboutWindow.ShowDialog()
+
     End Sub
 
 End Class

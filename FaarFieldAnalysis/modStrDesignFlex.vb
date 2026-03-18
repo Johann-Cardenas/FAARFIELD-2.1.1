@@ -558,6 +558,81 @@ StartFlexLoop:
                 dli.LCode = julLCode(I)
                 gDetailedReportData.SublayerData.ExpandedSublayers.Add(dli)
             Next
+            ' Capture aggregate sublayering parameters
+            Dim hasBase As Boolean = False
+            Dim hasSBase As Boolean = False
+            Dim baseLIdx As Short = 0
+            Dim sbaseLIdx As Short = 0
+            For I = 1 To NPLayers
+                If LayerType(LCode(I)) = NAgBase Then hasBase = True : baseLIdx = I
+                If LayerType(LCode(I)) = NAgSBase Then hasSBase = True : sbaseLIdx = I
+            Next
+            If hasBase OrElse hasSBase Then
+                gDetailedReportData.SublayerData.HasAggregateSublayers = True
+                If hasBase Then
+                    If gP209_C1052D20 Then
+                        gDetailedReportData.SublayerData.BaseCoeffC = 10.52F
+                        gDetailedReportData.SublayerData.BaseCoeffD = 2.0F
+                    Else
+                        gDetailedReportData.SublayerData.BaseCoeffC = 10.52F
+                        gDetailedReportData.SublayerData.BaseCoeffD = 2.1F
+                    End If
+                    gDetailedReportData.SublayerData.BaseModUnder = Modulus(CShort(baseLIdx + 1))
+                    Dim nsb As Integer = CInt(NS_P209)
+                    If nsb = 0 Then nsb = CInt(publicNS_P209)
+                    gDetailedReportData.SublayerData.BaseSublayerCount = nsb
+                    For I = 1 To CShort(nsb)
+                        Dim sl As New clsLayerInfo()
+                        sl.Thickness = TSS_P209(I)
+                        sl.Modulus = BaseMod(I)
+                        sl.LCode = LCode(baseLIdx)
+                        gDetailedReportData.SublayerData.BaseSublayers.Add(sl)
+                    Next
+                End If
+                If hasSBase Then
+                    If gP154_C688D156 Then
+                        gDetailedReportData.SublayerData.SubbaseCoeffC = 6.88F
+                        gDetailedReportData.SublayerData.SubbaseCoeffD = 1.56F
+                    Else
+                        gDetailedReportData.SublayerData.SubbaseCoeffC = 7.18F
+                        gDetailedReportData.SublayerData.SubbaseCoeffD = 1.56F
+                    End If
+                    gDetailedReportData.SublayerData.SubbaseModUnder = Modulus(CShort(sbaseLIdx + 1))
+                    Dim nss As Integer = CInt(NS_P154)
+                    If nss = 0 Then nss = CInt(publicNS_P154)
+                    gDetailedReportData.SublayerData.SubbaseSublayerCount = nss
+                    For I = 1 To CShort(nss)
+                        Dim sl As New clsLayerInfo()
+                        sl.Thickness = TSS_P154(I)
+                        sl.Modulus = SubbaseMod(I)
+                        sl.LCode = LCode(sbaseLIdx)
+                        gDetailedReportData.SublayerData.SubbaseSublayers.Add(sl)
+                    Next
+                End If
+            End If
+
+            ' Capture asphalt CDF data
+            gDetailedReportData.AsphaltCDFTotal = CDFAsp
+            gDetailedReportData.AsphaltCDFComputed = AsphaltCDFComputed
+            gDetailedReportData.AsphaltModel = If(gRDEC, "RDEC", "AI")
+            gDetailedReportData.RdecFlexuralMod = gFlexuralMod(ISect)
+            gDetailedReportData.RdecAirVoids = gAirVoids(ISect)
+            gDetailedReportData.RdecAsphaltContent = gAsphaltContentByVol(ISect)
+            gDetailedReportData.RdecVoidParameter = gVoidPar(ISect)
+            gDetailedReportData.RdecPNMS = gPNMS(ISect)
+            gDetailedReportData.RdecPPCS = gPPCS(ISect)
+            gDetailedReportData.RdecP200 = gP200(ISect)
+            gDetailedReportData.RdecGradationParameter = gGradationPar(ISect)
+
+            ' Capture per-aircraft asphalt CDF
+            If gDetailedReportData.AircraftDetails IsNot Nothing Then
+                For IA As Short = 1 To NAC
+                    If gDetailedReportData.AircraftDetails(IA) IsNot Nothing Then
+                        gDetailedReportData.AircraftDetails(IA).AsphaltCDF = jobCDFacrftMaxtableHMA(ISect, IA)
+                    End If
+                Next
+            End If
+
             gDetailedReportData.IsPopulated = True
         Catch ex As Exception
         End Try
@@ -679,6 +754,16 @@ StartFlexLoop:
                     CDFAsp = CDFASPMAX
                     '        Debug.Print "CDFAsp = "; CDFAsp
                     AsphaltCDFComputed = True
+
+                    ' Capture per-aircraft asphalt NtoFail and strain while available
+                    If gDetailedReportData.AircraftDetails IsNot Nothing Then
+                        For IA As Short = 1 To NAC
+                            If gDetailedReportData.AircraftDetails(IA) IsNot Nothing Then
+                                gDetailedReportData.AircraftDetails(IA).AsphaltNtoFail = gNtoFail(IA)
+                                gDetailedReportData.AircraftDetails(IA).AsphaltStrain = gSTRAIN(IA)
+                            End If
+                        Next
+                    End If
 
                     CDFASPMAX1 = CDFASPMAX 'ikawa 999
                 End If

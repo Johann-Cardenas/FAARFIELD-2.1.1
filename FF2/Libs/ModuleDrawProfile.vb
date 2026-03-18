@@ -50,155 +50,333 @@ Namespace Libs
                     XYCoord(i, j) = 0.0!
                 Next
             Next
+
+            ' ── Rendering setup ──
+            g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit
+            g.InterpolationMode = Drawing2D.InterpolationMode.HighQualityBicubic
+
+            Dim W As Integer = pictureBox.Width
+            Dim H As Integer = pictureBox.Height
+            Dim isMetric As Boolean = Not TypeOf (measurementSystem) Is UsCustomary
+
+            ' Background: white
             g.Clear(Color.White)
-            Dim x As Single
-            Dim y As Single
-
-            Dim Ts As Double
-            Dim TT As Double
-            Dim B As Double
-            B = airplane.B.UsCustomary
-
-            Ts = Format(airplane.Ts, "0.0")
-            TT = Format(airplane.Tt.UsCustomary, "0.0")
-
-            Dim offsetx As Double
-            offsetx = (Ts + TT) / 2
-            Dim offsety As Double
-            'If Not TypeOf (measurementSystem) Is UsCustomary Then
-            '    Ts = Ts * 25.4
-            '    TT = TT * 25.4
-            '    offsetx = offsetx * 25.4
-            'End If
-
-
-            g.DrawLine(Pens.Black, New Point(10, (pictureBox.Height / 2)), New Point(pictureBox.Width - 10, (pictureBox.Height / 2)))
-            g.DrawLine(Pens.Black, New Point((pictureBox.Width / 2), 10), New Point(pictureBox.Width / 2, (pictureBox.Height) - 10))
 
             If airplane Is Nothing Then Return
-            font = New Font(font.Name, 11)
-            g.DrawString("Airplane: " + airplane.Name, font, Brushes.Black, New PointF(5, 5))
 
-            Dim maximumDimension As Single = 0
-            Dim maximumY As Single = Single.MinValue
-            Dim minimumY As Single = Single.MaxValue
+            ' ── Unit label ──
+            Dim unitLabel As String = If(isMetric, "mm", "in.")
 
-            For Each wheelCoordinate In airplane.WheelCoordinates
-                If wheelCoordinate.X.GetValue(measurementSystem) + offsetx > maximumDimension Then
-                    maximumDimension = wheelCoordinate.X.GetValue(measurementSystem) + offsetx
-                End If
+            ' ── Compute data ranges from wheel coordinates ──
+            Dim Ts As Double = CDbl(Format(airplane.Ts, "0.0"))
+            Dim TT As Double = CDbl(Format(airplane.Tt.UsCustomary, "0.0"))
+            Dim offsetx As Double = (Ts + TT) / 2
 
-                If wheelCoordinate.Y.GetValue(measurementSystem) > maximumDimension Then
-                    maximumDimension = wheelCoordinate.Y.GetValue(measurementSystem)
-                End If
-
-                If wheelCoordinate.Y.GetValue(measurementSystem) < minimumY Then
-                    minimumY = wheelCoordinate.Y.GetValue(measurementSystem)
-                End If
-
-                If wheelCoordinate.Y.GetValue(measurementSystem) > maximumY Then
-                    maximumY = wheelCoordinate.Y.GetValue(measurementSystem)
-                End If
+            Dim maxDim As Single = 0
+            Dim maxY As Single = Single.MinValue
+            Dim minY As Single = Single.MaxValue
+            For Each wc In airplane.WheelCoordinates
+                Dim wx As Single = wc.X.GetValue(measurementSystem) + CSng(offsetx)
+                If wx > maxDim Then maxDim = wx
+                Dim wy As Single = wc.Y.GetValue(measurementSystem)
+                If wy > maxDim Then maxDim = wy
+                If wy < minY Then minY = wy
+                If wy > maxY Then maxY = wy
             Next
-            offsety = (maximumY - minimumY) / 2
 
-            ' Draw wheels
+            ' ── Scale calculation (preserve original logic for accuracy) ──
             Dim scale As Single = 0
             Dim scaleRatio As Single = 1
-            If TypeOf (measurementSystem) Is UsCustomary Then
-                If airplane IsNot Nothing AndAlso airplane.Name.Contains("B-52") Then
+            If Not isMetric Then
+                If airplane.Name.Contains("B-52") Then
                     scale = 325
-                ElseIf airplane IsNot Nothing AndAlso airplane.Name.Contains("A380") Then
+                ElseIf airplane.Name.Contains("A380") Then
                     scale = 150
                 Else
                     scale = 125
                 End If
                 scaleRatio = 125 / scale
             Else
-                If airplane IsNot Nothing AndAlso airplane.Name.Contains("B-52") Then
+                If airplane.Name.Contains("B-52") Then
                     scale = 8255
-                ElseIf airplane IsNot Nothing AndAlso airplane.Name.Contains("A380") Then
+                ElseIf airplane.Name.Contains("A380") Then
                     scale = 3810
                 Else
                     scale = 3175
                 End If
                 scaleRatio = 3175 / scale
             End If
+            Dim axisRatio As Single = CSng(150 / scale)
+            Dim ScaledPictureBox As Single = 320.0F / 270.0F
 
-            ' Draw axes
-            Dim ratio = 150 / scale
-            If Not TypeOf (measurementSystem) Is UsCustomary Then
-                Dim i As Single
-                For i = -10 To 10 Step 3.333333333333
-                    If i = 0 Then Continue For
-                    Dim d = scale * i / 5
+            ' ── Pixel coordinate lambdas ──
+            Dim cx As Single = CSng(W / 2)
+            Dim cy As Single = CSng(H / 2)
+            Dim toX = Function(val As Single) cx + val * scaleRatio * ScaledPictureBox
+            Dim toY = Function(val As Single) cy - val * scaleRatio * ScaledPictureBox
 
-                    Dim labelWidth = g.MeasureString(d.ToString("f0"), font).Width
-                    Dim labelHeight = g.MeasureString(d.ToString("f0"), font).Height
-                    'Horizontal
-                    Dim tick = pictureBox.Width / 2 + (i * scale * ratio / 5)
-                    g.DrawLine(Pens.Black, New Point(tick, pictureBox.Height / 2 + 4), New Point(tick, pictureBox.Height / 2 - 3))
+            ' ── Fonts ──
+            Dim titleFont As New Font("Segoe UI", 9.0F, FontStyle.Bold)
+            Dim subtitleFont As New Font("Segoe UI", 7.5F)
+            Dim tickFont As New Font("Segoe UI", 8.0F)
+            Dim labelFont As New Font("Segoe UI", 7.5F)
+            Dim coordFont As New Font("Consolas", 6.5F)
+            Dim badgeFont As New Font("Segoe UI", 7.0F, FontStyle.Bold)
 
+            ' ── Colors ──
+            Dim teal As Color = Color.FromArgb(0, 121, 107)       ' #00796B
+            Dim tealLight As Color = Color.FromArgb(178, 223, 219) ' #B2DFDB
+            Dim gridColor As Color = Color.FromArgb(230, 230, 225)
+            Dim axisColor As Color = Color.FromArgb(120, 120, 115)
+            Dim wheelFill As Color = Color.FromArgb(160, 0, 105, 92)
+            Dim wheelStroke As Color = Color.FromArgb(0, 77, 64)
+            Dim mirrorFill As Color = Color.FromArgb(100, 0, 105, 92)
+            Dim mirrorStroke As Color = Color.FromArgb(120, 0, 77, 64)
+            Dim evalColor As Color = Color.FromArgb(220, 50, 50)
 
-                    g.DrawString(d.ToString("f0"), font, Brushes.Black, New Point(tick - labelWidth / 2, pictureBox.Height / 2 + 5))
-
-                    'Vertical
-                    tick = pictureBox.Height / 2 + (i * scale * ratio / 5)
-                    g.DrawLine(Pens.Black, New Point(pictureBox.Width / 2 + 4, tick), New Point(pictureBox.Width / 2 - 3, tick))
-                    d = d * -1
-                    g.DrawString(d.ToString("f0"), font, Brushes.Black, New Point(pictureBox.Width / 2 + 5, tick - labelHeight / 2))
-                Next
-
-            Else
-                Dim i As Integer
-                For i = -10 To 10 Step 2
-                    If i = 0 Then Continue For
-                    Dim d = scale * i / 5
-
-
-                    Dim labelWidth = g.MeasureString(d.ToString("f0"), font).Width
-                    Dim labelHeight = g.MeasureString(d.ToString("f0"), font).Height
-                    'Horizontal
-                    Dim tick = pictureBox.Width / 2 + (i * scale * ratio / 5)
-                    g.DrawLine(Pens.Black, New Point(tick, pictureBox.Height / 2 + 4), New Point(tick, pictureBox.Height / 2 - 3))
-
-
-                    g.DrawString(d.ToString("f0"), font, Brushes.Black, New Point(tick - labelWidth / 2, pictureBox.Height / 2 + 5))
-
-                    'Vertical
-                    tick = pictureBox.Height / 2 + (i * scale * ratio / 5)
-                    g.DrawLine(Pens.Black, New Point(pictureBox.Width / 2 + 4, tick), New Point(pictureBox.Width / 2 - 3, tick))
-                    d = d * -1
-                    g.DrawString(d.ToString("f0"), font, Brushes.Black, New Point(pictureBox.Width / 2 + 5, tick - labelHeight / 2))
-                Next
-            End If
-            If TypeOf (measurementSystem) Is UsCustomary Then
-                g.DrawString("(Inches)", font, Brushes.Black, New Point(pictureBox.Width / 2 + 45, 10))
-                g.DrawString("(Inches)", font, Brushes.Black, New Point(pictureBox.Width / 2 + 45, 10))
-            Else
-                g.DrawString("(Millimeters)", font, Brushes.Black, New Point(pictureBox.Width / 2 + 45, 10))
-            End If
-
-            Dim ScaledPictureBox As Single = 320 / 270
-
-            For Each wheelCoordinate In airplane.WheelCoordinates
-                'Wheel
-                x = pictureBox.Width / 2 + (wheelCoordinate.X.UsCustomary) * scaleRatio * ScaledPictureBox
-                y = pictureBox.Height / 2 - (wheelCoordinate.Y.UsCustomary) * scaleRatio * ScaledPictureBox
-                g.FillEllipse(Brushes.Black, x - 6, y - 12, 12, 24)
-
-                'Mirrored Wheel
-                x = pictureBox.Width / 2 - (wheelCoordinate.X.UsCustomary) * scaleRatio * ScaledPictureBox
-                y = pictureBox.Height / 2 - (wheelCoordinate.Y.UsCustomary) * scaleRatio * ScaledPictureBox
-                g.FillEllipse(Brushes.Black, x - 6, y - 12, 12, 24)
-
+            ' ── Dot grid ──
+            Dim gridPen As New Pen(gridColor, 0.5F)
+            Dim tickStep As Single = If(isMetric, 3.333333F, 2.0F)
+            For i As Single = -10 To 10 Step tickStep
+                If Math.Abs(i) < 0.01 Then Continue For
+                Dim d As Single = scale * i / 5
+                Dim px As Single = CSng(cx + i * scale * axisRatio / 5)
+                Dim py As Single = CSng(cy + i * scale * axisRatio / 5)
+                ' Vertical grid line (light dots)
+                If px > 10 AndAlso px < W - 10 Then
+                    Dim dotPen As New Pen(Color.FromArgb(50, gridColor.R, gridColor.G, gridColor.B), 0.5F)
+                    dotPen.DashStyle = Drawing2D.DashStyle.Dot
+                    g.DrawLine(dotPen, px, 44, px, CSng(H - 20))
+                    dotPen.Dispose()
+                End If
+                ' Horizontal grid line
+                If py > 44 AndAlso py < H - 20 Then
+                    Dim dotPen As New Pen(Color.FromArgb(50, gridColor.R, gridColor.G, gridColor.B), 0.5F)
+                    dotPen.DashStyle = Drawing2D.DashStyle.Dot
+                    g.DrawLine(dotPen, 10, py, CSng(W - 10), py)
+                    dotPen.Dispose()
+                End If
             Next
 
-            For Each Evaluationpoint In airplane.EvaluationPoints
-                x = pictureBox.Width / 2 + (Evaluationpoint.X.UsCustomary) * scaleRatio * ScaledPictureBox
-                y = pictureBox.Height / 2 - (Evaluationpoint.Y.UsCustomary) * scaleRatio * ScaledPictureBox
-                g.FillEllipse(Brushes.Black, x, y, 2, 4)
+            ' ── Axes ──
+            Dim axisPen As New Pen(axisColor, 1.2F)
+            g.DrawLine(axisPen, 10, cy, CSng(W - 10), cy)    ' horizontal
+            g.DrawLine(axisPen, cx, 44, cx, CSng(H - 20))    ' vertical
+
+            ' ── Tick marks and labels ──
+            Dim tickBrush As New SolidBrush(Color.FromArgb(100, 100, 95))
+            For i As Single = -10 To 10 Step tickStep
+                If Math.Abs(i) < 0.01 Then Continue For
+                Dim d As Single = scale * i / 5
+                Dim dlabel As String = d.ToString("f0")
+
+                ' Horizontal axis ticks
+                Dim px As Single = CSng(cx + i * scale * axisRatio / 5)
+                If px > 10 AndAlso px < W - 10 Then
+                    g.DrawLine(axisPen, px, cy - 4, px, cy + 4)
+                    Dim sz = g.MeasureString(dlabel, tickFont)
+                    g.DrawString(dlabel, tickFont, tickBrush, px - sz.Width / 2, cy + 6)
+                End If
+
+                ' Vertical axis ticks (note: Y is inverted so negate label)
+                Dim py As Single = CSng(cy + i * scale * axisRatio / 5)
+                If py > 44 AndAlso py < H - 20 Then
+                    g.DrawLine(axisPen, cx - 4, py, cx + 4, py)
+                    Dim negD As Single = -d
+                    Dim negLabel As String = negD.ToString("f0")
+                    Dim sz = g.MeasureString(negLabel, tickFont)
+                    g.DrawString(negLabel, tickFont, tickBrush, cx + 7, py - sz.Height / 2)
+                End If
             Next
+
+            ' ── Axis unit labels ──
+            Dim axUnitBrush As New SolidBrush(Color.FromArgb(140, 140, 135))
+            g.DrawString("Lateral (" & unitLabel & ")", labelFont, axUnitBrush, CSng(W - 100), cy - 18)
+            Dim sfVert As New StringFormat()
+            sfVert.FormatFlags = StringFormatFlags.DirectionVertical
+            g.DrawString("Longitudinal (" & unitLabel & ")", labelFont, axUnitBrush, cx - 20, 46, sfVert)
+            sfVert.Dispose()
+
+            ' Origin marker
+            g.FillEllipse(New SolidBrush(axisColor), cx - 2.5F, cy - 2.5F, 5, 5)
+
+            ' ── Title bar (teal header band) ──
+            Dim headerRect As New RectangleF(0, 0, W, 38)
+            Dim headerBrush As New Drawing2D.LinearGradientBrush(headerRect, Color.FromArgb(0, 77, 64), teal, Drawing2D.LinearGradientMode.Horizontal)
+            g.FillRectangle(headerBrush, headerRect)
+            g.DrawString(airplane.Name, titleFont, Brushes.White, 10, 5)
+
+            ' Gear type badge
+            Dim gearText As String = airplane.Gear
+            If gearText IsNot Nothing AndAlso gearText.Length > 0 Then
+                Dim badgeSz = g.MeasureString(gearText, badgeFont)
+                Dim badgeX As Single = CSng(W - badgeSz.Width - 22)
+                Dim badgeY As Single = 7
+                Dim badgeRect As New RectangleF(badgeX, badgeY, badgeSz.Width + 12, badgeSz.Height + 4)
+                g.FillRectangle(New SolidBrush(Color.FromArgb(80, 255, 255, 255)), badgeRect.X, badgeRect.Y, badgeRect.Width, badgeRect.Height)
+                Dim badgePath As New Drawing2D.GraphicsPath()
+                badgePath.AddRectangle(badgeRect)
+                g.DrawPath(New Pen(Color.FromArgb(120, 255, 255, 255), 0.8F), badgePath)
+                g.DrawString(gearText, badgeFont, New SolidBrush(Color.FromArgb(230, 255, 255, 255)), badgeX + 6, badgeY + 2)
+                badgePath.Dispose()
+            End If
+
+            ' Wheel count + tire info in header
+            Dim infoText As String = airplane.NumberWheels & " wheels"
+            If airplane.TireWidth IsNot Nothing Then
+                infoText &= " | TW=" & Format(airplane.TireWidth.GetValue(measurementSystem), "0.0") & " " & unitLabel
+            End If
+            If airplane.Cp IsNot Nothing Then
+                Dim cpLabel As String = If(isMetric, "MPa", "psi")
+                infoText &= " | p=" & Format(airplane.Cp.GetValue(measurementSystem), "0.0") & " " & cpLabel
+            End If
+            g.DrawString(infoText, subtitleFont, New SolidBrush(Color.FromArgb(200, 178, 223, 219)), 10, 22)
+            headerBrush.Dispose()
+
+            ' ── Draw wheels — right side (primary) ──
+            Dim wheelW As Single = 12   ' half-width of the tire imprint rectangle
+            Dim wheelH As Single = 22   ' half-height
+            Dim wIdx As Integer = 1
+            For Each wc In airplane.WheelCoordinates
+                Dim wx As Single = toX(wc.X.UsCustomary)
+                Dim wy As Single = toY(wc.Y.UsCustomary)
+
+                ' Tire imprint — rounded rectangle with gradient fill
+                Dim tireRect As New RectangleF(wx - wheelW / 2, wy - wheelH / 2, wheelW, wheelH)
+                Dim tirePath As New Drawing2D.GraphicsPath()
+                Dim cr As Single = 3.5F  ' corner radius
+                tirePath.AddArc(tireRect.X, tireRect.Y, cr * 2, cr * 2, 180, 90)
+                tirePath.AddArc(tireRect.Right - cr * 2, tireRect.Y, cr * 2, cr * 2, 270, 90)
+                tirePath.AddArc(tireRect.Right - cr * 2, tireRect.Bottom - cr * 2, cr * 2, cr * 2, 0, 90)
+                tirePath.AddArc(tireRect.X, tireRect.Bottom - cr * 2, cr * 2, cr * 2, 90, 90)
+                tirePath.CloseFigure()
+
+                ' Fill with gradient
+                Using gb As New Drawing2D.LinearGradientBrush(tireRect, wheelFill, Color.FromArgb(200, 0, 77, 64), Drawing2D.LinearGradientMode.Vertical)
+                    g.FillPath(gb, tirePath)
+                End Using
+                g.DrawPath(New Pen(wheelStroke, 1.0F), tirePath)
+
+                ' Wheel number label (centered)
+                Dim numStr As String = wIdx.ToString()
+                Dim numSz = g.MeasureString(numStr, coordFont)
+                g.DrawString(numStr, coordFont, Brushes.White, wx - numSz.Width / 2, wy - numSz.Height / 2)
+
+                tirePath.Dispose()
+
+                ' ── Mirrored wheel (left side, softer) ──
+                Dim mx As Single = toX(-wc.X.UsCustomary)
+                Dim mirrorRect As New RectangleF(mx - wheelW / 2, wy - wheelH / 2, wheelW, wheelH)
+                Dim mirrorPath As New Drawing2D.GraphicsPath()
+                mirrorPath.AddArc(mirrorRect.X, mirrorRect.Y, cr * 2, cr * 2, 180, 90)
+                mirrorPath.AddArc(mirrorRect.Right - cr * 2, mirrorRect.Y, cr * 2, cr * 2, 270, 90)
+                mirrorPath.AddArc(mirrorRect.Right - cr * 2, mirrorRect.Bottom - cr * 2, cr * 2, cr * 2, 0, 90)
+                mirrorPath.AddArc(mirrorRect.X, mirrorRect.Bottom - cr * 2, cr * 2, cr * 2, 90, 90)
+                mirrorPath.CloseFigure()
+                Using gb As New Drawing2D.LinearGradientBrush(mirrorRect, mirrorFill, Color.FromArgb(140, 0, 77, 64), Drawing2D.LinearGradientMode.Vertical)
+                    g.FillPath(gb, mirrorPath)
+                End Using
+                g.DrawPath(New Pen(mirrorStroke, 0.8F), mirrorPath)
+                g.DrawString(numStr, coordFont, New SolidBrush(Color.FromArgb(180, 255, 255, 255)), mx - numSz.Width / 2, wy - numSz.Height / 2)
+                mirrorPath.Dispose()
+
+                wIdx += 1
+            Next
+
+            ' ── Evaluation points ──
+            For Each ep In airplane.EvaluationPoints
+                Dim ex As Single = toX(ep.X.UsCustomary)
+                Dim ey As Single = toY(ep.Y.UsCustomary)
+                g.FillEllipse(New SolidBrush(Color.FromArgb(180, evalColor.R, evalColor.G, evalColor.B)), ex - 3, ey - 3, 6, 6)
+                g.DrawEllipse(New Pen(evalColor, 0.8F), ex - 3, ey - 3, 6, 6)
+            Next
+
+            ' ── Dimension annotations ──
+            Dim dimPen As New Pen(Color.FromArgb(160, 160, 155), 0.8F)
+            dimPen.DashStyle = Drawing2D.DashStyle.Dash
+            Dim dimBrush As New SolidBrush(Color.FromArgb(100, 100, 95))
+
+            ' Dual spacing (B) — if > 0
+            If airplane.B IsNot Nothing AndAlso airplane.B.UsCustomary > 0 AndAlso airplane.WheelCoordinates.Count >= 1 Then
+                Dim firstWc = airplane.WheelCoordinates(0)
+                Dim rWx As Single = toX(firstWc.X.UsCustomary)
+                Dim lWx As Single = toX(-firstWc.X.UsCustomary)
+                Dim dY As Single = toY(firstWc.Y.UsCustomary) - wheelH / 2 - 14
+                g.DrawLine(dimPen, lWx, dY, rWx, dY)
+                g.DrawLine(New Pen(dimPen.Color, 0.8F), lWx, dY - 4, lWx, dY + 4)
+                g.DrawLine(New Pen(dimPen.Color, 0.8F), rWx, dY - 4, rWx, dY + 4)
+                Dim bLabel As String = "B=" & Format(airplane.B.GetValue(measurementSystem), "0.0") & " " & unitLabel
+                Dim bSz = g.MeasureString(bLabel, labelFont)
+                g.DrawString(bLabel, labelFont, dimBrush, (lWx + rWx) / 2 - bSz.Width / 2, dY - bSz.Height - 1)
+            End If
+
+            ' Tandem spacing (Ts) — if > 0 and multiple Y positions exist
+            If airplane.Ts > 0 AndAlso airplane.WheelCoordinates.Count >= 2 Then
+                ' Find two wheels at different Y
+                Dim w1 = airplane.WheelCoordinates(0)
+                Dim w2 As ICoordinates = Nothing
+                For Each wc In airplane.WheelCoordinates
+                    If Math.Abs(wc.Y.UsCustomary - w1.Y.UsCustomary) > 1 Then
+                        w2 = wc
+                        Exit For
+                    End If
+                Next
+                If w2 IsNot Nothing Then
+                    Dim tX As Single = toX(w1.X.UsCustomary) + wheelW / 2 + 14
+                    Dim tY1 As Single = toY(w1.Y.UsCustomary)
+                    Dim tY2 As Single = toY(w2.Y.UsCustomary)
+                    g.DrawLine(dimPen, tX, tY1, tX, tY2)
+                    g.DrawLine(New Pen(dimPen.Color, 0.8F), tX - 4, tY1, tX + 4, tY1)
+                    g.DrawLine(New Pen(dimPen.Color, 0.8F), tX - 4, tY2, tX + 4, tY2)
+                    Dim tsVal As Double = If(isMetric, airplane.Ts * 25.4, airplane.Ts)
+                    Dim tsLabel As String = "Ts=" & Format(tsVal, "0.0") & " " & unitLabel
+                    Dim tsSz = g.MeasureString(tsLabel, labelFont)
+                    g.DrawString(tsLabel, labelFont, dimBrush, tX + 5, (tY1 + tY2) / 2 - tsSz.Height / 2)
+                End If
+            End If
+
+            ' ── Legend (bottom-left) ──
+            Dim lgX As Single = 12
+            Dim lgY As Single = CSng(H - 58)
+            Dim lgFont As New Font("Segoe UI", 7.0F)
+            Dim lgBrush As New SolidBrush(Color.FromArgb(120, 120, 115))
+
+            ' Semi-transparent legend background
+            g.FillRectangle(New SolidBrush(Color.FromArgb(220, 255, 255, 255)), lgX - 4, lgY - 4, 175, 42)
+
+            ' Wheel legend
+            g.FillRectangle(New SolidBrush(wheelFill), lgX, lgY + 2, 10, 10)
+            g.DrawRectangle(New Pen(wheelStroke, 0.8F), lgX, lgY + 2, 10, 10)
+            g.DrawString("Tire imprint (right side)", lgFont, lgBrush, lgX + 14, lgY)
+            lgY += 14
+            g.FillRectangle(New SolidBrush(mirrorFill), lgX, lgY + 2, 10, 10)
+            g.DrawRectangle(New Pen(mirrorStroke, 0.8F), lgX, lgY + 2, 10, 10)
+            g.DrawString("Mirrored (left side)", lgFont, lgBrush, lgX + 14, lgY)
+            If airplane.EvaluationPoints.Count > 0 Then
+                lgY += 14
+                g.FillEllipse(New SolidBrush(evalColor), lgX + 2, lgY + 3, 6, 6)
+                g.DrawString("Evaluation points", lgFont, lgBrush, lgX + 14, lgY)
+            End If
+
+            ' ── Subtle border ──
+            g.DrawRectangle(New Pen(Color.FromArgb(210, 210, 205), 1), 0, 0, W - 1, H - 1)
+
+            ' ── Cleanup ──
+            titleFont.Dispose()
+            subtitleFont.Dispose()
+            tickFont.Dispose()
+            labelFont.Dispose()
+            coordFont.Dispose()
+            badgeFont.Dispose()
+            lgFont.Dispose()
+            axisPen.Dispose()
+            dimPen.Dispose()
+            gridPen.Dispose()
+            tickBrush.Dispose()
+            axUnitBrush.Dispose()
+            dimBrush.Dispose()
+            lgBrush.Dispose()
 
         End Sub
 

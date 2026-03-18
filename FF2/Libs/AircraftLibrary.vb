@@ -387,6 +387,14 @@ Namespace Libs
             FileSystem.DeleteFile(deletePath)
         End Sub
 
+
+        Public Sub DeleteUserDefinedAircraft(aircraftName As String, udaFolderPath As String)
+            Dim deletePath = udaFolderPath & Path.DirectorySeparatorChar & aircraftName & ".xml"
+            If File.Exists(deletePath) Then
+                FileSystem.DeleteFile(deletePath)
+            End If
+        End Sub
+
         Private Sub InsertVersionInfo(path As String)
             Dim libFile As String
 

@@ -473,6 +473,11 @@ Public Class AirplaneInfo
         End Get
         Set(value As Weight)
 
+            ' Skip if value is unchanged (prevents double-fire from OnPropertyChanged re-entry)
+            If _GrossWeight IsNot Nothing AndAlso value IsNot Nothing AndAlso
+               _GrossWeight.UsCustomary = value.UsCustomary Then
+                Exit Property
+            End If
 
             Dim NWMax As Single
             Dim NWMin As Single
@@ -502,12 +507,22 @@ Public Class AirplaneInfo
                 End If
 
 
-                If NV > NWMax Then
-                    MessageBox.Show("Allowed Gross Taxi weight for this airplane is " + NWMin.ToString + " lb" + " (" + NWMinMetric.ToString + " Kg" + ")" + " to " + NWMax.ToString + " lb" + " (" + NWMaxMetric.ToString + " Kg" + ")" + ".")
-                    value = _GrossWeight
-                ElseIf NV < NWMin Then
-                    MessageBox.Show("Allowed Gross Taxi weight for this airplane is " + NWMin.ToString + " lb" + " (" + NWMinMetric.ToString + " Kg" + ")" + " to " + NWMax.ToString + " lb" + " (" + NWMaxMetric.ToString + " Kg" + ")" + ".")
-                    value = _GrossWeight
+                If NV > NWMax OrElse NV < NWMin Then
+                    Dim rangeMsg As String = "Allowed Gross Taxi weight for this airplane is " &
+                        NWMin.ToString("#,##0") & " lb (" & NWMinMetric.ToString("#,##0") & " kg) to " &
+                        NWMax.ToString("#,##0") & " lb (" & NWMaxMetric.ToString("#,##0") & " kg)." &
+                        vbCrLf & vbCrLf &
+                        "The entered value of " & NV.ToString("#,##0") & " lb (" & NVMetric.ToString("#,##0") & " kg) " &
+                        "is outside this range." & vbCrLf & vbCrLf &
+                        "Click Yes to override this limit and continue anyway, " &
+                        "or No to revert to the previous value."
+                    Dim result = MessageBox.Show(rangeMsg, "Gross Weight Outside Allowed Range",
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
+                    If result = DialogResult.Yes Then
+                        _GrossWeight = value
+                    Else
+                        value = _GrossWeight
+                    End If
 
                 Else
 

@@ -251,6 +251,195 @@ Namespace ViewModels
         End Property
 
 
+        ' ── Progress banner properties ──
+
+        Private _ProgressBannerVisibility As Visibility = Visibility.Collapsed
+        Public Property ProgressBannerVisibility As Visibility
+            Get
+                Return _ProgressBannerVisibility
+            End Get
+            Set(value As Visibility)
+                _ProgressBannerVisibility = value
+                OnPropertyChanged(NameOf(ProgressBannerVisibility))
+            End Set
+        End Property
+
+        Private _ProgressBannerBackground As Media.Brush = New Media.SolidColorBrush(Media.Color.FromRgb(&HE3, &HF2, &HFD))
+        Public Property ProgressBannerBackground As Media.Brush
+            Get
+                Return _ProgressBannerBackground
+            End Get
+            Set(value As Media.Brush)
+                _ProgressBannerBackground = value
+                OnPropertyChanged(NameOf(ProgressBannerBackground))
+            End Set
+        End Property
+
+        Private _ProgressIcon As String = ""
+        Public Property ProgressIcon As String
+            Get
+                Return _ProgressIcon
+            End Get
+            Set(value As String)
+                _ProgressIcon = value
+                OnPropertyChanged(NameOf(ProgressIcon))
+            End Set
+        End Property
+
+        Private _ProgressStatusText As String = ""
+        Public Property ProgressStatusText As String
+            Get
+                Return _ProgressStatusText
+            End Get
+            Set(value As String)
+                _ProgressStatusText = value
+                OnPropertyChanged(NameOf(ProgressStatusText))
+            End Set
+        End Property
+
+        Private _ProgressTextBrush As Media.Brush = Media.Brushes.DarkSlateGray
+        Public Property ProgressTextBrush As Media.Brush
+            Get
+                Return _ProgressTextBrush
+            End Get
+            Set(value As Media.Brush)
+                _ProgressTextBrush = value
+                OnPropertyChanged(NameOf(ProgressTextBrush))
+            End Set
+        End Property
+
+        Private _ProgressIsIndeterminate As Boolean = False
+        Public Property ProgressIsIndeterminate As Boolean
+            Get
+                Return _ProgressIsIndeterminate
+            End Get
+            Set(value As Boolean)
+                _ProgressIsIndeterminate = value
+                OnPropertyChanged(NameOf(ProgressIsIndeterminate))
+            End Set
+        End Property
+
+        Private _ProgressValue As Double = 0
+        Public Property ProgressValue As Double
+            Get
+                Return _ProgressValue
+            End Get
+            Set(value As Double)
+                _ProgressValue = value
+                OnPropertyChanged(NameOf(ProgressValue))
+            End Set
+        End Property
+
+        Private _ProgressBarBrush As Media.Brush = New Media.SolidColorBrush(Media.Color.FromRgb(&H15, &H65, &HC0))
+        Public Property ProgressBarBrush As Media.Brush
+            Get
+                Return _ProgressBarBrush
+            End Get
+            Set(value As Media.Brush)
+                _ProgressBarBrush = value
+                OnPropertyChanged(NameOf(ProgressBarBrush))
+            End Set
+        End Property
+
+        Private _ProgressSubText As String = ""
+        Public Property ProgressSubText As String
+            Get
+                Return _ProgressSubText
+            End Get
+            Set(value As String)
+                _ProgressSubText = value
+                OnPropertyChanged(NameOf(ProgressSubText))
+            End Set
+        End Property
+
+        Private _ProgressSubTextVisibility As Visibility = Visibility.Collapsed
+        Public Property ProgressSubTextVisibility As Visibility
+            Get
+                Return _ProgressSubTextVisibility
+            End Get
+            Set(value As Visibility)
+                _ProgressSubTextVisibility = value
+                OnPropertyChanged(NameOf(ProgressSubTextVisibility))
+            End Set
+        End Property
+
+        Private _ProgressSubTextBrush As Media.Brush = Media.Brushes.Gray
+        Public Property ProgressSubTextBrush As Media.Brush
+            Get
+                Return _ProgressSubTextBrush
+            End Get
+            Set(value As Media.Brush)
+                _ProgressSubTextBrush = value
+                OnPropertyChanged(NameOf(ProgressSubTextBrush))
+            End Set
+        End Property
+
+
+        ''' <summary>
+        ''' Configures the progress banner for the "running" state (indeterminate bar, blue theme).
+        ''' </summary>
+        Public Sub ShowProgressRunning(statusText As String, Optional subText As String = Nothing)
+            ProgressBannerVisibility = Visibility.Visible
+            ProgressBannerBackground = New Media.SolidColorBrush(Media.Color.FromRgb(&HE3, &HF2, &HFD))
+            ProgressIcon = ChrW(&H23F3)  ' hourglass
+            ProgressStatusText = statusText
+            ProgressTextBrush = New Media.SolidColorBrush(Media.Color.FromRgb(&H0D, &H47, &HA1))
+            ProgressIsIndeterminate = True
+            ProgressValue = 0
+            ProgressBarBrush = New Media.SolidColorBrush(Media.Color.FromRgb(&H15, &H65, &HC0))
+            If subText IsNot Nothing Then
+                ProgressSubText = subText
+                ProgressSubTextVisibility = Visibility.Visible
+                ProgressSubTextBrush = New Media.SolidColorBrush(Media.Color.FromRgb(&H54, &H6E, &H7A))
+            Else
+                ProgressSubTextVisibility = Visibility.Collapsed
+            End If
+        End Sub
+
+
+        ''' <summary>
+        ''' Configures the progress banner for the "completed" state (full bar, green theme).
+        ''' </summary>
+        Public Sub ShowProgressCompleted(elapsedText As String)
+            ProgressBannerVisibility = Visibility.Visible
+            ProgressBannerBackground = New Media.SolidColorBrush(Media.Color.FromRgb(&HE8, &HF5, &HE9))
+            ProgressIcon = ChrW(&H2705)  ' check mark
+            ProgressStatusText = "Analysis Complete"
+            ProgressTextBrush = New Media.SolidColorBrush(Media.Color.FromRgb(&H1B, &H5E, &H20))
+            ProgressIsIndeterminate = False
+            ProgressValue = 100
+            ProgressBarBrush = New Media.SolidColorBrush(Media.Color.FromRgb(&H2E, &H7D, &H32))
+            ProgressSubText = "Completed in " & elapsedText & " — results are ready for review."
+            ProgressSubTextVisibility = Visibility.Visible
+            ProgressSubTextBrush = New Media.SolidColorBrush(Media.Color.FromRgb(&H33, &H69, &H1E))
+        End Sub
+
+
+        ''' <summary>
+        ''' Configures the progress banner for the "canceled" state (amber theme).
+        ''' </summary>
+        Public Sub ShowProgressCanceled()
+            ProgressBannerVisibility = Visibility.Visible
+            ProgressBannerBackground = New Media.SolidColorBrush(Media.Color.FromRgb(&HFF, &HF3, &HE0))
+            ProgressIcon = ChrW(&H26A0)  ' warning
+            ProgressStatusText = "Analysis Canceled"
+            ProgressTextBrush = New Media.SolidColorBrush(Media.Color.FromRgb(&HE6, &H51, &H00))
+            ProgressIsIndeterminate = False
+            ProgressValue = 0
+            ProgressBarBrush = New Media.SolidColorBrush(Media.Color.FromRgb(&HFF, &HA0, &H00))
+            ProgressSubTextVisibility = Visibility.Collapsed
+        End Sub
+
+
+        ''' <summary>
+        ''' Hides the progress banner.
+        ''' </summary>
+        Public Sub HideProgressBanner()
+            ProgressBannerVisibility = Visibility.Collapsed
+            ProgressIsIndeterminate = False
+        End Sub
+
+
         Private _UserDefinedLIsEnabled As Boolean = True
         Public Property UserDefinedLIsEnabled As Boolean
             Get
@@ -2761,6 +2950,17 @@ Namespace ViewModels
         End Property
 
 
+        Private _OnAbout_Command As DelegateCommand
+        Public ReadOnly Property OnAbout_Command As ICommand
+            Get
+                If _OnAbout_Command Is Nothing Then
+                    _OnAbout_Command = New DelegateCommand(AddressOf OnAbout, Function() True)
+                End If
+                Return _OnAbout_Command
+            End Get
+        End Property
+
+
         Private _OnSelectAllSections_Command As DelegateCommand
         Public ReadOnly Property OnSelectAllSections_Command As ICommand
             Get
@@ -3052,6 +3252,59 @@ Namespace ViewModels
         End Property
 
 
+        ' RDEC Mix Properties commands and state
+        Private _RdecInfoVisible As Visibility = Visibility.Collapsed
+        Public Property RdecInfoVisible As Visibility
+            Get
+                Return _RdecInfoVisible
+            End Get
+            Set(value As Visibility)
+                _RdecInfoVisible = value
+                OnPropertyChanged(NameOf(RdecInfoVisible))
+            End Set
+        End Property
+
+        Private _ToggleRdecInfo_Command As DelegateCommand
+        Public ReadOnly Property ToggleRdecInfo_Command As ICommand
+            Get
+                If _ToggleRdecInfo_Command Is Nothing Then
+                    _ToggleRdecInfo_Command = New DelegateCommand(AddressOf ToggleRdecInfo, AddressOf InitializedEnabled)
+                End If
+                Return _ToggleRdecInfo_Command
+            End Get
+        End Property
+
+        Private Sub ToggleRdecInfo()
+            If RdecInfoVisible = Visibility.Collapsed Then
+                RdecInfoVisible = Visibility.Visible
+            Else
+                RdecInfoVisible = Visibility.Collapsed
+            End If
+        End Sub
+
+        Private _ResetRdecDefaults_Command As DelegateCommand
+        Public ReadOnly Property ResetRdecDefaults_Command As ICommand
+            Get
+                If _ResetRdecDefaults_Command Is Nothing Then
+                    _ResetRdecDefaults_Command = New DelegateCommand(AddressOf ResetRdecDefaults, AddressOf InitializedEnabled)
+                End If
+                Return _ResetRdecDefaults_Command
+            End Get
+        End Property
+
+        Private Sub ResetRdecDefaults()
+            If CurrentSectionView IsNot Nothing AndAlso CurrentSectionView.Section IsNot Nothing Then
+                CurrentSectionView.Section.RdecFlexuralMod = 600000
+                CurrentSectionView.Section.RdecAirVoids = 3.5
+                CurrentSectionView.Section.RdecAsphaltContentByVol = 12
+                CurrentSectionView.Section.RdecPNMS = 95
+                CurrentSectionView.Section.RdecPPCS = 58
+                CurrentSectionView.Section.RdecP200 = 4.5
+                OnPropertyChanged(NameOf(CurrentSectionView))
+            End If
+        End Sub
+
+
         Private _AddLayerBelow_Command As DelegateCommand
         Public ReadOnly Property AddLayerBelow_Command As ICommand
             Get
@@ -3320,6 +3573,13 @@ Namespace ViewModels
 
         Private Sub OnHelp()
             Help()
+        End Sub
+
+
+        Private Sub OnAbout()
+            Dim aboutWindow As New Views.AboutWindow()
+            aboutWindow.Owner = System.Windows.Application.Current.MainWindow
+            aboutWindow.ShowDialog()
         End Sub
 
 
@@ -4460,6 +4720,7 @@ Namespace ViewModels
                 dt.Start()
                 RunningTimeVisibility = Visibility.Visible
                 TimerVisibility = Visibility.Visible
+                ShowProgressRunning("Running analysis...", "Initializing computation engine")
                 Analysis = New RunAnalysis(Me)
                 Analysis.RunOrCancel()
             Else
@@ -4469,6 +4730,7 @@ Namespace ViewModels
                 StopwatchVisibility = Visibility.Hidden
                 TimerVisibility = Visibility.Hidden
                 CrossSectionVisibility = Visibility.Hidden
+                ShowProgressCanceled()
                 Analysis.RunOrCancel()
             End If
 
@@ -4481,6 +4743,18 @@ Namespace ViewModels
                 Dim span = DateTime.Now - timestart
                 TimerText = span.ToString("hh\:mm\:ss")
 
+                ' Update progress banner sub-text with the latest status line
+                If _messageText IsNot Nothing AndAlso CStr(_messageText).Length > 0 Then
+                    Dim lines = CStr(_messageText).Split({vbNewLine, vbCrLf, vbLf}, StringSplitOptions.RemoveEmptyEntries)
+                    If lines.Length > 0 Then
+                        Dim lastLine = lines(lines.Length - 1).Trim()
+                        If lastLine.Length > 0 Then
+                            ProgressSubText = lastLine
+                            ProgressSubTextVisibility = Visibility.Visible
+                        End If
+                    End If
+                End If
+
                 If OverflowExit Then
                     Analysis.CancelRun()
                     OverflowExit = False
@@ -4492,12 +4766,14 @@ Namespace ViewModels
                 End If
 
             Else
+                Dim finalElapsed = (DateTime.Now - timestart).ToString("hh\:mm\:ss")
                 dt.Stop()
                 RunningTimeVisibility = Visibility.Hidden
                 StopwatchVisibility = Visibility.Hidden
                 TimerVisibility = Visibility.Hidden
                 CrossSectionVisibility = Visibility.Hidden
-                TimerText = "0"
+                ShowProgressCompleted(finalElapsed)
+                TimerText = finalElapsed
             End If
         End Sub
 
@@ -8314,6 +8590,8 @@ Namespace ViewModels
                 tmpdiv = hu.wrap_bmp_img(bitmap)
                 bitmap.Dispose()
                 html += hu.wrap_div(tmpdiv, "image")
+                html += hu.wrap_p("Figure: CDF distribution across pavement width for all aircraft in the traffic mix. " &
+                    "The heavy blue line shows cumulative CDF. Individual aircraft are shown in distinct colors.", "chart-caption")
             End If
 
             ' Complete HTML Page
@@ -8326,10 +8604,10 @@ Namespace ViewModels
 
         Public Function CreateDetailedReportErrorPage(errorMessage As String) As String
             Dim html As String = ""
-            Dim tmpdiv As String = hu.wrap_h3("Error generating Detailed Computation Report")
+            Dim tmpdiv As String = hu.wrap_h3("Error generating CM Report")
             tmpdiv += hu.wrap_p(errorMessage)
             html += hu.wrap_div(tmpdiv, "report")
-            html = hu.CreateHtmlPage(html, "Detailed Report Error")
+            html = hu.CreateHtmlPage(html, "CM Report Error")
             Return html
         End Function
 
@@ -8361,7 +8639,7 @@ Namespace ViewModels
                 LenghtUnit = "mm"
             End If
 
-            Dim reportTitle = "Federal Aviation Administration FAARFIELD Detailed Computation Report"
+            Dim reportTitle = "Federal Aviation Administration FAARFIELD CM Report — Computational Mechanics"
             Dim html As String = ""
             Dim tmpdiv As String = ""
             Dim tmptable As String = ""
@@ -8554,6 +8832,187 @@ Namespace ViewModels
             tmpdiv = hu.wrap_p("Evaluation Depth at Subgrade = " + Format(rpt.SublayerData.EvalDepthSubgrade, "0.00") + " " + Thicknessunit)
             html += hu.wrap_div(tmpdiv, "summary-box")
 
+            ' A.3 Aggregate sublayer modulus explanation
+            If rpt.SublayerData.HasAggregateSublayers Then
+                tmpdiv = hu.wrap_h4("Unbound Aggregate Modulus — Sublayering Procedure")
+                html += hu.wrap_div(tmpdiv)
+
+                ' Explanation note box
+                Dim noteText As String = "Unbound aggregate layers (crushed base and uncrushed subbase) do not have a single " &
+                    "fixed modulus. FAARFIELD subdivides each aggregate layer into sublayers and computes a " &
+                    "depth-dependent modulus for each sublayer using an empirical formula. The modulus of each sublayer " &
+                    "depends on the modulus of the material below it — sublayers near the bottom (close to the subgrade) " &
+                    "have lower moduli, while sublayers near the top have higher moduli. The computation proceeds from " &
+                    "the bottom of the aggregate layer upward."
+                html += hu.wrap_div(hu.wrap_p(noteText), "note-box")
+
+                ' Formula
+                Dim formulaLines() As String = {
+                    "Sublayer modulus formula (applied bottom " & ChrW(&H2192) & " top):",
+                    "",
+                    "  f" & ChrW(&H2081) & " = 1 + C " & ChrW(&H00D7) & " ln(t) / ln(10)",
+                    "  f" & ChrW(&H2082) & " = D " & ChrW(&H00D7) & " ln(E" & ChrW(&H1D62) & ChrW(&H208B) & ChrW(&H2081) & ") " & ChrW(&H00D7) & " ln(t) / ln" & ChrW(&H00B2) & "(10)",
+                    "  E" & ChrW(&H1D62) & " = E" & ChrW(&H1D62) & ChrW(&H208B) & ChrW(&H2081) & " " & ChrW(&H00D7) & " (f" & ChrW(&H2081) & " " & ChrW(&H2212) & " f" & ChrW(&H2082) & ")",
+                    "",
+                    "where t = sublayer thickness (" & Thicknessunit & "), E" & ChrW(&H1D62) & ChrW(&H208B) & ChrW(&H2081) & " = modulus of layer below (" & PressureUnit & ")"
+                }
+                Dim eqImg As Bitmap = DrawEquationImage("Sublayer Modulus Reduction Formula", formulaLines)
+                tmpdiv = hu.wrap_bmp_img(eqImg)
+                html += hu.wrap_div(tmpdiv, "math-block")
+                eqImg.Dispose()
+
+                ' Parameters table
+                If rpt.SublayerData.BaseSublayerCount > 0 OrElse rpt.SublayerData.SubbaseSublayerCount > 0 Then
+                    tmpth = hu.wrap_p("Parameter")
+                    tmptr = hu.wrap_th(tmpth)
+                    If rpt.SublayerData.BaseSublayerCount > 0 Then
+                        tmpth = hu.wrap_p("P-209 Crushed Base")
+                        tmptr += hu.wrap_th(tmpth)
+                    End If
+                    If rpt.SublayerData.SubbaseSublayerCount > 0 Then
+                        tmpth = hu.wrap_p("P-154 Uncrushed Subbase")
+                        tmptr += hu.wrap_th(tmpth)
+                    End If
+                    tmpthead = hu.wrap_tr(tmptr)
+                    tmptable = hu.wrap_thead(tmpthead)
+
+                    ' C coefficient
+                    tmptd = hu.wrap_p("C (thickness factor)")
+                    tmptr = hu.wrap_td(tmptd)
+                    If rpt.SublayerData.BaseSublayerCount > 0 Then
+                        tmptd = hu.wrap_p(Format(rpt.SublayerData.BaseCoeffC, "0.00"))
+                        tmptr += hu.wrap_td(tmptd)
+                    End If
+                    If rpt.SublayerData.SubbaseSublayerCount > 0 Then
+                        tmptd = hu.wrap_p(Format(rpt.SublayerData.SubbaseCoeffC, "0.00"))
+                        tmptr += hu.wrap_td(tmptd)
+                    End If
+                    tmptable += hu.wrap_tr(tmptr)
+
+                    ' D coefficient
+                    tmptd = hu.wrap_p("D (modulus interaction)")
+                    tmptr = hu.wrap_td(tmptd)
+                    If rpt.SublayerData.BaseSublayerCount > 0 Then
+                        tmptd = hu.wrap_p(Format(rpt.SublayerData.BaseCoeffD, "0.00"))
+                        tmptr += hu.wrap_td(tmptd)
+                    End If
+                    If rpt.SublayerData.SubbaseSublayerCount > 0 Then
+                        tmptd = hu.wrap_p(Format(rpt.SublayerData.SubbaseCoeffD, "0.00"))
+                        tmptr += hu.wrap_td(tmptd)
+                    End If
+                    tmptable += hu.wrap_tr(tmptr)
+
+                    ' Modulus of layer below
+                    tmptd = hu.wrap_p("E below (" & PressureUnit & ")")
+                    tmptr = hu.wrap_td(tmptd)
+                    If rpt.SublayerData.BaseSublayerCount > 0 Then
+                        tmptd = hu.wrap_p(Format(rpt.SublayerData.BaseModUnder, "#,##0"))
+                        tmptr += hu.wrap_td(tmptd)
+                    End If
+                    If rpt.SublayerData.SubbaseSublayerCount > 0 Then
+                        tmptd = hu.wrap_p(Format(rpt.SublayerData.SubbaseModUnder, "#,##0"))
+                        tmptr += hu.wrap_td(tmptd)
+                    End If
+                    tmptable += hu.wrap_tr(tmptr)
+
+                    ' Number of sublayers
+                    tmptd = hu.wrap_p("Sublayers")
+                    tmptr = hu.wrap_td(tmptd)
+                    If rpt.SublayerData.BaseSublayerCount > 0 Then
+                        tmptd = hu.wrap_p(rpt.SublayerData.BaseSublayerCount.ToString())
+                        tmptr += hu.wrap_td(tmptd)
+                    End If
+                    If rpt.SublayerData.SubbaseSublayerCount > 0 Then
+                        tmptd = hu.wrap_p(rpt.SublayerData.SubbaseSublayerCount.ToString())
+                        tmptr += hu.wrap_td(tmptd)
+                    End If
+                    tmptable += hu.wrap_tr(tmptr)
+
+                    tmpdiv = hu.wrap_table(tmptable)
+                    html += hu.wrap_div(tmpdiv)
+                End If
+
+                ' Individual sublayer detail tables
+                If rpt.SublayerData.BaseSublayers.Count > 0 Then
+                    tmpdiv = hu.wrap_h4("P-209 Crushed Aggregate Base — Sublayer Moduli (bottom " & ChrW(&H2192) & " top)")
+                    html += hu.wrap_div(tmpdiv)
+
+                    tmpth = hu.wrap_p("Sublayer")
+                    tmptr = hu.wrap_th(tmpth)
+                    tmpth = hu.wrap_p("Thickness (" & Thicknessunit & ")")
+                    tmptr += hu.wrap_th(tmpth)
+                    tmpth = hu.wrap_p("Modulus (" & PressureUnit & ")")
+                    tmptr += hu.wrap_th(tmpth)
+                    tmpthead = hu.wrap_tr(tmptr)
+                    tmptable = hu.wrap_thead(tmpthead)
+
+                    ' Bottom-up: show from last sublayer to first
+                    For si As Integer = rpt.SublayerData.BaseSublayers.Count - 1 To 0 Step -1
+                        Dim bsl = rpt.SublayerData.BaseSublayers(si)
+                        tmptd = hu.wrap_p((si + 1).ToString() & If(si = rpt.SublayerData.BaseSublayers.Count - 1, " (bottom)", If(si = 0, " (top)", "")))
+                        tmptr = hu.wrap_td(tmptd)
+                        tmptd = hu.wrap_p(Format(bsl.Thickness, "0.00"))
+                        tmptr += hu.wrap_td(tmptd)
+                        tmptd = hu.wrap_p(Format(bsl.Modulus, "#,##0"))
+                        tmptr += hu.wrap_td(tmptd)
+                        tmptable += hu.wrap_tr(tmptr)
+                    Next
+                    ' Add "layer below" reference row
+                    tmptd = hu.wrap_p(ChrW(&H2193) & " Layer below")
+                    tmptr = hu.wrap_td(tmptd)
+                    tmptd = hu.wrap_p("—")
+                    tmptr += hu.wrap_td(tmptd)
+                    tmptd = hu.wrap_p(Format(rpt.SublayerData.BaseModUnder, "#,##0"))
+                    tmptr += hu.wrap_td(tmptd)
+                    tmptable += hu.wrap_tr(tmptr, "highlight-row")
+                    tmpdiv = hu.wrap_table(tmptable, "detailed-table")
+                    html += hu.wrap_div(tmpdiv)
+                End If
+
+                If rpt.SublayerData.SubbaseSublayers.Count > 0 Then
+                    tmpdiv = hu.wrap_h4("P-154 Uncrushed Aggregate Subbase — Sublayer Moduli (bottom " & ChrW(&H2192) & " top)")
+                    html += hu.wrap_div(tmpdiv)
+
+                    tmpth = hu.wrap_p("Sublayer")
+                    tmptr = hu.wrap_th(tmpth)
+                    tmpth = hu.wrap_p("Thickness (" & Thicknessunit & ")")
+                    tmptr += hu.wrap_th(tmpth)
+                    tmpth = hu.wrap_p("Modulus (" & PressureUnit & ")")
+                    tmptr += hu.wrap_th(tmpth)
+                    tmpthead = hu.wrap_tr(tmptr)
+                    tmptable = hu.wrap_thead(tmpthead)
+
+                    For si As Integer = rpt.SublayerData.SubbaseSublayers.Count - 1 To 0 Step -1
+                        Dim ssl = rpt.SublayerData.SubbaseSublayers(si)
+                        tmptd = hu.wrap_p((si + 1).ToString() & If(si = rpt.SublayerData.SubbaseSublayers.Count - 1, " (bottom)", If(si = 0, " (top)", "")))
+                        tmptr = hu.wrap_td(tmptd)
+                        tmptd = hu.wrap_p(Format(ssl.Thickness, "0.00"))
+                        tmptr += hu.wrap_td(tmptd)
+                        tmptd = hu.wrap_p(Format(ssl.Modulus, "#,##0"))
+                        tmptr += hu.wrap_td(tmptd)
+                        tmptable += hu.wrap_tr(tmptr)
+                    Next
+                    tmptd = hu.wrap_p(ChrW(&H2193) & " Layer below")
+                    tmptr = hu.wrap_td(tmptd)
+                    tmptd = hu.wrap_p("—")
+                    tmptr += hu.wrap_td(tmptd)
+                    tmptd = hu.wrap_p(Format(rpt.SublayerData.SubbaseModUnder, "#,##0"))
+                    tmptr += hu.wrap_td(tmptd)
+                    tmptable += hu.wrap_tr(tmptr, "highlight-row")
+                    tmpdiv = hu.wrap_table(tmptable, "detailed-table")
+                    html += hu.wrap_div(tmpdiv)
+                End If
+
+                ' Modulus-depth profile chart
+                Dim modChart As Bitmap = DrawModulusDepthProfile(rpt.SublayerData, Thicknessunit, PressureUnit)
+                tmpdiv = hu.wrap_bmp_img(modChart)
+                html += hu.wrap_div(tmpdiv, "chart-container-wide")
+                modChart.Dispose()
+                html += hu.wrap_p("Figure: Modulus vs. depth profile for the expanded sublayer structure. " &
+                    "Aggregate layers are subdivided and their moduli computed bottom-up using the empirical reduction formula. " &
+                    "The teal step line traces the modulus at each sublayer depth.", "chart-caption")
+            End If
+
             ' ====== Section B: Design Equations (rendered as high-quality images) ======
             html += hu.wrap_h3("<span class='section-number'>B.</span> Design Equations", "section-header-left")
 
@@ -8703,6 +9162,172 @@ Namespace ViewModels
                         "exact balance between design traffic and allowable repetitions.", "chart-caption")
                 End If
                 lifeRatioPlot.Dispose()
+
+                ' D.2 Asphalt (HMA) Fatigue Characterization
+                If rpt.AsphaltCDFComputed Then
+                    html += hu.wrap_h4("D.2 Asphalt (HMA) Layer Fatigue")
+
+                    html += hu.wrap_div(hu.wrap_p("In addition to subgrade rutting, FAARFIELD evaluates fatigue cracking of the " &
+                        "hot-mix asphalt (HMA) surface layer. The governing failure mode for design is typically subgrade rutting " &
+                        "(CDF<sub>subgrade</sub> " & ChrW(&H2192) & " 1.0), but the asphalt CDF is computed in parallel using " &
+                        "the horizontal tensile strain at the bottom of the HMA layer. Two fatigue models are available:"), "note-box")
+
+                    ' RDEC equation
+                    If rpt.AsphaltModel = "RDEC" Then
+                        Dim rdecLines() As String = {
+                            "RDEC Model (Rate of Dissipated Energy Change):",
+                            "",
+                            "PV = 44.422 " & ChrW(&H00D7) & " " & ChrW(&H03B5) & "^5.14 " & ChrW(&H00D7) & " (E" & ChrW(&H00D7) & "0.0068948)^2.993 " & ChrW(&H00D7) & " VoidPar^1.85 " & ChrW(&H00D7) & " GradPar^(-0.4063)",
+                            "",
+                            "N_fail = 0.4801 " & ChrW(&H00D7) & " PV^(-0.90074)",
+                            "",
+                            "Where: " & ChrW(&H03B5) & " = horizontal tensile strain at bottom of HMA",
+                            "       E = flexural modulus (psi " & ChrW(&H00D7) & " 0.0068948 " & ChrW(&H2192) & " MPa)",
+                            "       VoidPar = AirVoids / (AirVoids + AsphaltContent)",
+                            "       GradPar = (PNMS - PPCS) / P200"
+                        }
+                        Dim rdecImg As Bitmap = DrawEquationImage("RDEC Asphalt Fatigue Model", rdecLines)
+                        tmpdiv = hu.wrap_bmp_img(rdecImg)
+                        html += hu.wrap_div(tmpdiv, "math-block")
+                        rdecImg.Dispose()
+
+                        ' RDEC mix parameters table
+                        tmpdiv = hu.wrap_h4("RDEC Mix Parameters")
+                        html += hu.wrap_div(tmpdiv)
+
+                        tmpth = hu.wrap_p("Parameter")
+                        tmptr = hu.wrap_th(tmpth)
+                        tmpth = hu.wrap_p("Symbol")
+                        tmptr += hu.wrap_th(tmpth)
+                        tmpth = hu.wrap_p("Value")
+                        tmptr += hu.wrap_th(tmpth)
+                        tmpth = hu.wrap_p("Description")
+                        tmptr += hu.wrap_th(tmpth)
+                        tmpthead = hu.wrap_tr(tmptr)
+                        tmptable = hu.wrap_thead(tmpthead)
+
+                        tmptr = hu.wrap_td(hu.wrap_p("Flexural Modulus"))
+                        tmptr += hu.wrap_td(hu.wrap_p("E"))
+                        tmptr += hu.wrap_td(hu.wrap_p(Format(rpt.RdecFlexuralMod, "#,##0") & " psi"))
+                        tmptr += hu.wrap_td(hu.wrap_p("HMA flexural stiffness at design conditions"))
+                        tmptable += hu.wrap_tr(tmptr)
+
+                        tmptr = hu.wrap_td(hu.wrap_p("Air Voids"))
+                        tmptr += hu.wrap_td(hu.wrap_p("V<sub>a</sub>"))
+                        tmptr += hu.wrap_td(hu.wrap_p(Format(rpt.RdecAirVoids, "0.0") & " %"))
+                        tmptr += hu.wrap_td(hu.wrap_p("Percent air voids in HMA mix"))
+                        tmptable += hu.wrap_tr(tmptr)
+
+                        tmptr = hu.wrap_td(hu.wrap_p("Asphalt Content"))
+                        tmptr += hu.wrap_td(hu.wrap_p("V<sub>b</sub>"))
+                        tmptr += hu.wrap_td(hu.wrap_p(Format(rpt.RdecAsphaltContent, "0.0") & " %"))
+                        tmptr += hu.wrap_td(hu.wrap_p("Asphalt content by volume"))
+                        tmptable += hu.wrap_tr(tmptr)
+
+                        tmptr = hu.wrap_td(hu.wrap_p("Void Parameter"))
+                        tmptr += hu.wrap_td(hu.wrap_p("VP"))
+                        tmptr += hu.wrap_td(hu.wrap_p(Format(rpt.RdecVoidParameter, "0.0000")))
+                        tmptr += hu.wrap_td(hu.wrap_p("V<sub>a</sub> / (V<sub>a</sub> + V<sub>b</sub>)"))
+                        tmptable += hu.wrap_tr(tmptr)
+
+                        tmptr = hu.wrap_td(hu.wrap_p("Nom. Max Sieve Passing"))
+                        tmptr += hu.wrap_td(hu.wrap_p("PNMS"))
+                        tmptr += hu.wrap_td(hu.wrap_p(Format(rpt.RdecPNMS, "0.0") & " %"))
+                        tmptr += hu.wrap_td(hu.wrap_p("Percent passing nominal maximum sieve"))
+                        tmptable += hu.wrap_tr(tmptr)
+
+                        tmptr = hu.wrap_td(hu.wrap_p("Primary Control Sieve"))
+                        tmptr += hu.wrap_td(hu.wrap_p("PPCS"))
+                        tmptr += hu.wrap_td(hu.wrap_p(Format(rpt.RdecPPCS, "0.0") & " %"))
+                        tmptr += hu.wrap_td(hu.wrap_p("Percent passing primary control sieve"))
+                        tmptable += hu.wrap_tr(tmptr)
+
+                        tmptr = hu.wrap_td(hu.wrap_p("P-200 Fraction"))
+                        tmptr += hu.wrap_td(hu.wrap_p("P200"))
+                        tmptr += hu.wrap_td(hu.wrap_p(Format(rpt.RdecP200, "0.0") & " %"))
+                        tmptr += hu.wrap_td(hu.wrap_p("Percent passing #200 sieve"))
+                        tmptable += hu.wrap_tr(tmptr)
+
+                        tmptr = hu.wrap_td(hu.wrap_p("Gradation Parameter"))
+                        tmptr += hu.wrap_td(hu.wrap_p("GP"))
+                        tmptr += hu.wrap_td(hu.wrap_p(Format(rpt.RdecGradationParameter, "0.000")))
+                        tmptr += hu.wrap_td(hu.wrap_p("(PNMS " & ChrW(&H2212) & " PPCS) / P200"))
+                        tmptable += hu.wrap_tr(tmptr)
+
+                        tmpdiv = hu.wrap_table(tmptable, "detailed-table")
+                        html += hu.wrap_div(tmpdiv)
+                    Else
+                        ' AI (Asphalt Institute) model
+                        Dim aiLines() As String = {
+                            "Asphalt Institute (AI) Fatigue Model:",
+                            "",
+                            "AA = 2.68 - 5.0 " & ChrW(&H00D7) & " log10(" & ChrW(&H03B5) & ")",
+                            "BB = 2.665 " & ChrW(&H00D7) & " log10(E_asp)",
+                            "N_fail = 10^(AA - BB)",
+                            "",
+                            "Where: " & ChrW(&H03B5) & " = horizontal tensile strain at bottom of HMA",
+                            "       E_asp = asphalt surface modulus (psi)"
+                        }
+                        Dim aiImg As Bitmap = DrawEquationImage("Asphalt Institute (AI) Fatigue Model", aiLines)
+                        tmpdiv = hu.wrap_bmp_img(aiImg)
+                        html += hu.wrap_div(tmpdiv, "math-block")
+                        aiImg.Dispose()
+                    End If
+
+                    ' Per-aircraft asphalt CDF table
+                    tmpdiv = hu.wrap_h4("Asphalt CDF Per Aircraft")
+                    html += hu.wrap_div(tmpdiv)
+
+                    tmpth = hu.wrap_p("Aircraft")
+                    tmptr = hu.wrap_th(tmpth)
+                    tmpth = hu.wrap_p("HMA Strain (" & ChrW(&H03BC) & ChrW(&H03B5) & ")")
+                    tmptr += hu.wrap_th(tmpth)
+                    tmpth = hu.wrap_p("N<sub>fail,HMA</sub>")
+                    tmptr += hu.wrap_th(tmpth)
+                    tmpth = hu.wrap_p("Repetitions")
+                    tmptr += hu.wrap_th(tmpth)
+                    tmpth = hu.wrap_p("CDF<sub>HMA</sub>")
+                    tmptr += hu.wrap_th(tmpth)
+                    tmpth = hu.wrap_p("CDF<sub>Subgrade</sub>")
+                    tmptr += hu.wrap_th(tmpth)
+                    tmpth = hu.wrap_p("Governing")
+                    tmptr += hu.wrap_th(tmpth)
+                    tmpthead = hu.wrap_tr(tmptr)
+                    tmptable = hu.wrap_thead(tmpthead)
+
+                    For ia As Integer = 1 To UBound(rpt.AircraftDetails)
+                        If rpt.AircraftDetails(ia) Is Nothing Then Continue For
+                        Dim det = rpt.AircraftDetails(ia)
+
+                        Dim governing As String = "—"
+                        If det.AsphaltCDF > 0 AndAlso det.MaxCDF > 0 Then
+                            governing = If(det.MaxCDF >= det.AsphaltCDF, "Subgrade", "Asphalt")
+                        End If
+
+                        tmptr = hu.wrap_td(hu.wrap_p(det.ACName))
+                        tmptr += hu.wrap_td(hu.wrap_p(If(det.AsphaltStrain > 0, Format(det.AsphaltStrain * 1000000, "0.00"), "—")))
+                        tmptr += hu.wrap_td(hu.wrap_p(If(det.AsphaltNtoFail > 0, Format(det.AsphaltNtoFail, "0.000E+00"), "—")))
+                        tmptr += hu.wrap_td(hu.wrap_p(Format(det.TotalRepetitions, "#,##0")))
+                        tmptr += hu.wrap_td(hu.wrap_p(If(det.AsphaltCDF > 0, Format(det.AsphaltCDF, "0.000E+00"), "—")))
+                        tmptr += hu.wrap_td(hu.wrap_p(Format(det.MaxCDF, "0.000000")))
+                        tmptr += hu.wrap_td(hu.wrap_p(governing))
+                        tmptable += hu.wrap_tr(tmptr)
+                    Next
+
+                    tmpdiv = hu.wrap_table(tmptable, "detailed-table")
+                    html += hu.wrap_div(tmpdiv)
+
+                    ' Asphalt CDF summary box
+                    Dim aspSummary As String = "<strong>Total Asphalt CDF = " & Format(rpt.AsphaltCDFTotal, "0.000000") & "</strong>"
+                    aspSummary &= " &nbsp;|&nbsp; Total Subgrade CDF = " & Format(rpt.CDFSweep.MaxCDF, "0.000000")
+                    aspSummary &= " &nbsp;|&nbsp; <strong>Governing: " & If(rpt.CDFSweep.MaxCDF >= rpt.AsphaltCDFTotal, "Subgrade Rutting", "Asphalt Fatigue") & "</strong>"
+                    html += hu.wrap_div(hu.wrap_p(aspSummary), "summary-box")
+
+                    html += hu.wrap_div(hu.wrap_p("Note: FAARFIELD uses the governing failure mode (typically subgrade rutting) " &
+                        "for thickness design convergence (CDF " & ChrW(&H2192) & " 1.0). The asphalt CDF is computed in parallel " &
+                        "but does not directly control the design thickness unless it exceeds the subgrade CDF. " &
+                        "Monitoring the asphalt CDF is valuable for evaluating HMA layer fatigue life under different traffic mixes."), "note-box")
+                End If
             End If
 
             ' ====== Section E: Per-Aircraft Detailed Breakdown ======
@@ -8762,6 +9387,19 @@ Namespace ViewModels
 
                     tmpdiv = hu.wrap_table(tmptable)
                     html += hu.wrap_div(tmpdiv, "no-break")
+
+                    ' E.2b Gear Configuration Visualization
+                    If det.NWheels > 0 AndAlso det.WheelX IsNot Nothing Then
+                        tmpdiv = hu.wrap_h4("Gear Configuration — " & det.ACName)
+                        html += hu.wrap_div(tmpdiv)
+                        Dim gearChart As Bitmap = DrawGearConfiguration(det, rpt.CDFSweep.MaxCDFOffset, LenghtUnit)
+                        tmpdiv = hu.wrap_bmp_img(gearChart)
+                        html += hu.wrap_div(tmpdiv, "chart-container-wide")
+                        gearChart.Dispose()
+                        html += hu.wrap_p("Figure: Plan view of wheel positions for " & det.ACName & " (" & det.GearType & " gear). " &
+                            "Circles represent tire contact patches. Dashed gray lines show the 41 CDF evaluation offset strips. " &
+                            "Red dashed line = critical strip. Shaded bell curve = Gaussian lateral wander (" & ChrW(&H03C3) & "=30.435 in.).", "chart-caption")
+                    End If
 
                     ' E.3 Per-Aircraft CDF Chart (enhanced with wheel indicators)
                     If rpt.CDFSweep.NAircraftCaptured > 0 Then
@@ -11690,6 +12328,251 @@ Namespace ViewModels
 
 
         ''' <summary>
+        ''' Draws a plan-view gear configuration diagram showing wheel positions,
+        ''' CDF offset strips, dimension annotations, and Gaussian wander overlay.
+        ''' </summary>
+        Private Function DrawGearConfiguration(det As clsAircraftDetail, criticalOffset As Integer, lengthUnit As String) As Bitmap
+            Dim chartWidth As Integer = 900
+            Dim chartHeight As Integer = 600
+            Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
+
+            Using g As Graphics = Graphics.FromImage(bmpHi)
+                g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+                g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.ScaleTransform(2, 2)
+                g.Clear(Color.White)
+
+                Dim faaBlue As Color = Color.FromArgb(46, 94, 168)
+                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
+                Dim labelFont As New Font("Segoe UI", 8.5F)
+                Dim tickFont As New Font("Segoe UI", 7.5F)
+                Dim legendFont As New Font("Segoe UI", 7.0F)
+                Dim annotFont As New Font("Segoe UI", 6.5F)
+
+                ' Title
+                Dim titleText = "Gear Configuration: " & det.ACName & " (" & det.GearType & ")"
+                Dim titleSize = g.MeasureString(titleText, titleFont)
+                g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 8)
+
+                ' Plot area
+                Dim marginLeft As Integer = 80
+                Dim marginRight As Integer = 40
+                Dim marginTop As Integer = 40
+                Dim marginBottom As Integer = 60
+                Dim plotWidth As Integer = chartWidth - marginLeft - marginRight
+                Dim plotHeight As Integer = chartHeight - marginTop - marginBottom
+
+                ' Find wheel coordinate ranges
+                Dim minX As Single = Single.MaxValue, maxX As Single = Single.MinValue
+                Dim minY As Single = Single.MaxValue, maxY As Single = Single.MinValue
+                For i As Integer = 1 To det.NWheels
+                    If det.WheelX(i) < minX Then minX = det.WheelX(i)
+                    If det.WheelX(i) > maxX Then maxX = det.WheelX(i)
+                    If det.WheelY(i) < minY Then minY = det.WheelY(i)
+                    If det.WheelY(i) > maxY Then maxY = det.WheelY(i)
+                Next
+                ' Pad range by tire width + margin
+                Dim pad As Single = Math.Max(det.TireWidth * 2, 30)
+                minX -= pad : maxX += pad
+                minY -= pad : maxY += pad
+
+                ' Scale: map gear coordinates to plot area
+                ' X (lateral) -> horizontal, Y (longitudinal) -> vertical
+                Dim rangeX As Single = Math.Max(maxX - minX, 1)
+                Dim rangeY As Single = Math.Max(maxY - minY, 1)
+                Dim scaleX As Single = CSng(plotWidth / rangeX)
+                Dim scaleY As Single = CSng(plotHeight / rangeY)
+                Dim scale As Single = Math.Min(scaleX, scaleY) ' uniform scale
+                ' Center the drawing
+                Dim usedW As Single = rangeX * scale
+                Dim usedH As Single = rangeY * scale
+                Dim offsetX As Single = marginLeft + (plotWidth - usedW) / 2
+                Dim offsetY As Single = marginTop + (plotHeight - usedH) / 2
+
+                ' Transform functions
+                Dim toPixelX = Function(wx As Single) offsetX + (wx - minX) * scale
+                Dim toPixelY = Function(wy As Single) offsetY + (maxY - wy) * scale  ' flip Y
+
+                ' Draw CDF offset strips (vertical dashed lines at wheel path centerline)
+                ' The strips are lateral offsets from the nominal wheel path
+                Dim stripPen As New Pen(Color.FromArgb(60, 160, 160, 160), 0.5F)
+                stripPen.DashStyle = Drawing2D.DashStyle.Dash
+                Dim critStripPen As New Pen(Color.FromArgb(180, 220, 50, 50), 1.0F)
+                critStripPen.DashStyle = Drawing2D.DashStyle.Dash
+
+                ' The centerline X of the gear (lateral midpoint)
+                Dim centerX As Single = (minX + pad + maxX - pad) / 2
+                For ioff As Integer = 0 To CDF.NOFF - 1
+                    Dim offsetInches As Single = CSng(ioff * CDF.OFFSETINC)
+                    Dim stripXpos As Single = centerX + offsetInches
+                    If stripXpos >= minX AndAlso stripXpos <= maxX Then
+                        Dim px As Single = toPixelX(stripXpos)
+                        If ioff = criticalOffset - 1 Then
+                            g.DrawLine(critStripPen, px, CSng(marginTop), px, CSng(marginTop + plotHeight))
+                            g.DrawString("critical", annotFont, Brushes.Red, px - 12, CSng(marginTop - 12))
+                        Else
+                            g.DrawLine(stripPen, px, CSng(marginTop), px, CSng(marginTop + plotHeight))
+                        End If
+                        If ioff Mod 5 = 0 Then
+                            g.DrawString(Format(offsetInches, "0"), annotFont, Brushes.Gray, px - 6, CSng(marginTop + plotHeight + 2))
+                        End If
+                    End If
+                Next
+
+                ' Gaussian wander overlay (sigma = 30.435 in.)
+                Dim sigma As Double = 30.435
+                Dim gaussPts As New List(Of PointF)
+                Dim gaussMax As Double = 1.0 / (sigma * Math.Sqrt(2 * Math.PI))
+                Dim gaussHeight As Single = 40  ' max pixel height for the bell curve
+                For px As Integer = marginLeft To marginLeft + plotWidth
+                    Dim wx As Single = minX + CSng((px - offsetX) / scale)
+                    Dim dist As Double = wx - centerX
+                    Dim gVal As Double = Math.Exp(-dist * dist / (2 * sigma * sigma)) / (sigma * Math.Sqrt(2 * Math.PI))
+                    Dim py As Single = CSng(marginTop + plotHeight - (gVal / gaussMax) * gaussHeight)
+                    gaussPts.Add(New PointF(CSng(px), py))
+                Next
+                If gaussPts.Count > 2 Then
+                    ' Fill
+                    Dim fillPts As New List(Of PointF)
+                    fillPts.Add(New PointF(gaussPts(0).X, CSng(marginTop + plotHeight)))
+                    fillPts.AddRange(gaussPts)
+                    fillPts.Add(New PointF(gaussPts(gaussPts.Count - 1).X, CSng(marginTop + plotHeight)))
+                    g.FillPolygon(New SolidBrush(Color.FromArgb(25, faaBlue.R, faaBlue.G, faaBlue.B)), fillPts.ToArray())
+                    g.DrawLines(New Pen(Color.FromArgb(100, faaBlue.R, faaBlue.G, faaBlue.B), 1.0F), gaussPts.ToArray())
+                End If
+
+                ' Draw wheels as filled ellipses
+                Dim tireRadius As Single = det.TireWidth / 2
+                Dim wheelBrush As New SolidBrush(Color.FromArgb(140, faaBlue.R, faaBlue.G, faaBlue.B))
+                Dim wheelPen As New Pen(faaBlue, 1.0F)
+                For i As Integer = 1 To det.NWheels
+                    Dim cx As Single = toPixelX(det.WheelX(i))
+                    Dim cy As Single = toPixelY(det.WheelY(i))
+                    Dim rPx As Single = tireRadius * scale
+                    ' Clamp radius for visibility
+                    rPx = Math.Max(rPx, 6)
+                    rPx = Math.Min(rPx, 40)
+                    g.FillEllipse(wheelBrush, cx - rPx, cy - rPx, rPx * 2, rPx * 2)
+                    g.DrawEllipse(wheelPen, cx - rPx, cy - rPx, rPx * 2, rPx * 2)
+                    ' Coordinate label
+                    Dim coordLabel = "(" & Format(det.WheelX(i), "0.0") & ", " & Format(det.WheelY(i), "0.0") & ")"
+                    g.DrawString(coordLabel, annotFont, Brushes.Black, cx + rPx + 2, cy - 5)
+                Next
+
+                ' Dimension annotations
+                Dim dimPen As New Pen(Color.FromArgb(180, 80, 80, 80), 0.8F)
+                Dim dimFont As New Font("Segoe UI", 6.5F)
+
+                ' Dual spacing annotation (find a pair of wheels at same Y with different X)
+                If det.DualSpacing > 0 AndAlso det.NWheels >= 2 Then
+                    ' Find first two wheels at approximately the same Y
+                    Dim w1 As Integer = 1, w2 As Integer = 2
+                    For i As Integer = 1 To det.NWheels - 1
+                        For j As Integer = i + 1 To det.NWheels
+                            If Math.Abs(det.WheelY(i) - det.WheelY(j)) < 1 AndAlso Math.Abs(det.WheelX(i) - det.WheelX(j)) > 1 Then
+                                w1 = i : w2 = j
+                                GoTo FoundDualPair
+                            End If
+                        Next
+                    Next
+FoundDualPair:
+                    Dim px1 As Single = toPixelX(det.WheelX(w1))
+                    Dim px2 As Single = toPixelX(det.WheelX(w2))
+                    Dim py As Single = toPixelY(det.WheelY(w1)) - tireRadius * scale - 12
+                    py = Math.Max(py, CSng(marginTop + 5))
+                    g.DrawLine(dimPen, px1, py, px2, py)
+                    g.DrawLine(dimPen, px1, py - 3, px1, py + 3)
+                    g.DrawLine(dimPen, px2, py - 3, px2, py + 3)
+                    Dim dualLabel = Format(det.DualSpacing, "0.0") & """ dual"
+                    Dim dualSize = g.MeasureString(dualLabel, dimFont)
+                    g.DrawString(dualLabel, dimFont, Brushes.DimGray, (px1 + px2) / 2 - dualSize.Width / 2, py - dualSize.Height - 1)
+                End If
+
+                ' Tandem spacing annotation (find a pair at same X with different Y)
+                If det.TandemSpacing > 0 AndAlso det.NWheels >= 2 Then
+                    Dim w1 As Integer = 1, w2 As Integer = 2
+                    For i As Integer = 1 To det.NWheels - 1
+                        For j As Integer = i + 1 To det.NWheels
+                            If Math.Abs(det.WheelX(i) - det.WheelX(j)) < 1 AndAlso Math.Abs(det.WheelY(i) - det.WheelY(j)) > 1 Then
+                                w1 = i : w2 = j
+                                GoTo FoundTandemPair
+                            End If
+                        Next
+                    Next
+FoundTandemPair:
+                    Dim py1 As Single = toPixelY(det.WheelY(w1))
+                    Dim py2 As Single = toPixelY(det.WheelY(w2))
+                    Dim px As Single = toPixelX(det.WheelX(w1)) + tireRadius * scale + 15
+                    px = Math.Min(px, CSng(marginLeft + plotWidth - 5))
+                    g.DrawLine(dimPen, px, py1, px, py2)
+                    g.DrawLine(dimPen, px - 3, py1, px + 3, py1)
+                    g.DrawLine(dimPen, px - 3, py2, px + 3, py2)
+                    Dim tanLabel = Format(det.TandemSpacing, "0.0") & """ tandem"
+                    Dim tanSize = g.MeasureString(tanLabel, dimFont)
+                    ' Rotate text for vertical dimension
+                    Dim midY As Single = (py1 + py2) / 2
+                    g.DrawString(tanLabel, dimFont, Brushes.DimGray, px + 4, midY - tanSize.Height / 2)
+                End If
+
+                ' Contact area annotation
+                If det.ContactArea > 0 Then
+                    Dim caText = "Contact area: " & Format(det.ContactArea, "0.0") & " " & lengthUnit & ChrW(&H00B2)
+                    g.DrawString(caText, annotFont, Brushes.DimGray, CSng(marginLeft + 5), CSng(marginTop + plotHeight + 18))
+                End If
+
+                ' Gaussian sigma annotation
+                g.DrawString(ChrW(&H03C3) & " = 30.435 in. (Gaussian lateral wander)", annotFont, New SolidBrush(faaBlue), CSng(marginLeft + 5), CSng(marginTop + plotHeight + 30))
+
+                ' Axes
+                g.DrawLine(Pens.Black, marginLeft, marginTop, marginLeft, marginTop + plotHeight)
+                g.DrawLine(Pens.Black, marginLeft, marginTop + plotHeight, marginLeft + plotWidth, marginTop + plotHeight)
+                g.DrawString("Lateral position (" & lengthUnit & ")", labelFont, Brushes.Black, CSng(marginLeft + plotWidth / 2 - 50), CSng(marginTop + plotHeight + 42))
+
+                ' Y-axis label (drawn vertically)
+                Dim yLabel = "Longitudinal (" & lengthUnit & ")"
+                Dim sf As New StringFormat()
+                sf.FormatFlags = StringFormatFlags.DirectionVertical
+                g.DrawString(yLabel, labelFont, Brushes.Black, 5, CSng(marginTop + plotHeight / 2 - 30), sf)
+                sf.Dispose()
+
+                ' Legend
+                Dim lgX As Integer = chartWidth - marginRight - 180
+                Dim lgY As Integer = marginTop + 5
+                g.FillEllipse(wheelBrush, lgX, lgY + 2, 10, 10)
+                g.DrawEllipse(wheelPen, lgX, lgY + 2, 10, 10)
+                g.DrawString("Tire contact patch", legendFont, Brushes.Black, lgX + 14, lgY)
+                lgY += 16
+                g.DrawLine(stripPen, CSng(lgX), CSng(lgY + 5), CSng(lgX + 10), CSng(lgY + 5))
+                g.DrawString("CDF offset strips", legendFont, Brushes.Gray, lgX + 14, lgY)
+                lgY += 16
+                g.DrawLine(critStripPen, CSng(lgX), CSng(lgY + 5), CSng(lgX + 10), CSng(lgY + 5))
+                g.DrawString("Critical strip", legendFont, Brushes.Red, lgX + 14, lgY)
+                lgY += 16
+                g.FillRectangle(New SolidBrush(Color.FromArgb(25, faaBlue.R, faaBlue.G, faaBlue.B)), lgX, lgY + 2, 10, 10)
+                g.DrawString("Gaussian wander", legendFont, New SolidBrush(faaBlue), lgX + 14, lgY)
+
+                ' Border
+                g.DrawRectangle(New Pen(Color.FromArgb(209, 213, 219), 1), 0, 0, chartWidth - 1, chartHeight - 1)
+
+                ' Cleanup
+                titleFont.Dispose()
+                labelFont.Dispose()
+                tickFont.Dispose()
+                legendFont.Dispose()
+                annotFont.Dispose()
+                dimFont.Dispose()
+                stripPen.Dispose()
+                critStripPen.Dispose()
+                wheelBrush.Dispose()
+                wheelPen.Dispose()
+                dimPen.Dispose()
+            End Using
+
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
+        End Function
+
+
+        ''' <summary>
         ''' Draws an ACR vs normalized CDF per departure scatter chart.
         ''' </summary>
         Private Function DrawACRDamageChart(rpt As clsDetailedReportData, chartColors() As Color) As Bitmap
@@ -11825,6 +12708,242 @@ Namespace ViewModels
                 axisFont.Dispose()
                 smallFont.Dispose()
                 gridPen.Dispose()
+            End Using
+
+            Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
+        End Function
+
+
+        ''' <summary>
+        ''' Draws a modulus-vs-depth profile showing aggregate sublayer modulus gradient.
+        ''' Left panel: stacked layer bars colored by modulus. Right panel: modulus-depth step chart.
+        ''' </summary>
+        Private Function DrawModulusDepthProfile(sublayerData As clsSublayerData, thicknessUnit As String, pressureUnit As String) As Bitmap
+            Dim chartWidth As Integer = 850
+            Dim chartHeight As Integer = 500
+            Dim ssF As Integer = 2
+            Dim bmpHi As New Bitmap(chartWidth * ssF, chartHeight * ssF)
+
+            Using g As Graphics = Graphics.FromImage(bmpHi)
+                g.ScaleTransform(ssF, ssF)
+                g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit
+                g.Clear(Color.White)
+
+                ' Fonts
+                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
+                Dim axisFont As New Font("Segoe UI", 8.5F)
+                Dim tickFont As New Font("Segoe UI", 7.5F)
+                Dim labelFont As New Font("Segoe UI", 7.0F)
+                Dim smallFont As New Font("Segoe UI", 6.5F)
+                Dim mathFont As New Font("Consolas", 6.5F)
+
+                ' Colors
+                Dim teal As Color = Color.FromArgb(0, 121, 107)
+                Dim tealLight As Color = Color.FromArgb(224, 242, 241)
+                Dim gridColor As Color = Color.FromArgb(230, 230, 230)
+                Dim axisColor As Color = Color.FromArgb(80, 80, 80)
+
+                ' Title
+                g.DrawString("Aggregate Sublayer Modulus Profile", titleFont, Brushes.Black, 20, 12)
+
+                ' Collect all sublayers for the depth profile
+                Dim allLayers As New List(Of clsLayerInfo)
+                For Each sl In sublayerData.ExpandedSublayers
+                    allLayers.Add(sl)
+                Next
+
+                If allLayers.Count < 2 Then
+                    titleFont.Dispose() : axisFont.Dispose() : tickFont.Dispose()
+                    labelFont.Dispose() : smallFont.Dispose() : mathFont.Dispose()
+                    Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
+                End If
+
+                ' Compute depth array and modulus range (exclude semi-infinite last layer from depth)
+                Dim depths As New List(Of Single)  ' depth to top of each layer
+                Dim cumDepth As Single = 0
+                For i As Integer = 0 To allLayers.Count - 2  ' skip last (semi-infinite)
+                    depths.Add(cumDepth)
+                    cumDepth += allLayers(i).Thickness
+                Next
+                depths.Add(cumDepth) ' bottom of last structural layer
+
+                Dim maxDepth As Single = cumDepth * 1.1F
+                If maxDepth < 10 Then maxDepth = 10
+
+                ' Find modulus range across all layers (including subgrade)
+                Dim minMod As Single = Single.MaxValue
+                Dim maxMod As Single = Single.MinValue
+                For Each sl In allLayers
+                    If sl.Modulus > maxMod Then maxMod = sl.Modulus
+                    If sl.Modulus < minMod Then minMod = sl.Modulus
+                Next
+                Dim modRange As Single = maxMod - minMod
+                If modRange < 1000 Then modRange = 1000
+
+                ' ── Layout: left = layer column (200px), right = chart area ──
+                Dim layerColX As Single = 60
+                Dim layerColW As Single = 140
+                Dim plotLeft As Single = 260
+                Dim plotRight As Single = 790
+                Dim plotTop As Single = 55
+                Dim plotBottom As Single = 440
+                Dim plotH As Single = plotBottom - plotTop
+                Dim plotW As Single = plotRight - plotLeft
+
+                ' Helper lambdas
+                Dim depthToY As Func(Of Single, Single) = Function(d As Single) plotTop + (d / maxDepth) * plotH
+                Dim modToX As Func(Of Single, Single) = Function(m As Single) plotLeft + ((m - minMod * 0.9F) / (maxMod * 1.1F - minMod * 0.9F)) * plotW
+
+                ' ── Left panel: stacked layer bars ──
+                Dim layerColors() As Color = {
+                    Color.FromArgb(55, 71, 79),    ' dark gray (HMA)
+                    Color.FromArgb(0, 121, 107),   ' teal (stabilized)
+                    Color.FromArgb(121, 85, 72),   ' brown (aggregate base)
+                    Color.FromArgb(161, 136, 127), ' light brown (aggregate subbase)
+                    Color.FromArgb(189, 189, 189), ' light gray (subgrade)
+                    Color.FromArgb(96, 125, 139)   ' blue-gray (other)
+                }
+
+                For i As Integer = 0 To allLayers.Count - 2
+                    Dim y1 As Single = depthToY.Invoke(depths(i))
+                    Dim y2 As Single = depthToY.Invoke(depths(i + 1))
+                    Dim lh As Single = Math.Max(y2 - y1, 2)
+
+                    ' Pick color based on layer type
+                    Dim cIdx As Integer = Math.Min(i, layerColors.Length - 1)
+                    ' Use brown shades for aggregate sublayers
+                    Dim isAggregate As Boolean = False
+                    For Each bsl In sublayerData.BaseSublayers
+                        If Math.Abs(allLayers(i).Modulus - bsl.Modulus) < 1 AndAlso allLayers(i).LCode = bsl.LCode Then isAggregate = True
+                    Next
+                    For Each ssl In sublayerData.SubbaseSublayers
+                        If Math.Abs(allLayers(i).Modulus - ssl.Modulus) < 1 AndAlso allLayers(i).LCode = ssl.LCode Then isAggregate = True
+                    Next
+
+                    Dim barColor As Color
+                    If isAggregate Then
+                        ' Gradient shade based on modulus within aggregate range
+                        Dim t As Single = 0.5F
+                        If modRange > 100 Then t = (allLayers(i).Modulus - minMod) / modRange
+                        t = Math.Max(0, Math.Min(1, t))
+                        barColor = Color.FromArgb(
+                            CInt(161 + (0 - 161) * t * 0.6),
+                            CInt(136 + (121 - 136) * t * 0.6),
+                            CInt(127 + (107 - 127) * t * 0.6))
+                    ElseIf i = allLayers.Count - 2 Then
+                        barColor = layerColors(4) ' subgrade-like for last structural
+                    ElseIf i = 0 Then
+                        barColor = layerColors(0) ' HMA surface
+                    Else
+                        barColor = layerColors(Math.Min(cIdx, layerColors.Length - 1))
+                    End If
+
+                    Using br As New SolidBrush(Color.FromArgb(200, barColor.R, barColor.G, barColor.B))
+                        g.FillRectangle(br, layerColX, y1, layerColW, lh)
+                    End Using
+                    g.DrawRectangle(New Pen(Color.FromArgb(120, 80, 80, 80), 0.5F), layerColX, y1, layerColW, lh)
+
+                    ' Layer label
+                    Dim layerLabel As String = Format(allLayers(i).Thickness, "0.0") & " " & thicknessUnit
+                    If lh > 14 Then
+                        Dim lsz = g.MeasureString(layerLabel, smallFont)
+                        g.DrawString(layerLabel, smallFont, Brushes.White, layerColX + layerColW / 2 - lsz.Width / 2, y1 + lh / 2 - lsz.Height / 2)
+                    End If
+                Next
+
+                ' Depth axis (left of layer column)
+                g.DrawString("Depth (" & thicknessUnit & ")", axisFont, New SolidBrush(axisColor), 2, plotTop - 18)
+                For Each d As Single In depths
+                    Dim y As Single = depthToY.Invoke(d)
+                    g.DrawLine(New Pen(gridColor, 0.5F), plotLeft, y, plotRight, y)
+                    Dim dStr As String = Format(d, "0.0")
+                    Dim dsz = g.MeasureString(dStr, tickFont)
+                    g.DrawString(dStr, tickFont, New SolidBrush(axisColor), layerColX - dsz.Width - 4, y - dsz.Height / 2)
+                Next
+
+                ' ── Right panel: modulus step chart ──
+                ' Modulus axis
+                g.DrawLine(New Pen(axisColor, 1.2F), plotLeft, plotTop, plotLeft, plotBottom)
+                g.DrawLine(New Pen(axisColor, 1.2F), plotLeft, plotBottom, plotRight, plotBottom)
+                g.DrawString("Modulus (" & pressureUnit & ")", axisFont, New SolidBrush(axisColor), plotLeft + plotW / 2 - 50, plotBottom + 20)
+
+                ' Modulus tick marks
+                Dim modMin As Single = minMod * 0.9F
+                Dim modMax As Single = maxMod * 1.1F
+                Dim modStep As Single = CSng(Math.Pow(10, Math.Floor(Math.Log10(modMax - modMin))))
+                If (modMax - modMin) / modStep < 3 Then modStep /= 2
+                If (modMax - modMin) / modStep > 8 Then modStep *= 2
+                Dim mTick As Single = CSng(Math.Ceiling(modMin / modStep) * modStep)
+                While mTick <= modMax
+                    Dim x As Single = modToX.Invoke(mTick)
+                    g.DrawLine(New Pen(gridColor, 0.5F), x, plotTop, x, plotBottom)
+                    g.DrawLine(New Pen(axisColor, 0.8F), x, plotBottom, x, plotBottom + 4)
+                    Dim mStr As String = Format(mTick, "#,##0")
+                    Dim msz = g.MeasureString(mStr, tickFont)
+                    g.DrawString(mStr, tickFont, New SolidBrush(axisColor), x - msz.Width / 2, plotBottom + 6)
+                    mTick += modStep
+                End While
+
+                ' Draw step profile (modulus at each depth)
+                Dim profilePen As New Pen(teal, 2.5F)
+                For i As Integer = 0 To allLayers.Count - 2
+                    Dim y1 As Single = depthToY.Invoke(depths(i))
+                    Dim y2 As Single = depthToY.Invoke(depths(i + 1))
+                    Dim x As Single = modToX.Invoke(allLayers(i).Modulus)
+
+                    ' Horizontal line at this modulus across the layer depth
+                    g.DrawLine(profilePen, x, y1, x, y2)
+
+                    ' Vertical step between layers
+                    If i < allLayers.Count - 2 Then
+                        Dim xNext As Single = modToX.Invoke(allLayers(i + 1).Modulus)
+                        g.DrawLine(profilePen, x, y2, xNext, y2)
+                    End If
+
+                    ' Modulus value label
+                    Dim modLabel As String = Format(allLayers(i).Modulus, "#,##0")
+                    Dim mlsz = g.MeasureString(modLabel, smallFont)
+                    Dim labelX As Single = x + 4
+                    If labelX + mlsz.Width > plotRight - 5 Then labelX = x - mlsz.Width - 4
+                    g.DrawString(modLabel, smallFont, New SolidBrush(teal), labelX, (y1 + y2) / 2 - mlsz.Height / 2)
+                Next
+
+                ' Highlight aggregate sublayers with filled area
+                For i As Integer = 0 To allLayers.Count - 2
+                    Dim isAgg As Boolean = False
+                    For Each bsl In sublayerData.BaseSublayers
+                        If Math.Abs(allLayers(i).Modulus - bsl.Modulus) < 1 AndAlso allLayers(i).LCode = bsl.LCode Then isAgg = True
+                    Next
+                    For Each ssl In sublayerData.SubbaseSublayers
+                        If Math.Abs(allLayers(i).Modulus - ssl.Modulus) < 1 AndAlso allLayers(i).LCode = ssl.LCode Then isAgg = True
+                    Next
+                    If isAgg Then
+                        Dim y1 As Single = depthToY.Invoke(depths(i))
+                        Dim y2 As Single = depthToY.Invoke(depths(i + 1))
+                        Dim x As Single = modToX.Invoke(allLayers(i).Modulus)
+                        Using br As New SolidBrush(Color.FromArgb(40, teal.R, teal.G, teal.B))
+                            g.FillRectangle(br, plotLeft, y1, x - plotLeft, y2 - y1)
+                        End Using
+                    End If
+                Next
+
+                ' Draw connecting line from layer column to chart
+                Dim connPen As New Pen(Color.FromArgb(100, 180, 180, 180), 0.6F)
+                connPen.DashStyle = Drawing2D.DashStyle.Dot
+                For Each d As Single In depths
+                    Dim y As Single = depthToY.Invoke(d)
+                    g.DrawLine(connPen, layerColX + layerColW, y, plotLeft, y)
+                Next
+                connPen.Dispose()
+
+                profilePen.Dispose()
+                titleFont.Dispose()
+                axisFont.Dispose()
+                tickFont.Dispose()
+                labelFont.Dispose()
+                smallFont.Dispose()
+                mathFont.Dispose()
             End Using
 
             Return SupersampleBitmap(bmpHi, chartWidth, chartHeight)
@@ -12755,6 +13874,8 @@ Namespace ViewModels
             tmpdiv = hu.wrap_bmp_img(bitmap)
             bitmap.Dispose()
             html += hu.wrap_div(tmpdiv, "image")
+            html += hu.wrap_p("Figure: Aircraft ACR comparison with calculated PCR. Bars represent ACR values; " &
+                "the horizontal black line marks the calculated PCR. The dashed orange line shows annual departures (secondary axis).", "chart-caption")
 
             ' Table Title Div
             tmpdiv = hu.wrap_h3(" ")
@@ -12818,7 +13939,7 @@ Namespace ViewModels
         Private Function BitmapImage2Bitmap(ByVal bitmapImage As BitmapImage) As Bitmap
             Dim bm As Bitmap
             Using outStream As MemoryStream = New MemoryStream()
-                Dim enc As BitmapEncoder = New BmpBitmapEncoder()
+                Dim enc As BitmapEncoder = New PngBitmapEncoder()
                 enc.Frames.Add(BitmapFrame.Create(bitmapImage))
                 enc.Save(outStream)
                 Using bitmap As New Bitmap(outStream)
@@ -12998,7 +14119,8 @@ Namespace ViewModels
             Dim chartSize As System.Windows.Size = chart.RenderSize
             Dim bmp As Bitmap
 
-            Dim rtb As New RenderTargetBitmap(chartSize.Width, chartSize.Height + 100, 96D, 96D, PixelFormats.Pbgra32)
+            Dim scale As Double = 2.0
+            Dim rtb As New RenderTargetBitmap(CInt(chartSize.Width * scale), CInt((chartSize.Height + 100) * scale), 96D * scale, 96D * scale, PixelFormats.Pbgra32)
 
             Dim dv As DrawingVisual = New DrawingVisual()
             Dim dc As DrawingContext = dv.RenderOpen()
@@ -13035,7 +14157,7 @@ Namespace ViewModels
             rtb.Render(dv)
 
             Dim strm As MemoryStream = New MemoryStream()
-            Dim enc As BitmapEncoder = New BmpBitmapEncoder()
+            Dim enc As BitmapEncoder = New PngBitmapEncoder()
             enc.Frames.Add(BitmapFrame.Create(rtb))
             enc.Save(strm)
             bmp = New Bitmap(strm)
@@ -13623,7 +14745,7 @@ Namespace ViewModels
                 savePDF.FileName = Me.CurrentJob.Name + "-" + Me.CurrentSectionView.Report.Parent.Name + "-Airport Master Record"
 
             ElseIf context = "DetailedRpt" Then
-                savePDF.FileName = Me.CurrentJob.Name + "-" + Me.CurrentSectionView.Report.Parent.Name + "-Detailed Computation Report"
+                savePDF.FileName = Me.CurrentJob.Name + "-" + Me.CurrentSectionView.Report.Parent.Name + "-CM Report"
 
             End If
 
@@ -13674,7 +14796,23 @@ Namespace ViewModels
                 sName = "AirportMasterRecordRpt.pdf"
 
             ElseIf rptName = "DetailedRpt" Then
-                testName = Me.refreshDetailedReport()
+                ' Use the SVG-based HTML report generator for high-quality vector PDF output
+                Dim Section = CurrentSectionView.Section
+                Dim theJob = CurrentJob
+                Dim thkU As String, presU As String, wgtU As String, lenU As String
+                If TypeOf (theJob.DesignOptions.MeasurementSystem) Is UsCustomary Then
+                    thkU = "in." : presU = "psi" : wgtU = "lbs" : lenU = "in."
+                Else
+                    thkU = "mm" : presU = "MPa" : wgtU = "kg" : lenU = "mm"
+                End If
+                Dim analysisName As String = If(Section.AnalysisType IsNot Nothing, Section.AnalysisType.Name, Nothing)
+                testName = Libs.HtmlReportGenerator.Generate(
+                    FEDFAA1.gDetailedReportData,
+                    theJob.Name,
+                    Section.Name,
+                    analysisName,
+                    MainWindowTitle,
+                    thkU, presU, wgtU, lenU)
                 resultName = justPath & Path.DirectorySeparatorChar & justName & justExtension
                 sName = "DetailedRpt.pdf"
 
@@ -13705,7 +14843,7 @@ Namespace ViewModels
 
 
         ''' <summary>
-        ''' Saves the Detailed Computation Report as an HTML file and opens it in the default browser.
+        ''' Saves the CM Report as an HTML file and opens it in the default browser.
         ''' </summary>
         Private Sub SectionReportOpenHtml(context As Object)
             Dim rptName As String = CStr(context)
@@ -13714,7 +14852,7 @@ Namespace ViewModels
             Dim saveHtml As New System.Windows.Forms.SaveFileDialog()
             saveHtml.Filter = "HTML Files|*.html"
             saveHtml.Title = "Save as an HTML file"
-            saveHtml.FileName = Me.CurrentJob.Name & "-" & Me.CurrentSectionView.Report.Parent.Name & "-Detailed Computation Report"
+            saveHtml.FileName = Me.CurrentJob.Name & "-" & Me.CurrentSectionView.Report.Parent.Name & "-CM Report"
 
             If saveHtml.ShowDialog() <> System.Windows.Forms.DialogResult.OK Then
                 Return
@@ -15484,6 +16622,77 @@ Namespace ViewModels
         End Function
 
 
+        Public ReadOnly Property OnDeleteUserDefinedAircraft As ICommand
+            Get
+                Return New DelegateCommand(AddressOf DeleteUserDefinedAircraftCommand, AddressOf DeleteUserDefinedAircraftEnabled)
+            End Get
+        End Property
+
+
+        Public Sub DeleteUserDefinedAircraftCommand(context As Object)
+
+            If CurrentUserDefinedAircraft Is Nothing Then
+                MessageBox.Show("No User Defined Aircraft is selected.")
+                Exit Sub
+            End If
+
+            Dim aircraftName As String = CurrentUserDefinedAircraft.Name
+
+            Dim msgBoxResult As MessageBoxResult = MessageBox.Show(
+                "Are you sure you want to delete '" & aircraftName & "'?" & vbCrLf & vbCrLf &
+                "The aircraft file will be permanently removed from disk. " &
+                "Any saved job files that already contain this aircraft will not be affected.",
+                "Delete User Defined Aircraft",
+                MessageBoxButton.YesNo)
+
+            If msgBoxResult <> MessageBoxResult.Yes Then
+                Exit Sub
+            End If
+
+            ' Delete the XML file from disk
+            Libs.AircraftLibrary.DeleteUserDefinedAircraft(aircraftName, UDAFolderPath)
+
+            ' Remove from in-memory collections
+            Dim toRemove = ListExternalAircraft.FirstOrDefault(Function(a) a.Name = aircraftName)
+            If toRemove IsNot Nothing Then
+                ListExternalAircraft.Remove(toRemove)
+            End If
+
+            Dim toRemoveLib = AircraftLibrary.FirstOrDefault(Function(a) a.Name = aircraftName)
+            If toRemoveLib IsNot Nothing Then
+                AircraftLibrary.Remove(toRemoveLib)
+            End If
+
+            Dim toRemoveFull = FullAircraftLibrary.FirstOrDefault(Function(a) a.Name = aircraftName)
+            If toRemoveFull IsNot Nothing Then
+                FullAircraftLibrary.Remove(toRemoveFull)
+            End If
+
+            ' If no more UDVs remain, remove the External Library group from the tree
+            If ListExternalAircraft.Count = 0 Then
+                For i = AirplaneGroup.Count - 1 To 0 Step -1
+                    Dim tmpName = TryCast(AirplaneGroup.Item(i), AirplaneGroupViewModel)
+                    If tmpName IsNot Nothing AndAlso tmpName.Manufacturer = "External Library" Then
+                        AirplaneGroup.RemoveAt(i)
+                    End If
+                Next
+            End If
+
+            OnPropertyChanged(NameOf(ListExternalAircraft))
+            OnPropertyChanged(NameOf(AircraftLibrary))
+            OnPropertyChanged(NameOf(AirplaneGroup))
+
+            ' Clear the edit form
+            ClearUserDefinedPage()
+
+        End Sub
+
+
+        Private Shared Function DeleteUserDefinedAircraftEnabled(context As Object) As Boolean
+            Return True
+        End Function
+
+
         Public ReadOnly Property UpdateUDAGearImage_Command As ICommand
             Get
                 Return New DelegateCommand(AddressOf UpdateUDAGearImage, AddressOf UpdateUDAGearImageEnabled)
@@ -16911,7 +18120,7 @@ Namespace ViewModels
                     _selectedAirplane = Value
                     OnPropertyChanged(NameOf(SelectedAirplane))
                     SlabListUpdate()
-                    SelectedTabIndex = 1
+                    If RunCompleted Then SelectedTabIndex = 1
                     GearImage = DrawGear()
                 End If
             End Set
@@ -17156,7 +18365,7 @@ Namespace ViewModels
             End If
             OnPropertyChanged(NameOf(CurrentSectionView))
 
-            SelectedTabIndex = 1
+            If RunCompleted Then SelectedTabIndex = 1
             Try
                 ResetCalculatedAirplaneValues()
             Catch ex As Exception
@@ -17730,11 +18939,11 @@ Namespace ViewModels
                 .Maximum = ymaximum,
                 .Minimum = 0}
 
-            ''add Grid for yAxis
-            'For i = cdfScale To (cdfMax + 2 * cdfScale) Step cdfScale
-            '    Dim gridLine = New CartesianGridLineAnnotation() With {.Value = i, .Axis = cdfchart.VerticalAxis, .StrokeThickness = 0.5, .Stroke = New SolidColorBrush(System.Windows.Media.Color.FromRgb(90, 164, 211))}
-            '    cdfchart.Annotations.Add(gridLine)
-            'Next
+            'add Grid for yAxis
+            For i = cdfScale To (cdfMax + 2 * cdfScale) Step cdfScale
+                Dim gridLine = New CartesianGridLineAnnotation() With {.Value = i, .Axis = cdfchart.VerticalAxis, .StrokeThickness = 0.5, .Stroke = New SolidColorBrush(System.Windows.Media.Color.FromRgb(90, 164, 211))}
+                cdfchart.Annotations.Add(gridLine)
+            Next
 
             'draw XAxis
             If TypeOf (CurrentJob.DesignOptions.MeasurementSystem) Is UsCustomary Then
@@ -17885,7 +19094,8 @@ Namespace ViewModels
 
             Dim chartSize As System.Windows.Size = cdfchart.RenderSize
             Dim bmp As Bitmap
-            Dim rtb As New RenderTargetBitmap(chartSize.Width, chartSize.Height + 500, 96D, 96D, PixelFormats.Pbgra32)
+            Dim scale As Double = 2.0
+            Dim rtb As New RenderTargetBitmap(CInt(chartSize.Width * scale), CInt((chartSize.Height + 500) * scale), 96D * scale, 96D * scale, PixelFormats.Pbgra32)
 
             dc.DrawRectangle(Windows.Media.Brushes.White, Nothing, New Rect(New Windows.Size(800, 1300)))
 
@@ -18050,7 +19260,7 @@ Namespace ViewModels
             rtb.Render(dv)
 
             Dim strm As MemoryStream = New MemoryStream()
-            Dim enc As BitmapEncoder = New BmpBitmapEncoder()
+            Dim enc As BitmapEncoder = New PngBitmapEncoder()
             enc.Frames.Add(BitmapFrame.Create(rtb))
             enc.Save(strm)
             bmp = New Bitmap(strm)
@@ -18065,12 +19275,17 @@ Namespace ViewModels
             Dim ms As New MemoryStream
             Dim bi As New BitmapImage
 
-            Using image As New Bitmap(640, 640)
+            Const logicalW As Integer = 640
+            Const logicalH As Integer = 640
+            Const ssScale As Integer = 3  ' 3x supersampling for crisp text
 
-                Dim g = Graphics.FromImage(image)
+            Dim hiRes As New Bitmap(logicalW * ssScale, logicalH * ssScale)
+
+            Using g = Graphics.FromImage(hiRes)
+                g.ScaleTransform(ssScale, ssScale)
                 Dim tempPictureBox As New System.Windows.Forms.PictureBox With {
-                        .Height = 640,
-                        .Width = 640
+                        .Height = logicalH,
+                        .Width = logicalW
                     }
 
                 If SelectedAirplane IsNot Nothing Then
@@ -18078,15 +19293,16 @@ Namespace ViewModels
                         PaintGear(g, SelectedAirplane, tempPictureBox, fontProfile, CurrentJob.DesignOptions.MeasurementSystem)
                     End Using
                 End If
-
-                image.Save(ms, Imaging.ImageFormat.Png)
-                'My.Computer.Clipboard.Clear()
-                'My.Computer.Clipboard.SetImage(image)
-                bi.BeginInit()
-                bi.StreamSource = ms
-                bi.EndInit()
-
             End Using
+
+            ' Downscale with high-quality bicubic interpolation (SupersampleBitmap disposes hiRes)
+            Using finalImage As Bitmap = SupersampleBitmap(hiRes, logicalW, logicalH)
+                finalImage.Save(ms, Imaging.ImageFormat.Png)
+            End Using
+
+            bi.BeginInit()
+            bi.StreamSource = ms
+            bi.EndInit()
 
             Return bi
         End Function

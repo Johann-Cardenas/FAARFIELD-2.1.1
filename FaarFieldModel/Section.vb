@@ -184,6 +184,19 @@ Public Class Section
     Public Property SavedAirportMasterRecordhtml As String Implements ISection.SavedAirportMasterRecordhtml
     Public Property SavedCDFgraph As String Implements ISection.SavedCDFgraph
 
+    <DataMember>
+    Public Property RdecFlexuralMod As Single Implements ISection.RdecFlexuralMod
+    <DataMember>
+    Public Property RdecAirVoids As Single Implements ISection.RdecAirVoids
+    <DataMember>
+    Public Property RdecAsphaltContentByVol As Single Implements ISection.RdecAsphaltContentByVol
+    <DataMember>
+    Public Property RdecPNMS As Single Implements ISection.RdecPNMS
+    <DataMember>
+    Public Property RdecPPCS As Single Implements ISection.RdecPPCS
+    <DataMember>
+    Public Property RdecP200 As Single Implements ISection.RdecP200
+
     ''' <summary>
     ''' This is the default constructor for the Section class.
     ''' It initializes multiple properties at once.
@@ -204,6 +217,13 @@ Public Class Section
         ThicknessOptimization = False
         RunStatus = False
         PtoTC = 1
+
+        RdecFlexuralMod = 600000
+        RdecAirVoids = 3.5
+        RdecAsphaltContentByVol = 12
+        RdecPNMS = 95
+        RdecPPCS = 58
+        RdecP200 = 4.5
 
         For i = 0 To 42
             SectionCDF.Add(0)
@@ -242,6 +262,12 @@ Public Class Section
         For i = 0 To 42
             SectionCDF.Add(0)
         Next
+        RdecFlexuralMod = 600000
+        RdecAirVoids = 3.5
+        RdecAsphaltContentByVol = 12
+        RdecPNMS = 95
+        RdecPPCS = 58
+        RdecP200 = 4.5
         RunStatus = False
         SectionRunStatus = ""
     End Sub
@@ -286,6 +312,12 @@ Public Class Section
         SectionRunStatus = ""
         PCAConversionTracker = existing.PCAConversionTracker
         NCHRPTracker = existing.NCHRPTracker
+        RdecFlexuralMod = existing.RdecFlexuralMod
+        RdecAirVoids = existing.RdecAirVoids
+        RdecAsphaltContentByVol = existing.RdecAsphaltContentByVol
+        RdecPNMS = existing.RdecPNMS
+        RdecPPCS = existing.RdecPPCS
+        RdecP200 = existing.RdecP200
     End Sub
 
     ''' <summary>
@@ -446,5 +478,15 @@ Public Class Section
         End Set
     End Property
 
+
+    <OnDeserialized>
+    Private Sub OnDeserialized(context As StreamingContext)
+        If RdecFlexuralMod = 0 Then RdecFlexuralMod = 600000
+        If RdecAirVoids = 0 Then RdecAirVoids = 3.5
+        If RdecAsphaltContentByVol = 0 Then RdecAsphaltContentByVol = 12
+        If RdecPNMS = 0 Then RdecPNMS = 95
+        If RdecPPCS = 0 Then RdecPPCS = 58
+        If RdecP200 = 0 Then RdecP200 = 4.5
+    End Sub
 
 End Class
