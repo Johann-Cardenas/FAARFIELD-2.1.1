@@ -82,11 +82,15 @@ Namespace ViewModels
                     OnPropertyChanged(NameOf(IsSelected))
                     If Value Then
                         Dim sectionview = CType(Parent, SectionViewModel)
-                        FaarFieldViewModel.SetCurrentSection(sectionview)
-                        FaarFieldViewModel.AirportMasterRecordIsHidden = True
+                        If FaarFieldViewModel.CurrentSectionView IsNot sectionview Then
+                            FaarFieldViewModel.SetCurrentSection(sectionview)
+                        End If
+                        Dim html = FaarFieldViewModel.refreshAirportMasterRecord()
+                        If html <> FaarFieldViewModel.AirportMasterRecordHtml Then
+                            FaarFieldViewModel.AirportMasterRecordIsHidden = True
+                            FaarFieldViewModel.AirportMasterRecordHtml = html
+                        End If
                         FaarFieldViewModel.AirportMasterRecordIsHidden = False
-                        FaarFieldViewModel.AirportMasterRecordHtml = FaarFieldViewModel.refreshAirportMasterRecord()
-
                     End If
                 End If
             End Set

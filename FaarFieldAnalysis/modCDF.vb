@@ -727,6 +727,24 @@ FAILURELAW:
                     det.TandemSpacing = AC(LI).libTS
                     det.ContactArea = CSng(GL(IA) / AC(LI).libNTires / AC(LI).libCP)
 
+                    ' Compute xCenter for report visualization (mirrors CoverageToPassFlexible logic)
+                    Dim lclXCenter As Single = 0
+                    For iw2 As Integer = 1 To AC(LI).libNTires
+                        lclXCenter += AC(LI).libTX(iw2)
+                    Next
+                    lclXCenter /= AC(LI).libNTires
+                    Dim rMostX As Single = Single.MinValue
+                    For iw2 As Integer = 1 To AC(LI).libNTires
+                        If AC(LI).libTX(iw2) > rMostX Then rMostX = AC(LI).libTX(iw2)
+                    Next
+                    If (InStr(4, ACName(IA), "Belly", CompareMethod.Text) = 0 _
+                        Or InStr(1, ACName(IA), "B747", CompareMethod.Text) > 0 _
+                        Or InStr(1, ACName(IA), "A380", CompareMethod.Text) > 0) _
+                       And AC(LI).libGear <> "A" Then
+                        lclXCenter = lclXCenter + AC(LI).libTS / 2 + Math.Abs(rMostX)
+                    End If
+                    det.XCenter = lclXCenter
+
                     ' Capture per-offset data
                     For IOFF = 1 To NOFF
                         det.CDFByOffset(IOFF) = lclCDF(IA, IOFF)

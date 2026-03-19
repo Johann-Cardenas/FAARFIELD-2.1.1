@@ -80,6 +80,8 @@ Namespace Interfaces
         Property SavedPCRgraph As String
         Property SavedAirportMasterRecordhtml As String
         Property SavedCDFgraph As String
+        Property SavedDetailedReportHtml As String
+        Property SavedSectionReportHtml As String
 
         Property RdecFlexuralMod As Single
         Property RdecAirVoids As Single

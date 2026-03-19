@@ -16,25 +16,32 @@
         WindowState="{Binding WindowState, Mode=TwoWay}"
         DataContext="{StaticResource MainWindowViewModel}">
 
+    <Window.InputBindings>
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding OnNewJob_Command}"/>
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding OnOpenJob_Command}"/>
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding OnSaveJob_Command}"/>
+        <KeyBinding Key="F1" Command="{Binding OnHelp_Command}"/>
+    </Window.InputBindings>
+
     <i:Interaction.Behaviors>
         <utils:EventToCommandBehavior Command="{Binding Window_Closing_Command}" Event="Closing" PassArguments="True" />
         <utils:EventToCommandBehavior Command="{Binding Window_Loaded_Command}" Event="Loaded" PassArguments="True" />
-    </i:Interaction.Behaviors>    
+    </i:Interaction.Behaviors>
 
     <DockPanel x:Name="FaarField" DataContext="{StaticResource MainWindowViewModel}">
 
         <telerik:RadToolBar DockPanel.Dock="Top">
             <Button Content="{StaticResource NewJobButton}"
-                ToolTip="Create a new FAARFIELD Job. Multiple FAARFIELD Jobs can be open simultaneously."
+                ToolTip="Create a new FAARFIELD Job (Ctrl+N)"
                 Command="{Binding OnNewJob_Command}" />
             <Button Content="{StaticResource OpenJobButton}"
-                ToolTip="Open an existing FAARFIELD Job."
+                ToolTip="Open an existing FAARFIELD Job (Ctrl+O)"
                 Command="{Binding OnOpenJob_Command}" />
             <Button Content="{StaticResource NewSectionButton}"
                 ToolTip="Create a new analysis structure in the active FAARFIELD job.  If a Job is not open, both a new Job and new Structure will be created."
                 Command="{Binding OnSectionNew_Command}" />
             <Button Content="{StaticResource SaveJobButton}"
-                ToolTip="Save current active FAARFIELD Job. Selecting Save Job will overwrite existing job file."
+                ToolTip="Save current active FAARFIELD Job (Ctrl+S)"
                 Command="{Binding OnSaveJob_Command}" />
             <Button Content="{StaticResource SaveAsJobButton}"
                 ToolTip="Save current FAARFIELD Job under new name.  Existing FAARFIELD Job will remain in your Save folder."
@@ -46,15 +53,15 @@
                 ToolTip="Close active FAARFIELD Job.  If the Job has unsaved data you will be prompted to save the job before the file closes."
                 Command="{Binding OnCloseJob_Command}" />
             <telerik:RadToolBarSeparator />
-            <Label Content="User Defined Aircraft"/>            
+            <Label Content="AIRCRAFT" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource FaaTextSecondary}" VerticalAlignment="Center"/>            
             <Button Content="{StaticResource ImportButton}"
                 ToolTip="Create New User Defined Aircraft"               
                 Command="{Binding OnCreateUserDefined_Command}"/>
             <Button Content="{StaticResource ExportButton}"
                 ToolTip="Edit User Defined Aircraft"
-                Command="{Binding OnEditUserDefined_Command}" Height="28" Margin="0.8,1,0.8,0" VerticalAlignment="Top"/>            
+                Command="{Binding OnEditUserDefined_Command}"/>            
             <telerik:RadToolBarSeparator />
-            <Label Content="Batch Run Selection" />
+            <Label Content="BATCH" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource FaaTextSecondary}" VerticalAlignment="Center"/>
             <Button Content="{StaticResource SelectAllButton}"
                 ToolTip="Select all structures for Batch Run"
                 Command="{Binding OnSelectAllSections_Command}"/>
@@ -64,7 +71,7 @@
             <telerik:RadToolBarSeparator />
             <Button Content="{StaticResource PaveAirActionsButton}"
                     ToolTip="Open DOM access tab"
-                    Command="{Binding OnOpenDomAccessTab_Command}" Height="28" Margin="1,1,1,0" VerticalAlignment="Top"/>
+                    Command="{Binding OnOpenDomAccessTab_Command}"/>
             <Button Content="{StaticResource ExitButton}"
                 ToolTip="Closes the software"
                 Command="{Binding ExitApp_Command}"
@@ -74,7 +81,7 @@
                 Command="{Binding OnReset_Command}"
                 telerik:RadToolBar.ItemAlignment="Right" />
             <Button Content="{StaticResource HelpButton}"
-                ToolTip="Display FAARFIELD help documentation."
+                ToolTip="Display FAARFIELD help documentation (F1)"
                 Command="{Binding OnHelp_Command}"
                 telerik:RadToolBar.ItemAlignment="Right" />
             <Button Content="{StaticResource AboutButton}"
@@ -83,6 +90,28 @@
                 telerik:RadToolBar.ItemAlignment="Right" />
         </telerik:RadToolBar>
 
+        <StatusBar DockPanel.Dock="Bottom"
+                   Background="{StaticResource FaaToolbarBg}"
+                   BorderBrush="{StaticResource FaaBorderGrayLight}"
+                   BorderThickness="0,1,0,0"
+                   FontSize="11">
+            <StatusBarItem>
+                <TextBlock Text="{Binding CurrentJob.Name, StringFormat='Job: {0}', FallbackValue='No job open'}"
+                           Foreground="{StaticResource FaaTextSecondary}"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock Text="{Binding CurrentSectionView.Section.Name, StringFormat='Structure: {0}', FallbackValue=''}"
+                           Foreground="{StaticResource FaaTextSecondary}"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock Text="{Binding AnalysisType.Name, FallbackValue=''}"
+                           Foreground="{StaticResource FaaTextSecondary}"/>
+            </StatusBarItem>
+        </StatusBar>
+
+        <Grid>
         <telerik:RadDocking ShowResizePreview="True" x:Name="Docking" GeneratedItemsFactory="{StaticResource NonTransparentWindowsGeneratedItemsFactory}" telerik:RadDocking.SerializationTag="MainDockingTag" Width="{Binding ActualWidth, ElementName=FaarField}">
 
             <telerik:RadDocking.DocumentHost>
@@ -224,7 +253,7 @@
                                                 <ComboBoxItem Content="Standard" />
                                             </ComboBox>
                                             <TextBlock  Name="WarningFrost"
-                                                    Foreground="Red"
+                                                    Foreground="{StaticResource FaaErrorRed}"
                                                     Canvas.Top="45"
                                                     Visibility="{Binding WarningFrostPenetrationHidden}"
                                                     Text="{Binding Path=CurrentJob.DesignOptions.MeasurementSystem, Converter={StaticResource FrostPenetrationWarning}}"/>
@@ -332,6 +361,7 @@
 
                                                     </ComboBox>
                                                     <Button Name="RunButton"
+                                                            Style="{StaticResource PrimaryButton}"
                                                             Width="120"
                                                             Height="30"
                                                             Canvas.Top="5"
@@ -352,7 +382,7 @@
                                                         </i:Interaction.Behaviors>
 
                                                     </TextBox>
-                                                    <Label Name="WarningSectionName" Foreground="Red" Canvas.Top="65" Visibility="{Binding WarningCdfToleranceHidden}">Structure names are allowed upper and lower case letters, numbers and common punctuation.</Label>
+                                                    <Label Name="WarningSectionName" Foreground="{StaticResource FaaErrorRed}" Canvas.Top="65" Visibility="{Binding WarningCdfToleranceHidden}">Structure names are allowed upper and lower case letters, numbers and common punctuation.</Label>
                                                     <CheckBox Name="IncludeInSummary"
                                                               Canvas.Top="45"
                                                               Canvas.Left="320"
@@ -420,15 +450,7 @@
                                                                 </DataGrid.RowValidationRules>
 
                                                                 <DataGrid.ColumnHeaderStyle>
-                                                                    <Style TargetType="DataGridColumnHeader">
-                                                                        <Setter Property="ContentTemplate">
-                                                                            <Setter.Value>
-                                                                                <DataTemplate>
-                                                                                    <TextBlock TextWrapping="Wrap" Text="{Binding}"></TextBlock>
-                                                                                </DataTemplate>
-                                                                            </Setter.Value>
-                                                                        </Setter>
-                                                                    </Style>
+                                                                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource WrappingColumnHeader}"/>
                                                                 </DataGrid.ColumnHeaderStyle>
 
                                                                 <DataGrid.Columns>
@@ -456,7 +478,7 @@
                                                                         <DataGridTextColumn.CellStyle>
                                                                             <Style TargetType="DataGridCell">
                                                                                 <Setter Property="IsEnabled" Value="True" />
-                                                                                <Setter Property="Background" Value="LightGray" />
+                                                                                <Setter Property="Background" Value="{StaticResource FaaBackgroundGray}" />
                                                                                 <Setter Property="Foreground" Value="Black" />
                                                                             </Style>
                                                                         </DataGridTextColumn.CellStyle>
@@ -576,183 +598,217 @@
                                                             <Label Name="WarningStructure"
                                                                    Visibility="{Binding WarningStructureError}"
                                                                    Content="{Binding StructureErrorMessage}"
-                                                                   Foreground="Red"
+                                                                   Foreground="{StaticResource FaaErrorRed}"
                                                                    Canvas.Top="250" />
 
                                                         </Canvas>
 
                                                     </GroupBox>
 
-                                                    <Label  Canvas.Top="400" Canvas.Left="7">Design Life (Years):</Label>
+                                                    <!-- ================================================== -->
+                                                    <!-- Design parameters row (Grid layout for alignment)  -->
+                                                    <!-- ================================================== -->
+                                                    <StackPanel Orientation="Vertical" Canvas.Top="412" Canvas.Left="0" Width="640">
 
-                                                    <TextBox Name="DesignlifeInput"
-                                                             Width="50"
-                                                             Height="32"
-                                                             Canvas.Top="400"
-                                                             Canvas.Left="130"
-                                                             Text="{Binding Path=DesignLife, UpdateSourceTrigger=PropertyChanged}">
-                                                        <i:Interaction.Behaviors>
-                                                            <utils:EventToCommandBehavior Command="{Binding DesignLife_LostFocus_Command}" Event="LostFocus" PassArguments="True" />
-                                                        </i:Interaction.Behaviors>
-                                                    </TextBox>
+                                                        <!-- Row: Design Life / SCI / CDFU / P-TC Ratio -->
+                                                        <Grid Margin="7,0,0,0">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="16"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="16"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="16"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
 
-                                                    <Label Canvas.Top="400"
-                                                           Canvas.Left="230"
-                                                           Visibility="{Binding Path = AnalysisType, Converter={StaticResource CdfuSciConverter} }">SCI:</Label>
-                                                    <TextBox Name="SCIInput"
-                                                             Width="50"
-                                                             Height="32"
-                                                             Canvas.Top="400"
-                                                             Canvas.Left="260"
-                                                             Text="{Binding Path=Sci, Mode=TwoWay}"
-                                                             Visibility="{Binding Path = AnalysisType, Converter={StaticResource CdfuSciConverter} }">
-                                                        <TextBox.InputBindings>
-                                                            <KeyBinding Key="Enter"
-                                                                        Command="{Binding Path=SciEnter, UpdateSourceTrigger=PropertyChanged }"
-                                                                        CommandParameter="{Binding ElementName=SCIInput, Path=Text}" />
-                                                        </TextBox.InputBindings>
-                                                    </TextBox>
-                                                    
-                                                    
-                                                    
-                                                    <Label Canvas.Top="400"
-                                                           Canvas.Left="340"
-                                                           Visibility="{Binding Path = AnalysisType, Converter={StaticResource CdfuSciConverter} }">Percent CDFU:</Label>
-                                                    <TextBox Width="52"
-                                                             Name="CdfuInput"
-                                                             Height="32"
-                                                             Canvas.Top="400"
-                                                             Canvas.Left="440"
-                                                             Text="{Binding Path=Cdfu, Mode=TwoWay}"
-                                                             Visibility="{Binding Path = AnalysisType, Converter={StaticResource CdfuSciConverter} }">
-                                                        <TextBox.InputBindings>
-                                                            <KeyBinding Key="Enter"
-                                                                        Command="{Binding Path=CdfuEnter, UpdateSourceTrigger=PropertyChanged }"
-                                                                        CommandParameter="{Binding ElementName=CdfuInput, Path=Text}" />
-                                                        </TextBox.InputBindings>
-                                                    </TextBox>
+                                                            <TextBlock Grid.Column="0" Text="Design Life (Years):"
+                                                                       VerticalAlignment="Center"
+                                                                       Foreground="{StaticResource FaaTextSecondary}"
+                                                                       FontFamily="Segoe UI" FontSize="13"
+                                                                       Margin="0,0,6,0"/>
+                                                            <TextBox Name="DesignlifeInput"
+                                                                     Grid.Column="1"
+                                                                     Width="50" Height="28"
+                                                                     VerticalAlignment="Center"
+                                                                     VerticalContentAlignment="Center"
+                                                                     Text="{Binding Path=DesignLife, UpdateSourceTrigger=PropertyChanged}">
+                                                                <i:Interaction.Behaviors>
+                                                                    <utils:EventToCommandBehavior Command="{Binding DesignLife_LostFocus_Command}" Event="LostFocus" PassArguments="True" />
+                                                                </i:Interaction.Behaviors>
+                                                            </TextBox>
 
-                                                    <Label Canvas.Top="400"
-                                                           Canvas.Left="513"
-                                                           Visibility="{Binding Path = CurrentSectionView.Section.SelectedRun, Converter={StaticResource PtoTCRatioConverter} }">P/TC Ratio:</Label>
-                                                    <TextBox Width="50"
-                                                             Name="PtoTCInput"
-                                                             Height="32"
-                                                             Canvas.Top="400"
-                                                             Canvas.Left="588"
-                                                             Text="{Binding Path=PtoTC, Mode=TwoWay}"
-                                                             Visibility="{Binding Path = CurrentSectionView.Section.SelectedRun, Converter={StaticResource PtoTCRatioConverter} }">
-                                                        <TextBox.InputBindings>
-                                                            <KeyBinding Key="Enter"
-                                                                        Command="{Binding Path=PtoTCEnter, UpdateSourceTrigger=PropertyChanged }"
-                                                                        CommandParameter="{Binding ElementName=PtoTCInput, Path=Text}" />
-                                                        </TextBox.InputBindings>
-                                                    </TextBox>
-                                                    
-                                                    <Label Canvas.Top="435"
-                                                           Canvas.Left="7">The standard design life for pavement structure is 20 years (1 to 50 allowed).</Label>
+                                                            <TextBlock Grid.Column="3" Text="SCI:"
+                                                                       VerticalAlignment="Center"
+                                                                       Foreground="{StaticResource FaaTextSecondary}"
+                                                                       FontFamily="Segoe UI" FontSize="13"
+                                                                       Margin="0,0,6,0"
+                                                                       Visibility="{Binding Path = AnalysisType, Converter={StaticResource CdfuSciConverter} }"/>
+                                                            <TextBox Name="SCIInput"
+                                                                     Grid.Column="4"
+                                                                     Width="50" Height="28"
+                                                                     VerticalAlignment="Center"
+                                                                     VerticalContentAlignment="Center"
+                                                                     Text="{Binding Path=Sci, Mode=TwoWay}"
+                                                                     Visibility="{Binding Path = AnalysisType, Converter={StaticResource CdfuSciConverter} }">
+                                                                <TextBox.InputBindings>
+                                                                    <KeyBinding Key="Enter"
+                                                                                Command="{Binding Path=SciEnter, UpdateSourceTrigger=PropertyChanged }"
+                                                                                CommandParameter="{Binding ElementName=SCIInput, Path=Text}" />
+                                                                </TextBox.InputBindings>
+                                                            </TextBox>
 
+                                                            <TextBlock Grid.Column="6" Text="Percent CDFU:"
+                                                                       VerticalAlignment="Center"
+                                                                       Foreground="{StaticResource FaaTextSecondary}"
+                                                                       FontFamily="Segoe UI" FontSize="13"
+                                                                       Margin="0,0,6,0"
+                                                                       Visibility="{Binding Path = AnalysisType, Converter={StaticResource CdfuSciConverter} }"/>
+                                                            <TextBox Name="CdfuInput"
+                                                                     Grid.Column="7"
+                                                                     Width="52" Height="28"
+                                                                     VerticalAlignment="Center"
+                                                                     VerticalContentAlignment="Center"
+                                                                     Text="{Binding Path=Cdfu, Mode=TwoWay}"
+                                                                     Visibility="{Binding Path = AnalysisType, Converter={StaticResource CdfuSciConverter} }">
+                                                                <TextBox.InputBindings>
+                                                                    <KeyBinding Key="Enter"
+                                                                                Command="{Binding Path=CdfuEnter, UpdateSourceTrigger=PropertyChanged }"
+                                                                                CommandParameter="{Binding ElementName=CdfuInput, Path=Text}" />
+                                                                </TextBox.InputBindings>
+                                                            </TextBox>
 
-                                                    <StackPanel Orientation="Vertical" Canvas.Top="465">
-                                                        <GroupBox Header="Slab Stress"                                                              
-                                                              Width="640"
-                                                              Height="95"
+                                                            <TextBlock Grid.Column="9" Text="P/TC Ratio:"
+                                                                       VerticalAlignment="Center"
+                                                                       Foreground="{StaticResource FaaTextSecondary}"
+                                                                       FontFamily="Segoe UI" FontSize="13"
+                                                                       Margin="0,0,6,0"
+                                                                       Visibility="{Binding Path = CurrentSectionView.Section.SelectedRun, Converter={StaticResource PtoTCRatioConverter} }"/>
+                                                            <TextBox Name="PtoTCInput"
+                                                                     Grid.Column="10"
+                                                                     Width="50" Height="28"
+                                                                     VerticalAlignment="Center"
+                                                                     VerticalContentAlignment="Center"
+                                                                     Text="{Binding Path=PtoTC, Mode=TwoWay}"
+                                                                     Visibility="{Binding Path = CurrentSectionView.Section.SelectedRun, Converter={StaticResource PtoTCRatioConverter} }">
+                                                                <TextBox.InputBindings>
+                                                                    <KeyBinding Key="Enter"
+                                                                                Command="{Binding Path=PtoTCEnter, UpdateSourceTrigger=PropertyChanged }"
+                                                                                CommandParameter="{Binding ElementName=PtoTCInput, Path=Text}" />
+                                                                </TextBox.InputBindings>
+                                                            </TextBox>
+                                                        </Grid>
+
+                                                        <!-- Helper text (Problem 2: secondary style, smaller, indented under textbox) -->
+                                                        <TextBlock Text="The standard design life for pavement structure is 20 years (1 to 50 allowed)."
+                                                                   Foreground="{StaticResource FaaTextSecondary}"
+                                                                   FontFamily="Segoe UI" FontSize="10.5"
+                                                                   Margin="7,4,0,0"/>
+
+                                                        <!-- Slab Stress (conditional) -->
+                                                        <GroupBox Header="Slab Stress"
+                                                                  Width="640"
+                                                                  Margin="0,16,0,0"
                                                                   Visibility="{Binding Path = SlabOptions, Converter={StaticResource BooleanToVisibilityConverter} }">
-                                                            <Canvas>
-                                                                <Label Canvas.Top="5" Canvas.Left="7">Slab Edge Stress</Label>
-                                                                <TextBlock Foreground="Black"                                                                    
-                                                                    Canvas.Left="119"
-                                                                    Canvas.Top="10"
-                                                                    Width="300"
-                                                                    Height="40"
-                                                                    Text="{Binding EdgeStressLabel}" >
-                                                                </TextBlock>
-                                                                <TextBox Name="SlabEdgeStress"
-                                                             Width="65"
-                                                             Height="32"
-                                                             Canvas.Top="0"
-                                                             IsReadOnly="True"
-                                                             Canvas.Left="160"
-                                                             Text="{Binding Path = SlabEdgeStress, Mode=OneWay}" >
+                                                            <Grid Margin="4,4,4,4">
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                </Grid.RowDefinitions>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="30"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
 
-                                                                </TextBox>
+                                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Slab Edge Stress"
+                                                                           VerticalAlignment="Center" Margin="0,0,6,0"
+                                                                           Foreground="{StaticResource FaaTextSecondary}" FontFamily="Segoe UI" FontSize="13"/>
+                                                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <TextBlock Foreground="{StaticResource FaaTextPrimary}" Text="{Binding EdgeStressLabel}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                                    <TextBox Name="SlabEdgeStress" Width="65" Height="28" IsReadOnly="True"
+                                                                             VerticalContentAlignment="Center"
+                                                                             Text="{Binding Path = SlabEdgeStress, Mode=OneWay}"/>
+                                                                </StackPanel>
 
-                                                                <Label Canvas.Top="5"
-                                                           Canvas.Left="230">Slab Interior Stress</Label>
-                                                                <TextBlock Foreground="Black"
-                                                                    
-                                                                    Canvas.Left="355"
-                                                                    Canvas.Top="10"
-                                                                    Width="300"
-                                                                    Height="40"
-                                                                    Text="{Binding InteriorStressLabel}" >
-                                                                </TextBlock>
-                                                                <TextBox Name="SlabInteriorStress"
-                                                             Width="65"
-                                                             Height="32"
-                                                             Canvas.Top="0"
-                                                             IsReadOnly="True"
-                                                             Canvas.Left="397"
-                                                             Text="{Binding Path = SlabInteriorStress, Mode=OneWay}" >
-                                                                </TextBox>
-                                                                <TextBlock Foreground="Black"
-                                                         Canvas.Left="12"
-                                                         Canvas.Top="40"
-                                                         Width="300"
-                                                         Height="40"
-                                                         Text="{Binding Path=AircraftStressLabel, Mode=TwoWay}">
+                                                                <TextBlock Grid.Row="0" Grid.Column="3" Text="Slab Interior Stress"
+                                                                           VerticalAlignment="Center" Margin="0,0,6,0"
+                                                                           Foreground="{StaticResource FaaTextSecondary}" FontFamily="Segoe UI" FontSize="13"/>
+                                                                <StackPanel Grid.Row="0" Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <TextBlock Foreground="{StaticResource FaaTextPrimary}" Text="{Binding InteriorStressLabel}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                                    <TextBox Name="SlabInteriorStress" Width="65" Height="28" IsReadOnly="True"
+                                                                             VerticalContentAlignment="Center"
+                                                                             Text="{Binding Path = SlabInteriorStress, Mode=OneWay}"/>
+                                                                </StackPanel>
 
-                                                                </TextBlock>
-                                                            </Canvas>
-
-
+                                                                <TextBlock Grid.Row="1" Grid.ColumnSpan="5"
+                                                                           Foreground="{StaticResource FaaTextPrimary}"
+                                                                           Margin="0,6,0,0"
+                                                                           Text="{Binding Path=AircraftStressLabel, Mode=TwoWay}"/>
+                                                            </Grid>
                                                         </GroupBox>
 
+                                                        <!-- Results section (Problem 3: 16px spacing before section, Problem 4: computed output styling) -->
+                                                        <GroupBox Header="Results"
+                                                                  Width="640"
+                                                                  Margin="0,16,0,0">
+                                                            <Grid Margin="4,8,4,4">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
 
-
-                                                        <GroupBox Header="Results"                                                              
-                                                              Width="640"
-                                                              Height="75">
-                                                            <Canvas>
-                                                                <Label Canvas.Top="10">Calculated Life (Years):</Label>
-                                                                <Border BorderThickness="1"
-                                                                    BorderBrush="DarkGray"
-                                                                    Canvas.Top="7"
-                                                                    Canvas.Left="148">
+                                                                <TextBlock Grid.Column="0" Text="Calculated Life (Years):"
+                                                                           VerticalAlignment="Center"
+                                                                           Foreground="{StaticResource FaaTextSecondary}"
+                                                                           FontFamily="Segoe UI" FontSize="13"
+                                                                           Margin="0,0,6,0"/>
+                                                                <Border Grid.Column="1"
+                                                                        BorderThickness="1"
+                                                                        BorderBrush="{StaticResource FaaBorderGray}"
+                                                                        Background="#F0F7F0"
+                                                                        CornerRadius="2"
+                                                                        VerticalAlignment="Center">
                                                                     <TextBlock Name="CalculatedLife"
-                                                                           Margin="8,0,0,0"
-                                                                           Padding="0,5"
-                                                                           Height="30"
-                                                                           Width="78"
-                                                                           Canvas.Top="8"
-                                                                           Canvas.Left="155"
-                                                                           Text="{Binding CalculatedLife}"></TextBlock>
+                                                                               Padding="8,5"
+                                                                               MinWidth="70"
+                                                                               Height="28"
+                                                                               Foreground="{StaticResource FaaPrimary}"
+                                                                               FontWeight="SemiBold"
+                                                                               Text="{Binding CalculatedLife}"/>
                                                                 </Border>
-                                                                <TextBlock Foreground="Black"
-                                                                    
-                                                                    Canvas.Left="270"
-                                                                    Canvas.Top="14"
-                                                                    Width="300"
-                                                                    Height="40"
-                                                                    Text="{Binding UnitLabel}" >
-                                                                </TextBlock>
-                                                                <Border BorderThickness="1"
-                                                                    BorderBrush="DarkGray"
-                                                                    Canvas.Top="7"
-                                                                    Canvas.Left="570">
-                                                                    <TextBlock Name="TotalThicknessUpdate"
-                                                                           Margin="3,0,0,0"
-                                                                           Padding="0,5"
-                                                                           Height="30"
-                                                                           Width="50"
-                                                                           Canvas.Top="15"
-                                                                           Canvas.Left="625"
-                                                                           Background="White"
-                                                                           Text="{Binding TotalThicknessUpdate}"></TextBlock>
-                                                                </Border>
-                                                            </Canvas>
-                                                        </GroupBox>
 
+                                                                <TextBlock Grid.Column="2"
+                                                                           Foreground="{StaticResource FaaTextPrimary}"
+                                                                           VerticalAlignment="Center"
+                                                                           Margin="8,0,0,0"
+                                                                           Text="{Binding UnitLabel}"/>
+
+                                                                <Border Grid.Column="4"
+                                                                        BorderThickness="1"
+                                                                        BorderBrush="{StaticResource FaaBorderGray}"
+                                                                        Background="#F0F7F0"
+                                                                        CornerRadius="2"
+                                                                        VerticalAlignment="Center">
+                                                                    <TextBlock Name="TotalThicknessUpdate"
+                                                                               Padding="8,5"
+                                                                               MinWidth="50"
+                                                                               Height="28"
+                                                                               Foreground="{StaticResource FaaPrimary}"
+                                                                               FontWeight="SemiBold"
+                                                                               Text="{Binding TotalThicknessUpdate}"/>
+                                                                </Border>
+                                                            </Grid>
+                                                        </GroupBox>
 
                                                     </StackPanel>
                                                     
@@ -778,9 +834,11 @@
                                                                         Visibility="{Binding ProgressBannerVisibility}"
                                                                         Margin="4,4,4,0"
                                                                         CornerRadius="4"
-                                                                        Padding="12,10"
-                                                                        Background="{Binding ProgressBannerBackground}">
-                                                                    <StackPanel>
+                                                                        Padding="0"
+                                                                        Background="{Binding ProgressBannerBackground}"
+                                                                        BorderBrush="{Binding ProgressBarBrush}"
+                                                                        BorderThickness="3,0,0,0">
+                                                                    <StackPanel Margin="12,10">
                                                                         <!-- Header row: status icon + text + elapsed time -->
                                                                         <Grid>
                                                                             <Grid.ColumnDefinitions>
@@ -790,9 +848,9 @@
                                                                             </Grid.ColumnDefinitions>
                                                                             <TextBlock Grid.Column="0"
                                                                                        Text="{Binding ProgressIcon}"
-                                                                                       FontSize="16"
+                                                                                       FontSize="20"
                                                                                        VerticalAlignment="Center"
-                                                                                       Margin="0,0,8,0"/>
+                                                                                       Margin="0,0,10,0"/>
                                                                             <TextBlock Grid.Column="1"
                                                                                        Text="{Binding ProgressStatusText}"
                                                                                        FontSize="12"
@@ -809,18 +867,27 @@
                                                                                        Visibility="{Binding TimerVisibility}"
                                                                                        VerticalAlignment="Center"/>
                                                                         </Grid>
-                                                                        <!-- Progress bar -->
-                                                                        <ProgressBar Height="6"
-                                                                                     Margin="0,8,0,0"
-                                                                                     IsIndeterminate="{Binding ProgressIsIndeterminate}"
-                                                                                     Value="{Binding ProgressValue}"
-                                                                                     Maximum="100"
-                                                                                     Foreground="{Binding ProgressBarBrush}"
-                                                                                     Background="#E0E0E0"
-                                                                                     BorderThickness="0"/>
+                                                                        <!-- Progress bar with percentage overlay -->
+                                                                        <Grid Margin="0,8,0,0">
+                                                                            <ProgressBar Height="16"
+                                                                                         IsIndeterminate="{Binding ProgressIsIndeterminate}"
+                                                                                         Value="{Binding ProgressValue}"
+                                                                                         Maximum="100"
+                                                                                         Foreground="{Binding ProgressBarBrush}"
+                                                                                         Background="#E0E0E0"
+                                                                                         BorderThickness="0"/>
+                                                                            <TextBlock Text="{Binding ProgressPercentText}"
+                                                                                       HorizontalAlignment="Center"
+                                                                                       VerticalAlignment="Center"
+                                                                                       FontSize="9"
+                                                                                       FontWeight="SemiBold"
+                                                                                       FontFamily="Segoe UI"
+                                                                                       Foreground="White"/>
+                                                                        </Grid>
                                                                         <!-- Subtitle (cross-section info, iteration, etc.) -->
                                                                         <TextBlock Text="{Binding ProgressSubText}"
-                                                                                   FontSize="10"
+                                                                                   FontSize="10.5"
+                                                                                   FontWeight="Medium"
                                                                                    Foreground="{Binding ProgressSubTextBrush}"
                                                                                    FontFamily="Segoe UI"
                                                                                    Margin="0,4,0,0"
@@ -828,35 +895,53 @@
                                                                     </StackPanel>
                                                                 </Border>
 
-                                                                <!-- Main message display -->
-                                                                <TextBox Grid.Row="1"
-                                                                         IsReadOnly="True"
-                                                                         VerticalAlignment="Stretch"
-                                                                         TextWrapping="Wrap"
-                                                                         VerticalScrollBarVisibility="Auto"
-                                                                         BorderThickness="0"
-                                                                         Margin="4,4,4,0"
-                                                                         Text="{Binding MessageText}"/>
+                                                                <!-- Main message display with run log -->
+                                                                <Border Grid.Row="1"
+                                                                        Margin="4,4,4,0"
+                                                                        CornerRadius="3"
+                                                                        BorderBrush="{StaticResource FaaBorderGrayLight}"
+                                                                        BorderThickness="1"
+                                                                        Background="{StaticResource FaaSurfaceOffWhite}">
+                                                                    <DockPanel>
+                                                                        <TextBlock DockPanel.Dock="Top"
+                                                                                   Text="Run Log"
+                                                                                   FontFamily="Segoe UI"
+                                                                                   FontSize="11"
+                                                                                   FontWeight="SemiBold"
+                                                                                   Foreground="{StaticResource FaaTextSecondary}"
+                                                                                   Margin="8,6,8,4"/>
+                                                                        <TextBox IsReadOnly="True"
+                                                                                 TextWrapping="Wrap"
+                                                                                 VerticalScrollBarVisibility="Auto"
+                                                                                 BorderThickness="0"
+                                                                                 Background="Transparent"
+                                                                                 FontFamily="Consolas"
+                                                                                 FontSize="11"
+                                                                                 Foreground="{StaticResource FaaTextPrimary}"
+                                                                                 Padding="8,2,8,8"
+                                                                                 Text="{Binding MessageText}"/>
+                                                                    </DockPanel>
+                                                                </Border>
 
                                                                 <!-- Legacy overlays (kept for RunningTime/Stopwatch positional compat) -->
                                                                 <TextBox Name="RunningTime"
                                                                          IsReadOnly="true"
-                                                                         Foreground="Blue" Background="White"
-                                                                         BorderBrush="white" BorderThickness="0"
+                                                                         Foreground="{StaticResource FaaPrimary}" Background="{StaticResource FaaSurfaceWhite}"
+                                                                         BorderBrush="Transparent" BorderThickness="0"
                                                                          Height="1" Width="1" Opacity="0"
                                                                          Text="{Binding RunningTimeText}"
                                                                          Visibility="{Binding RunningTimeVisibility}" />
                                                                 <TextBox Name="StopWatch"
                                                                          IsReadOnly="true"
-                                                                         Foreground="Blue"
-                                                                         BorderBrush="white" BorderThickness="0"
+                                                                         Foreground="{StaticResource FaaPrimary}"
+                                                                         BorderBrush="Transparent" BorderThickness="0"
                                                                          Height="1" Width="1" Opacity="0"
                                                                          Text="{Binding StopwatchText}"
                                                                          Visibility="{Binding StopwatchVisibility}" />
                                                                 <TextBox Name="CrossSection"
                                                                          IsReadOnly="true"
-                                                                         Foreground="Blue" Background="White"
-                                                                         BorderBrush="white" BorderThickness="0"
+                                                                         Foreground="{StaticResource FaaPrimary}" Background="{StaticResource FaaSurfaceWhite}"
+                                                                         BorderBrush="Transparent" BorderThickness="0"
                                                                          Height="1" Width="1" Opacity="0"
                                                                          Text="{Binding CrossSectionText}"
                                                                          Visibility="{Binding CrossSectionVisibility}" />
@@ -884,7 +969,7 @@
 														                 Visibility="{Binding XWCoordinate1Visibility}"
 														                 Text="{Binding XWCoordinate1Text}"
 														                 Margin="-200,-380,0,0"
-														                 Foreground="red"
+														                 Foreground="{StaticResource FaaErrorRed}"
 														                 IsReadOnly="True"
 														                 Height="70"
 														                 Width="130" />
@@ -892,7 +977,7 @@
                                                                          Visibility="{Binding XWCoordinate2Visibility}"
                                                                          Text="{Binding XWCoordinate2Text}"
                                                                          Margin="-200,240,0,0"
-                                                                         Foreground="red"
+                                                                         Foreground="{StaticResource FaaErrorRed}"
                                                                          IsReadOnly="True"
                                                                          Height="70"
                                                                          Width="130" />
@@ -900,7 +985,7 @@
                                                                          Visibility="{Binding XWCoordinate3Visibility}"
                                                                          Text="{Binding XWCoordinate3Text}"
                                                                          Margin="200,-380,0,0"
-                                                                         Foreground="red"
+                                                                         Foreground="{StaticResource FaaErrorRed}"
                                                                          IsReadOnly="True"
                                                                          Height="70"
                                                                          Width="130" />
@@ -908,7 +993,7 @@
                                                                          Visibility="{Binding XWCoordinate4Visibility}"
                                                                          Text="{Binding XWCoordinate4Text}"
                                                                          Margin="200,240,0,0"
-                                                                         Foreground="red"
+                                                                         Foreground="{StaticResource FaaErrorRed}"
                                                                          IsReadOnly="True"
                                                                          Height="70"
                                                                          Width="130" />
@@ -916,7 +1001,7 @@
                                                                          Visibility="{Binding XWCoordinate7Visibility}"
                                                                          Text="{Binding XWCoordinate7Text}"
                                                                          Margin="-200,-380,0,0"
-                                                                         Foreground="red"
+                                                                         Foreground="{StaticResource FaaErrorRed}"
                                                                          IsReadOnly="True"
                                                                          Height="70"
                                                                          Width="130" />
@@ -924,7 +1009,7 @@
                                                                          Visibility="{Binding XWCoordinate8Visibility}"
                                                                          Text="{Binding XWCoordinate8Text}"
                                                                          Margin="200,-380,0,0"
-                                                                         Foreground="red"
+                                                                         Foreground="{StaticResource FaaErrorRed}"
                                                                          IsReadOnly="True"
                                                                          Height="70"
                                                                          Width="130" />
@@ -933,7 +1018,7 @@
                                                                          Visibility="{Binding XWCoordinate5Visibility}"
                                                                          Text="{Binding XWCoordinate5Text}"
                                                                          TextAlignment="Center"
-                                                                         Foreground="red"
+                                                                         Foreground="{StaticResource FaaErrorRed}"
                                                                          IsReadOnly="True"
                                                                          Height="30"
                                                                          Width="75" />
@@ -942,7 +1027,7 @@
                                                                          Visibility="{Binding XWCoordinate6Visibility}"
                                                                          Text="{Binding XWCoordinate6Text}"
                                                                          TextAlignment="Center"
-                                                                         Foreground="red"
+                                                                         Foreground="{StaticResource FaaErrorRed}"
                                                                          IsReadOnly="True"
                                                                          Height="30"
                                                                          Width="75" />
@@ -957,6 +1042,10 @@
 
                                                         <TabItem Header="Structure" Name="Structure" Visibility="{Binding ImageVisibility}">
 
+                                                            <Border CornerRadius="2" Background="{StaticResource FaaSurfaceWhite}" Margin="4">
+                                                                <Border.Effect>
+                                                                    <DropShadowEffect ShadowDepth="1" BlurRadius="6" Opacity="0.12" Direction="270" Color="Black"/>
+                                                                </Border.Effect>
                                                             <Viewbox Height="580"
                                                                   Width="520" VerticalAlignment="Top" >
 
@@ -979,6 +1068,7 @@
                                                                 </Grid>
 
                                                             </Viewbox>                                                           
+                                                            </Border>
                                                            
                                                         </TabItem>
 
@@ -1030,7 +1120,7 @@
 
                                                         <Label Canvas.Left="550"
                                                                Canvas.Top="5"
-                                                               Foreground="Red"
+                                                               Foreground="{StaticResource FaaErrorRed}"
                                                                Visibility="{Binding WarningAirplanes}">Airplane error label</Label>
                                                         <ComboBox Name="TrafficCombo"
 											                      Canvas.Top="5"
@@ -1048,11 +1138,10 @@
 										                      CanUserDeleteRows="False"
 										                      AutoGenerateColumns="False"
 										                      ColumnHeaderHeight="50"
+                                                              FrozenColumnCount="1"
                                                               SelectedItem="{Binding Path=SelectedAirplane, Mode=TwoWay}"
 										                      ItemsSource="{Binding Path=CurrentAirplanes,Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-										                      HorizontalGridLinesBrush="LightGray"
-										                      VerticalGridLinesBrush="LightGray"
-										                      AllowDrop="True" 
+										                      AllowDrop="True"
 										                      ScrollViewer.CanContentScroll="true" >
                                                     <!--CanUserSortColumns="True"-->
                                                         
@@ -1066,24 +1155,16 @@
                                                         </i:Interaction.Behaviors>
 
                                                         <DataGrid.ColumnHeaderStyle>
-                                                            <Style TargetType="DataGridColumnHeader">
-                                                                <Setter Property="ContentTemplate">
-                                                                    <Setter.Value>
-                                                                        <DataTemplate>
-                                                                            <TextBlock TextWrapping="Wrap" Text="{Binding}" />
-                                                                        </DataTemplate>
-                                                                    </Setter.Value>
-                                                                </Setter>
-                                                            </Style>
+                                                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource WrappingColumnHeader}"/>
                                                         </DataGrid.ColumnHeaderStyle>
 
                                                         <DataGrid.CellStyle>
                                                             <Style TargetType="DataGridCell">
-                                                                <Setter Property="Background" Value="WhiteSmoke" />
+                                                                <Setter Property="Background" Value="{StaticResource FaaSurfaceOffWhite}" />
                                                                 <Style.Triggers>
                                                                     <Trigger Property="IsSelected" Value="True">
-                                                                        <Setter Property="Background" Value="Blue" />
-                                                                        <Setter Property="Foreground" Value="White" />
+                                                                        <Setter Property="Background" Value="{StaticResource FaaPrimaryLight}" />
+                                                                        <Setter Property="Foreground" Value="{StaticResource FaaTextPrimary}" />
                                                                     </Trigger>
                                                                 </Style.Triggers>
                                                             </Style>
@@ -1094,23 +1175,24 @@
 															                    IsReadOnly="True"
 															                    MinWidth="180"
 															                    Binding="{Binding Name}"
-															                    Width="*"
+															                    Width="Auto"
 															                    CanUserReorder="True" 
                                                                                 CanUserSort="True" />
 
                                                             <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem, Converter={StaticResource MeasurementSystemGrossWeight}}"
+                                                                                ElementStyle="{StaticResource NumericCellStyle}"
                                                                                 MinWidth="85"
-                                                                                Width="*"
+                                                                                Width="Auto"
                                                                                 CanUserSort="True"
                                                                                 SortMemberPath="GrossWeight.UsCustomary">
 
                                                                 <DataGridTextColumn.CellStyle>
                                                                     <Style TargetType="DataGridCell">
-                                                                        <Setter Property="Background" Value="White" />                                                                        
+                                                                        <Setter Property="Background" Value="{StaticResource FaaSurfaceOffWhite}" />
                                                                         <Style.Triggers>
                                                                             <Trigger Property="IsSelected" Value="True">
-                                                                                <Setter Property="Background" Value="White" />
-                                                                                <Setter Property="Foreground" Value="Black" />
+                                                                                <Setter Property="Background" Value="{StaticResource FaaPrimaryLight}" />
+                                                                                <Setter Property="Foreground" Value="{StaticResource FaaTextPrimary}" />
                                                                             </Trigger>
                                                                         </Style.Triggers>
                                                                     </Style>
@@ -1125,19 +1207,20 @@
 
                                                             </DataGridTextColumn>
 
-                                                            <DataGridTextColumn Header="Annual Departures"	
+                                                            <DataGridTextColumn Header="Annual Departures"
                                                                                 Binding="{Binding NumberDepartures, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N0}}"
+										                        ElementStyle="{StaticResource NumericCellStyle}"
 														                        MinWidth="85"
-														                        Width="*"                                                                                                   CanUserReorder="False"
+														                        Width="Auto"                                                                                                   CanUserReorder="False"
                                                                                 CanUserSort="True">
 
                                                                 <DataGridTextColumn.CellStyle>
                                                                     <Style TargetType="DataGridCell">
-                                                                        <Setter Property="Background" Value="White" />
+                                                                        <Setter Property="Background" Value="{StaticResource FaaSurfaceOffWhite}" />
                                                                         <Style.Triggers>
                                                                             <Trigger Property="IsSelected" Value="True">
-                                                                                <Setter Property="Background" Value="White" />
-                                                                                <Setter Property="Foreground" Value="Black" />
+                                                                                <Setter Property="Background" Value="{StaticResource FaaPrimaryLight}" />
+                                                                                <Setter Property="Foreground" Value="{StaticResource FaaTextPrimary}" />
                                                                             </Trigger>
                                                                         </Style.Triggers>
                                                                     </Style>
@@ -1147,18 +1230,19 @@
 
                                                             <DataGridTextColumn Header="Annual Growth (%)"
 														                        MinWidth="85"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        Binding="{Binding AnnualGrowth, UpdateSourceTrigger=LostFocus}"
+										                        ElementStyle="{StaticResource NumericCellStyle}"
                                                                                 CanUserSort="False">
 
                                                                 <DataGridTextColumn.CellStyle>
                                                                     <Style TargetType="DataGridCell">
-                                                                        <Setter Property="Background" Value="White" />
+                                                                        <Setter Property="Background" Value="{StaticResource FaaSurfaceOffWhite}" />
                                                                         <Style.Triggers>
                                                                             <Trigger Property="IsSelected" Value="True">
-                                                                                <Setter Property="Background" Value="White" />
-                                                                                <Setter Property="Foreground" Value="Black" />
+                                                                                <Setter Property="Background" Value="{StaticResource FaaPrimaryLight}" />
+                                                                                <Setter Property="Foreground" Value="{StaticResource FaaTextPrimary}" />
                                                                             </Trigger>
                                                                         </Style.Triggers>
                                                                     </Style>
@@ -1168,39 +1252,44 @@
 
                                                             <DataGridTextColumn Header="Total Departures"
 														                        Binding="{Binding TotalDepartures, StringFormat={}{0:N0}}"
+										                        ElementStyle="{StaticResource NumericCellStyle}"
 														                        MinWidth="85"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True" 
                                                                                 CanUserSort="True"/>
 
                                                             <DataGridTextColumn Header="CDF Contributions"
 														                        Binding="{Binding Cdf}"
+										                        ElementStyle="{StaticResource NumericCellStyle}"
 														                        MinWidth="95"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True" 
                                                                                 CanUserSort="False"/>
 
                                                             <DataGridTextColumn Header="CDF Max for Airplane"
 														                        Binding="{Binding CdfAircraftMax }"
+										                        ElementStyle="{StaticResource NumericCellStyle}"
 														                        MinWidth="85"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True"
                                                                                 CanUserSort="False"/>
 
                                                             <DataGridTextColumn Header="P/C Ratio"
 														                        Binding="{Binding CtoP }"
+										                        ElementStyle="{StaticResource NumericCellStyle}"
 														                        MinWidth="85"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True"
                                                                                 CanUserSort="False"/>
 
                                                             <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem ,Converter={StaticResource MeasurementSystemTirePressure}}"
+                                                                                ElementStyle="{StaticResource NumericCellStyle}"
 														                        MinWidth="100"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True"
                                                                                 CanUserSort="False">
@@ -1216,15 +1305,17 @@
 
                                                             <DataGridTextColumn Header="Percent GW on Gear"
 														                        Binding="{Binding  RunMgPercent, StringFormat={}{0:0.####}}"
+										                        ElementStyle="{StaticResource NumericCellStyle}"
 														                        MinWidth="85"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True"
                                                                                 CanUserSort="False"/>
 
                                                             <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem ,Converter={StaticResource MeasurementSystemTireWidth}}"
+                                                                                ElementStyle="{StaticResource NumericCellStyle}"
 														                        MinWidth="90"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True"
                                                                                 CanUserSort="False">
@@ -1239,8 +1330,9 @@
                                                             </DataGridTextColumn>
 
                                                             <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem ,Converter={StaticResource MeasurementSystemTireLength}}"
+                                                                                ElementStyle="{StaticResource NumericCellStyle}"
 														                        MinWidth="90"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True"
                                                                                 CanUserSort="False">
@@ -1255,8 +1347,9 @@
                                                             </DataGridTextColumn>
 
                                                             <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem ,Converter={StaticResource MeasurementSystemTireArea}}"
+                                                                                ElementStyle="{StaticResource NumericCellStyle}"
 														                        MinWidth="110"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True"
                                                                                 CanUserSort="False">
@@ -1272,7 +1365,7 @@
 
                                                             <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=ACRThickHeader ,Converter={StaticResource MeasurementSystemACRThick}}"
 															                    MinWidth="110"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True"
                                                                                 CanUserSort="False">
@@ -1293,9 +1386,9 @@
 
                                                             </DataGridTextColumn>
 
-                                                            <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=ACRThickHeader1 ,Converter={StaticResource MeasurementSystemACRThick}}" 
+                                                            <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=ACRThickHeader1 ,Converter={StaticResource MeasurementSystemACRThick}}"
 															                    MinWidth="110"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True"
                                                                                 CanUserSort="False">
@@ -1316,9 +1409,9 @@
 
                                                             </DataGridTextColumn>
 
-                                                            <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=ACRThickHeader2 ,Converter={StaticResource MeasurementSystemACRThick}}" 
+                                                            <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=ACRThickHeader2 ,Converter={StaticResource MeasurementSystemACRThick}}"
 															                    MinWidth="110"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True"
                                                                                 CanUserSort="False">
@@ -1339,9 +1432,9 @@
 
                                                             </DataGridTextColumn>
 
-                                                            <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=ACRThickHeader3 ,Converter={StaticResource MeasurementSystemACRThick}}" 
+                                                            <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=ACRThickHeader3 ,Converter={StaticResource MeasurementSystemACRThick}}"
 															                    MinWidth="110"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True"
                                                                                 CanUserSort="False">
@@ -1362,9 +1455,9 @@
 
                                                             </DataGridTextColumn>
 
-                                                            <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=ACRThickHeader4 ,Converter={StaticResource MeasurementSystemACRThick}}" 
+                                                            <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=ACRThickHeader4 ,Converter={StaticResource MeasurementSystemACRThick}}"
 															                    MinWidth="110"
-														                        Width="*"
+														                        Width="Auto"
 														                        CanUserReorder="False"
 														                        IsReadOnly="True"
                                                                                 CanUserSort="False">
@@ -1389,7 +1482,7 @@
 															                    IsReadOnly="True"
 															                    MinWidth="120"
 															                    Binding="{Binding ACRB, StringFormat=N1}"
-															                    Width="*"
+															                    Width="Auto"
 															                    CanUserReorder="False"
                                                                                 CanUserSort="False">
 
@@ -1406,7 +1499,7 @@
 															                    IsReadOnly="True"
 															                    MinWidth="120"
 															                    Binding="{Binding ACRB4, StringFormat=N1}"
-															                    Width="*"
+															                    Width="Auto"
 															                    CanUserReorder="False"
                                                                                 CanUserSort="False">
 
@@ -1423,7 +1516,7 @@
 															                    IsReadOnly="True"
 															                    MinWidth="120"
 															                    Binding="{Binding ACRB3, StringFormat=N1}"
-															                    Width="*"
+															                    Width="Auto"
 															                    CanUserReorder="False"
                                                                                 CanUserSort="False">
 
@@ -1440,7 +1533,7 @@
 															                    IsReadOnly="True"
 															                    MinWidth="120"
 															                    Binding="{Binding ACRB2, StringFormat=N1}"
-															                    Width="*"
+															                    Width="Auto"
 															                    CanUserReorder="False"
                                                                                 CanUserSort="False">
 
@@ -1457,7 +1550,7 @@
 															                    IsReadOnly="True"
 															                    MinWidth="120"
 															                    Binding="{Binding ACRB1, StringFormat=N1}"
-															                    Width="*"
+															                    Width="Auto"
 															                    CanUserReorder="False"
                                                                                 CanUserSort="False">
 
@@ -1706,7 +1799,7 @@
                                             Command="{Binding DeleteCurrentEval}">Delete Eval. Point</Button>
                                             <Button Canvas.Top="570"
                                             Canvas.Left="600"
-                                            Foreground="Red"
+                                            Foreground="{StaticResource FaaErrorRed}"
                                             Command="{Binding OnDeleteUserDefinedAircraft}">Delete Aircraft</Button>
 
                                         </Canvas>
@@ -1848,27 +1941,14 @@
                                                 <StaticResource ResourceKey="SubgradRowValidationRule" />
                                             </DataGrid.RowValidationRules>
                                             <DataGrid.ColumnHeaderStyle>
-                                                <Style TargetType="DataGridColumnHeader">
-                                                    <Setter Property="ContentTemplate">
-                                                        <Setter.Value>
-                                                            <DataTemplate>
-                                                                <TextBlock  TextWrapping="Wrap"
-                                                                    Text="{Binding}"></TextBlock>
-                                                            </DataTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                </Style>
+                                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource WrappingColumnHeader}"/>
                                             </DataGrid.ColumnHeaderStyle>
 
                                             <DataGrid.Columns>
 
-                                                <DataGridTextColumn 
+                                                <DataGridTextColumn
                                                             Width="100" Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem ,Converter={StaticResource MeasurementSystemTireX}, NotifyOnTargetUpdated=True, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                             CanUserSort="False">
-                                                    <DataGridTextColumn.CellStyle>
-                                                        <Style TargetType="DataGridCell">
-                                                        </Style>
-                                                    </DataGridTextColumn.CellStyle>
                                                     <DataGridTextColumn.Binding>
                                                         <MultiBinding Converter="{StaticResource ThicknessConverter}">
                                                             <Binding Path="TireX" />
@@ -1881,10 +1961,6 @@
                                                 <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem ,Converter={StaticResource MeasurementSystemTireY}, NotifyOnTargetUpdated=True, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                             Width="110"
                                                             CanUserSort="False">
-                                                    <DataGridTextColumn.CellStyle>
-                                                        <Style TargetType="DataGridCell">
-                                                        </Style>
-                                                    </DataGridTextColumn.CellStyle>
                                                     <DataGridTextColumn.Binding>
                                                         <MultiBinding Converter="{StaticResource ThicknessConverter}">
                                                             <Binding Path="TireY" />
@@ -1924,26 +2000,13 @@
                                                 <StaticResource ResourceKey="SubgradRowValidationRule" />
                                             </DataGrid.RowValidationRules>
                                             <DataGrid.ColumnHeaderStyle>
-                                                <Style TargetType="DataGridColumnHeader">
-                                                    <Setter Property="ContentTemplate">
-                                                        <Setter.Value>
-                                                            <DataTemplate>
-                                                                <TextBlock TextWrapping="Wrap"
-                                                                    Text="{Binding}"></TextBlock>
-                                                            </DataTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                </Style>
+                                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource WrappingColumnHeader}"/>
                                             </DataGrid.ColumnHeaderStyle>
 
                                             <DataGrid.Columns>
                                                 <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem ,Converter={StaticResource MeasurementSystemEvalX}, NotifyOnTargetUpdated=True, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                             Width="100"
                                                             CanUserSort="False">
-                                                    <DataGridTextColumn.CellStyle>
-                                                        <Style TargetType="DataGridCell">
-                                                        </Style>
-                                                    </DataGridTextColumn.CellStyle>
                                                     <DataGridTextColumn.Binding>
                                                         <MultiBinding Converter="{StaticResource ThicknessConverter}">
                                                             <Binding Path="EvalX" />
@@ -1955,10 +2018,6 @@
                                                 <DataGridTextColumn Header="{Binding Source={StaticResource MainWindowViewModel}, Path=CurrentJob.DesignOptions.MeasurementSystem ,Converter={StaticResource MeasurementSystemEvalY}, NotifyOnTargetUpdated=True, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                             Width="110"
                                                             CanUserSort="False">
-                                                    <DataGridTextColumn.CellStyle>
-                                                        <Style TargetType="DataGridCell">
-                                                        </Style>
-                                                    </DataGridTextColumn.CellStyle>
                                                     <DataGridTextColumn.Binding>
                                                         <MultiBinding Converter="{StaticResource ThicknessConverter}">
                                                             <Binding Path="EvalY" />
@@ -1989,6 +2048,7 @@
 
                         <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Summary Report"
                                         IsHidden="{Binding SummaryReportIsHidden,  Mode=TwoWay}"
+                                        CanUserClose="True"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="SummaryReport">
                             <Grid>
@@ -2012,6 +2072,7 @@
 
                         <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Structure Report"
                                         IsHidden="{Binding SectionReportIsHidden,  Mode=TwoWay}"
+                                        CanUserClose="True"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="SectionReport">
 
@@ -2036,6 +2097,7 @@
 
                         <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="CDF Graph"
                                         IsHidden="{Binding CDFGraphIsHidden,  Mode=TwoWay}"
+                                        CanUserClose="True"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="CDFGraph">
                             <Grid>
@@ -2061,6 +2123,7 @@
 
                         <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="PCR Report"
                                         IsHidden="{Binding PCRReportIsHidden,  Mode=TwoWay}"
+                                        CanUserClose="True"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="PCRReport">
                             <Grid>
@@ -2085,6 +2148,7 @@
 
                         <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="PCR Graph"
                                         IsHidden="{Binding PCRGraphIsHidden,  Mode=TwoWay}"
+                                        CanUserClose="True"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="PCRGraph">
 
@@ -2111,6 +2175,7 @@
 
                         <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Airport Master Record"
                                         IsHidden="{Binding AirportMasterRecordIsHidden,  Mode=TwoWay}"
+                                        CanUserClose="True"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="AirportMasterRecord">
 
@@ -2137,13 +2202,14 @@
 
                         <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}"
                                         IsHidden="{Binding DetailedReportIsHidden,  Mode=TwoWay}"
+                                        CanUserClose="True"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="DetailedReport">
                             <telerik:RadPane.Header>
                                 <StackPanel Orientation="Horizontal"
                                             ToolTip="CM Report — Computational Mechanics&#x0a;A detailed computational trace of the pavement design process.&#x0a;This is a supplementary report not part of the standard FAARFIELD output.">
                                     <TextBlock Text="CM Report" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                    <TextBlock Text=" &#x24D8;" FontSize="12" Foreground="#2E5EA8"
+                                    <TextBlock Text=" &#x24D8;" FontSize="12" Foreground="{StaticResource FaaPrimary}"
                                                VerticalAlignment="Center" Margin="4,0,0,0"/>
                                 </StackPanel>
                             </telerik:RadPane.Header>
@@ -2202,6 +2268,7 @@
                                 <Style TargetType="{x:Type telerik:RadTreeViewItem}">
                                     <Setter Property="VerticalContentAlignment" Value="Stretch"/>
                                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="Padding" Value="4,6"/>
                                     <Setter Property="IsExpanded"
                                         Value="{Binding IsExpanded, Mode=TwoWay}" />
                                     <Setter Property="IsSelected"
@@ -2210,10 +2277,14 @@
                                     <Setter Property="FontWeight"
                                         Value="Normal" />
                                     <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource FaaHoverGray}"/>
+                                        </Trigger>
                                         <Trigger Property="IsSelected"
                                                 Value="True">
                                             <Setter Property="FontWeight"
-                                                Value="Bold" />
+                                                Value="SemiBold" />
+                                            <Setter Property="Background" Value="{StaticResource FaaPrimaryLight}"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
@@ -2221,7 +2292,11 @@
 
                             <telerik:RadTreeView.ItemTemplate>
                                 <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                                    <TextBlock Text="{Binding Name}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Converter={StaticResource TreeNodeIconConverter}}"
+                                                   Foreground="{StaticResource FaaPrimary}"
+                                                   FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Name}">
                                         <TextBlock.ContextMenu>
                                             <ContextMenu>
                                                 <MenuItem Header="Close Job" Visibility="{Binding  Source={StaticResource MainWindowViewModel}, Path=CloseJobMenuItemVisibility}">
@@ -2247,6 +2322,7 @@
                                             </ContextMenu>
                                         </TextBlock.ContextMenu>
                                     </TextBlock>
+                                    </StackPanel>
                                 </HierarchicalDataTemplate>
                             </telerik:RadTreeView.ItemTemplate>
 
@@ -2296,11 +2372,20 @@
                             <Grid Grid.Row="2">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
                                 <Label Content="FAARFIELD Aircraft Library" />
+                                <TextBox Grid.Row="1"
+                                         Style="{StaticResource WatermarkTextBox}"
+                                         Tag="Filter aircraft..."
+                                         Text="{Binding AircraftFilterText, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="4,2"
+                                         Height="24"
+                                         FontSize="11"
+                                         ToolTip="Type to filter aircraft by name" />
 
-                                <ListBox Grid.Row="1"
+                                <ListBox Grid.Row="2"
                                          ItemsSource="{Binding AirplaneByManufacturer}"
                                          ItemTemplate="{StaticResource AirplaneByManufacturer }"
                                          AllowDrop="True"
@@ -2337,13 +2422,27 @@
                                     telerik:RadDocking.SerializationTag="Material"
                                     HeaderTemplate="{StaticResource MaterialTemplate}"
                                     CanUserClose="False">
-                        <telerik:RadTreeView ItemsSource="{Binding MaterialLibrary, Mode=TwoWay}"
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBox Grid.Row="0"
+                                     Style="{StaticResource WatermarkTextBox}"
+                                     Tag="Filter materials..."
+                                     Text="{Binding MaterialFilterText, UpdateSourceTrigger=PropertyChanged}"
+                                     Margin="4,4,4,2"
+                                     Height="24"
+                                     FontSize="11"
+                                     ToolTip="Type to filter materials by name" />
+                        <telerik:RadTreeView Grid.Row="1" ItemsSource="{Binding MaterialLibrary, Mode=TwoWay}"
                                              IsDragDropEnabled="True"
                                              IsDragTooltipEnabled="False"
                                              IsDropPreviewLineEnabled="False">
 
                             <telerik:RadTreeView.ItemContainerStyle>
                                 <Style TargetType="{x:Type telerik:RadTreeViewItem}">
+                                    <Setter Property="Padding" Value="4,6"/>
                                     <Setter Property="IsExpanded"
                                         Value="{Binding IsExpanded, Mode=TwoWay}" />
                                     <Setter Property="IsSelected"
@@ -2351,10 +2450,14 @@
                                     <Setter Property="FontWeight"
                                         Value="Normal" />
                                     <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource FaaHoverGray}"/>
+                                        </Trigger>
                                         <Trigger Property="IsSelected"
                                                 Value="True">
                                             <Setter Property="FontWeight"
-                                                Value="Bold" />
+                                                Value="SemiBold" />
+                                            <Setter Property="Background" Value="{StaticResource FaaPrimaryLight}"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
@@ -2366,10 +2469,16 @@
 
                             <telerik:RadTreeView.ItemTemplate>
                                 <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                                    <TextBlock Text="{Binding Name}" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Converter={StaticResource TreeNodeIconConverter}}"
+                                                   Foreground="{StaticResource FaaPrimary}"
+                                                   FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Name}" />
+                                    </StackPanel>
                                 </HierarchicalDataTemplate>
                             </telerik:RadTreeView.ItemTemplate>
                         </telerik:RadTreeView>
+                        </Grid>
                     </telerik:RadPane>
 
                 </telerik:RadPaneGroup>
@@ -2418,7 +2527,7 @@
                                     </Canvas>
                                     <TextBlock Visibility="{Binding RdecInfoVisible}"
                                                TextWrapping="Wrap" Margin="5,0,5,5"
-                                               FontSize="10" Foreground="Gray"
+                                               FontSize="10" Foreground="{StaticResource FaaTextSecondary}"
                                                Text="Default values are for a standard P-401 HMA mix per FAA AC 150/5320-6. Modify to match your specific asphalt mix design." />
                                     <Canvas Width="240" Height="35">
                                         <Label Canvas.Top="5" Canvas.Left="5" FontSize="11">Flexural Modulus (psi):</Label>
@@ -2477,7 +2586,7 @@
                                 <StackPanel  Orientation="Vertical">
                                     <Canvas Width="240"
                                         Height="55">
-                                        <TextBlock  Foreground="Black"
+                                        <TextBlock  Foreground="{StaticResource FaaTextPrimary}"
                                                 TextWrapping="Wrap"
                                                 Canvas.Left="5"
                                                 Width="120"
@@ -2556,7 +2665,7 @@
                                 <StackPanel  Orientation="Vertical">
                                     <Canvas Width="240"
                                         Height="55">
-                                        <TextBlock Foreground="Black"
+                                        <TextBlock Foreground="{StaticResource FaaTextPrimary}"
                                                 TextWrapping="Wrap"
                                                 Canvas.Left="5"
                                                 Width="140"
@@ -2575,7 +2684,7 @@
                                 <StackPanel  Orientation="Vertical">
                                     <Canvas Width="240"
                                         Height="55">
-                                        <TextBlock Foreground="Black"
+                                        <TextBlock Foreground="{StaticResource FaaTextPrimary}"
                                                 TextWrapping="Wrap"
                                                 Canvas.Left="5"
                                                    Canvas.Top="15"
@@ -2621,7 +2730,7 @@
                                                     </telerik:EventToCommandBehavior.EventBindings>
                                                 </TextBox>
                                                 <Label Canvas.Top="30"
-                                            Foreground="Red"
+                                            Foreground="{StaticResource FaaErrorRed}"
                                             Visibility="{Binding WarningCdfToleranceHidden}">Allowable range from 0.005 to 0.05</Label>
                                             </Canvas>
                                         </StackPanel>
@@ -2639,7 +2748,7 @@
                                                     </telerik:EventToCommandBehavior.EventBindings>
                                                 </TextBox>
                                                 <Label Canvas.Top="30"
-                                            Foreground="Red"
+                                            Foreground="{StaticResource FaaErrorRed}"
                                             Visibility="{Binding WarningLifeToleranceHidden}">Allowable range from 0.02 to 0.5</Label>
                                             </Canvas>
                                         </StackPanel>
@@ -2680,7 +2789,7 @@
                                         <StackPanel  Orientation="Vertical">
                                             <Canvas Width="240"
                                         Height="55">
-                                                <TextBlock  Foreground="Black"
+                                                <TextBlock  Foreground="{StaticResource FaaTextPrimary}"
                                                 TextWrapping="Wrap"
                                                 Canvas.Left="5"
                                                 Width="140"
@@ -2703,7 +2812,7 @@
                                         <StackPanel  Orientation="Vertical">
                                             <Canvas Width="240"
                                         Height="55">
-                                                <TextBlock  Foreground="Black"
+                                                <TextBlock  Foreground="{StaticResource FaaTextPrimary}"
                                                 TextWrapping="Wrap"
                                                 Canvas.Top="12"
                                                 Canvas.Left="5"
@@ -2727,7 +2836,7 @@
                                         <StackPanel  Orientation="Vertical">
                                             <Canvas Width="240"
                                         Height="55">
-                                                <TextBlock  Foreground="Black"
+                                                <TextBlock  Foreground="{StaticResource FaaTextPrimary}"
                                                 TextWrapping="Wrap"
                                                 Canvas.Top="12"
                                                 Canvas.Left="5"
@@ -2763,7 +2872,7 @@
                                             Width="110"
                                             Command="{Binding OnSetDefault_Command}">
                                             <Button.Content>
-                                                <TextBlock  Foreground="Black"
+                                                <TextBlock  Foreground="{StaticResource FaaTextPrimary}"
                                                         TextWrapping="Wrap"
                                                         TextAlignment="Center">
                                                 Set as Program Default
@@ -2776,7 +2885,7 @@
                                             Width="110"
                                             Command="{Binding OnResetDefault_Command}">
                                             <Button.Content>
-                                                <TextBlock  Foreground="Black"
+                                                <TextBlock  Foreground="{StaticResource FaaTextPrimary}"
                                                         TextWrapping="Wrap"
                                                         TextAlignment="Center">
                                                 Reset Default to Initial
@@ -2810,7 +2919,7 @@
                                 <StackPanel Orientation="Vertical">
                                     <Canvas Width="240"
                                         Height="55">
-                                        <TextBlock Foreground="Black"
+                                        <TextBlock Foreground="{StaticResource FaaTextPrimary}"
                                                 TextWrapping="Wrap"
                                                 Canvas.Left="5"
                                                    Canvas.Top="50"
@@ -2822,7 +2931,7 @@
                                 <StackPanel Orientation="Vertical">
                                     <Canvas Width="240"
                                         Height="55">
-                                        <TextBlock Foreground="Black"
+                                        <TextBlock Foreground="{StaticResource FaaTextPrimary}"
                                                 TextWrapping="Wrap"
                                                 Canvas.Left="5"
                                                    Canvas.Top="20"
@@ -3180,8 +3289,8 @@
                                                 <Style BasedOn="{StaticResource TextBoxStyle}" TargetType="{x:Type TextBox}">
                                                     <Style.Triggers>
                                                         <Trigger Property="IsEnabled" Value="False">
-                                                            <Setter Property="Foreground" Value="#e6e6e6"/>
-                                                            <Setter Property="Background" Value="#e6e6e6"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource FaaDisabledGray}"/>
+                                                            <Setter Property="Background" Value="{StaticResource FaaDisabledGray}"/>
                                                         </Trigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -3331,6 +3440,32 @@
 
             </telerik:RadSplitContainer>
         </telerik:RadDocking>
+
+        <!-- Toast Notification Overlay -->
+        <Border x:Name="ToastBorder"
+                HorizontalAlignment="Right" VerticalAlignment="Top"
+                Margin="0,12,20,0"
+                Background="{Binding ToastBackground}"
+                BorderBrush="{StaticResource FaaBorderGray}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="14,10"
+                MinWidth="200"
+                MaxWidth="380"
+                Visibility="{Binding ToastVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                Effect="{Binding Source={StaticResource ToolbarShadowBorder}, Path=Effect}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding ToastIcon}"
+                           FontSize="16" Margin="0,0,8,0"
+                           VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding ToastMessage}"
+                           Foreground="{StaticResource FaaTextPrimary}"
+                           FontSize="12" VerticalAlignment="Center"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
+        </Grid>
 
         <!-- LOGIN POPUP WINDOW -->
         <telerik:RadDocking x:Name="LoginDocking">

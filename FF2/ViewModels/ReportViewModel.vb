@@ -65,10 +65,15 @@ Namespace ViewModels
                     OnPropertyChanged(NameOf(IsSelected))
                     If Value Then
                         Dim sectionView = CType(Parent, SectionViewModel)
-                        FaarFieldViewModel.SetCurrentSection(sectionView)
-                        FaarFieldViewModel.SectionReportIsHidden = True
+                        If FaarFieldViewModel.CurrentSectionView IsNot sectionView Then
+                            FaarFieldViewModel.SetCurrentSection(sectionView)
+                        End If
+                        Dim html = FaarFieldViewModel.refreshsectionreport()
+                        If html <> FaarFieldViewModel.SectionReportHtml Then
+                            FaarFieldViewModel.SectionReportIsHidden = True
+                            FaarFieldViewModel.SectionReportHtml = html
+                        End If
                         FaarFieldViewModel.SectionReportIsHidden = False
-                        FaarFieldViewModel.SectionReportHtml = FaarFieldViewModel.refreshsectionreport()
                     End If
                 End If
             End Set

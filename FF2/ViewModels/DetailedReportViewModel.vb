@@ -59,10 +59,15 @@ Namespace ViewModels
                     If Value Then
                         Try
                             Dim sectionview = CType(Parent, SectionViewModel)
-                            FaarFieldViewModel.SetCurrentSection(sectionview)
-                            FaarFieldViewModel.DetailedReportIsHidden = True
+                            If FaarFieldViewModel.CurrentSectionView IsNot sectionview Then
+                                FaarFieldViewModel.SetCurrentSection(sectionview)
+                            End If
+                            Dim html = FaarFieldViewModel.refreshDetailedReport()
+                            If html <> FaarFieldViewModel.DetailedReportHtml Then
+                                FaarFieldViewModel.DetailedReportIsHidden = True
+                                FaarFieldViewModel.DetailedReportHtml = html
+                            End If
                             FaarFieldViewModel.DetailedReportIsHidden = False
-                            FaarFieldViewModel.DetailedReportHtml = FaarFieldViewModel.refreshDetailedReport()
                         Catch ex As Exception
                             Debug.WriteLine("DetailedReportViewModel.IsSelected error: " & ex.Message)
                             FaarFieldViewModel.DetailedReportIsHidden = False

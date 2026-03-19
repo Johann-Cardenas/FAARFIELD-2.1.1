@@ -26,7 +26,7 @@ Namespace Converters
                 End If
             End If
 
-
+            Return ""
         End Function
 
         Public Function ConvertBack(value As Object, targetTypes() As Type, parameter As Object, culture As CultureInfo) As Object() Implements IMultiValueConverter.ConvertBack

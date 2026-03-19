@@ -75,6 +75,7 @@
             <converters:PtoTCRatioConverter x:Key="PtoTCRatioConverter" />
             <converters:BrowserBehavior x:Key="BrowserBehavior" />
             <converters:NonTransparentWindowsGeneratedItemsFactory x:Key="NonTransparentWindowsGeneratedItemsFactory" />
+            <converters:TreeNodeIconConverter x:Key="TreeNodeIconConverter" />
 
             <validation:SubgradRowValidationRule x:Key="SubgradRowValidationRule" />
             <validation:GroupBoxValidationRules x:Key="GroupBoxValidationRules" />
@@ -217,7 +218,7 @@
             <StackPanel x:Key="AboutButton"
                         Orientation="Horizontal">
                 <Border Width="24" Height="24" CornerRadius="12"
-                        Background="#00897B" Margin="0,0,4,0">
+                        Background="{StaticResource FaaPrimary}" Margin="0,0,4,0">
                     <TextBlock Text="i" FontSize="14" FontWeight="Bold"
                                Foreground="White" FontFamily="Georgia"
                                HorizontalAlignment="Center" VerticalAlignment="Center"

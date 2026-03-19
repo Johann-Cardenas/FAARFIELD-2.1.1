@@ -82,9 +82,14 @@ Namespace ViewModels
                     OnPropertyChanged(NameOf(IsSelected))
                     If Value Then
                         Dim sectionview = CType(Parent, SectionViewModel)
-                        FaarFieldViewModel.SetCurrentSection(sectionview)
-                        FaarFieldViewModel.PCRReportIsHidden = True
-                        FaarFieldViewModel.PCRReportHtml = FaarFieldViewModel.refreshPCRReport()
+                        If FaarFieldViewModel.CurrentSectionView IsNot sectionview Then
+                            FaarFieldViewModel.SetCurrentSection(sectionview)
+                        End If
+                        Dim html = FaarFieldViewModel.refreshPCRReport()
+                        If html <> FaarFieldViewModel.PCRReportHtml Then
+                            FaarFieldViewModel.PCRReportIsHidden = True
+                            FaarFieldViewModel.PCRReportHtml = html
+                        End If
                         FaarFieldViewModel.PCRReportIsHidden = False
                     End If
                     End If

@@ -183,6 +183,8 @@ Public Class Section
     Public Property SavedPCRgraph As String Implements ISection.SavedPCRgraph
     Public Property SavedAirportMasterRecordhtml As String Implements ISection.SavedAirportMasterRecordhtml
     Public Property SavedCDFgraph As String Implements ISection.SavedCDFgraph
+    Public Property SavedDetailedReportHtml As String Implements ISection.SavedDetailedReportHtml
+    Public Property SavedSectionReportHtml As String Implements ISection.SavedSectionReportHtml
 
     <DataMember>
     Public Property RdecFlexuralMod As Single Implements ISection.RdecFlexuralMod

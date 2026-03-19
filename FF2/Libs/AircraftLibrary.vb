@@ -77,7 +77,17 @@ Namespace Libs
                 'Validate only on initial load for UI
                 Dim isSignedLibrary As Boolean = ValidateSignedAircraftLibrary(aircraftLibrary)
                 If Not isSignedLibrary Then
-                    MessageBox.Show("The aircraft library located at " + My.Application.Info.DirectoryPath + "\Defaults\Aircraft\aircraft.xml is not signed by the application.  Use of an unsigned library is allowed by the program, but not FAA approved.")
+                    MessageBox.Show(
+                        "The aircraft library located at:" & vbCrLf & vbCrLf &
+                        My.Application.Info.DirectoryPath & "\Defaults\Aircraft\aircraft.xml" & vbCrLf & vbCrLf &
+                        "is not digitally signed by the application. This means the library file " &
+                        "has been modified or replaced outside of an official FAARFIELD update, " &
+                        "and its contents cannot be verified as FAA-approved." & vbCrLf & vbCrLf &
+                        "The program will continue to function normally with this library, " &
+                        "but design results produced using an unsigned library are not FAA-approved.",
+                        "Aircraft Library Signature",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning)
                 End If
 
                 'Initial load removes belly and deprecated aircraft from view
@@ -346,12 +356,7 @@ Namespace Libs
                 SaveTrafficLibraryFile(savePath, currentAirplanes)
                 Return libraryName
             End If
-            'Else
-            '    Dim savePath = SpecialDirectories.MyDocuments + "\My FAARFIELD\TrafficLibrary\" + currentLibrary + ".xml"
-            '    SaveTrafficLibrary(savePath, currentAirplanes)
-            '    Return currentLibrary
-            'End If
-            'Return Nothing
+            Return Nothing
         End Function
 
 

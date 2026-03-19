@@ -77,6 +77,7 @@ Public Class clsAircraftDetail
     Public NWheels As Integer        ' libNTires — number of tires
     Public DualSpacing As Single     ' libB — dual wheel spacing (inches)
     Public GearSpacing As Single     ' libTG — gear spacing (inches)
+    Public XCenter As Single         ' Lateral offset-coordinate center used in C/P computation
 
     ' Asphalt CDF per aircraft
     Public AsphaltCDF As Double         ' HMA layer CDF for this aircraft

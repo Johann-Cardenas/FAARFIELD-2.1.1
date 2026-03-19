@@ -1,8 +1,12 @@
 # FAARFIELD 2.1.1 — Source (FAA)
 
+> [!IMPORTANT]
 > **Official source notice:** This repository contains the source code of **FAARFIELD 2.1.1** as published by the Federal Aviation Administration: https://www.airporttech.tc.faa.gov/Products/Airport-Safety-Papers-Publications/Airport-Safety-Detail/ArtMID/3682/ArticleID/2841/FAARFIELD-20
 >
 > This copy is provided for inspection, study, and archival purposes only. It does not represent a reproduction or transfer of copyright. All rights and ownership remain with the Federal Aviation Administration.
+
+> [!CAUTION]
+> **Beta version.** This repository contains customizations to the original FAA-published source (documented in [Modifications](#modifications-from-original-faarfield-211-source)). Results from this version should be independently verified against the official FAARFIELD release before use in any production or regulatory context.
 
 ---
 
@@ -23,9 +27,17 @@
 - [User interfaces](#user-interfaces)
 - [Reports](#reports)
 - [Software stack](#software-stack)
-- [Quick start (build)](#quick-start-build)
+- [Build setup & compilation](#build-setup--compilation)
+  - [Prerequisites](#prerequisites)
+  - [Installation walkthrough](#installation-walkthrough)
+  - [Opening and building the solution](#opening-and-building-the-solution)
+  - [Expected build output](#expected-build-output)
+  - [Running the application](#running-the-application)
+  - [Troubleshooting](#troubleshooting)
 - [Unit tests](#unit-tests)
 - [Project dependency graph](#project-dependency-graph)
+- [Modifications from original FAARFIELD 2.1.1 source](#modifications-from-original-faarfield-211-source)
+- [Backlog — Engineering reasonableness guardrails](#backlog--engineering-reasonableness-guardrails-to-review)
 
 ---
 
@@ -38,6 +50,9 @@
 - **ACN/PCN classification** per ICAO standards for pavement strength reporting.
 - **Cumulative damage factor (CDF)** integration for mixed-traffic thickness design.
 - **Overlay design** for flexible-on-flexible, PCC-on-rigid, HMA-on-rigid, and unbonded overlays.
+
+> [!NOTE]
+> The computational engines in this project were ported from Fortran to VB.NET. Variable names and algorithm structure deliberately mirror the original Fortran source for traceability to FAA technical reports. Do not rename variables for "clarity" — they map to published equations and documentation.
 
 ---
 
@@ -121,6 +136,7 @@ FAARFIELD-2.1.1/
 │   ├── Models/RunAnalysis.vb            Analysis execution model
 │   ├── Libs/AircraftLibrary.vb          Aircraft database manager
 │   ├── Libs/HtmlUtils.vb               HTML/PDF report generation helpers
+│   ├── Libs/HtmlReportGenerator.vb      SVG-based HTML report generator
 │   ├── Resources/Reports.css            Embedded CSS for all reports
 │   └── Defaults/Aircraft/aircraft.xml   Aircraft library (1.9 MB, XML)
 │
@@ -132,11 +148,17 @@ FAARFIELD-2.1.1/
 └── packages/                            NuGet packages
 ```
 
+> [!TIP]
+> The `lib/` folder contains pre-packaged Telerik UI for WPF assemblies. No separate Telerik license is needed to build or run the solution.
+
 ---
 
 ## Core computational modules
 
 The sections below describe each computational engine, the key files to inspect, and the most important functions and data structures within them. Line numbers are approximate and refer to the current source.
+
+> [!WARNING]
+> Many `Public` variables in `modCDF.vb`, `modFedfaaGbl.vb`, and similar modules are **shared mutable state** used across the entire analysis pipeline. Renaming or retyping them will break callers across multiple projects. The FEM solver (`FEMClassLib/Solve/`) has 96 files with heavily interrelated state — changes require running the full unit test suite and verifying against known benchmark results.
 
 ---
 
@@ -166,7 +188,12 @@ The LEAF solver computes the pavement response (deflections, strains, stresses) 
 
 **Constants:** `NOFF = 41` offsets for CDF calculations, `NNodesLong = 1800` longitudinal nodes for tandem analysis, `OFFSETINC = 10.0` inches between offsets.
 
-**Mathematical basis:** The solver uses the Hankel transform over a multi-layer elastic half-space. Response at radial distance *r* and depth *z* takes the form ∫ K(α,z)·J_n(α·r)·α dα, evaluated via 500-point Gauss-Laguerre quadrature. A 1-inch dummy top layer of surface material is inserted for numerical stability. Each tire is modelled as uniform circular pressure with contact radius a = √(W_wheel/(π·p_tire)); superposition handles multiple tires.
+<details>
+<summary><strong>Mathematical basis</strong></summary>
+
+The solver uses the Hankel transform over a multi-layer elastic half-space. Response at radial distance *r* and depth *z* takes the form ∫ K(α,z)·J_n(α·r)·α dα, evaluated via 500-point Gauss-Laguerre quadrature. A 1-inch dummy top layer of surface material is inserted for numerical stability. Each tire is modelled as uniform circular pressure with contact radius a = √(W_wheel/(π·p_tire)); superposition handles multiple tires.
+
+</details>
 
 ---
 
@@ -341,7 +368,7 @@ The **FF2** (WPF) project is the primary user interface and includes:
 - 52 value converters in `Converters/` for unit systems, visibility, and validation
 - An embedded aircraft library at `Defaults/Aircraft/aircraft.xml` (1.9 MB)
 - Material imagery in `Defaults/Materials/`
-- Multiple report types (Structure, CDF Graph, PCR, Airport Master Record, Summary, and **Detailed Computation Report**)
+- Multiple report types (Structure, CDF Graph, PCR, Airport Master Record, Summary, and **CM Report**)
 
 ---
 
@@ -357,38 +384,57 @@ FAARFIELD generates several report types, accessible from the section tree in th
 | **PCR Report** | Pavement Classification Rating results and aircraft-by-aircraft breakdown |
 | **PCR Graph** | PCR vs. aircraft chart |
 | **Airport Master Record** | ICAO-compliant pavement strength record |
-| **Detailed Computation Report** | Full computational trace for flexible pavement design (see below) |
+| **CM Report** | Full computational trace for flexible pavement design (see below) |
 
-### Detailed Computation Report
+### CM Report (Computational Mechanics)
 
-The **Detailed Computation Report** is a comprehensive technical report that documents the full computational workflow of thickness design, CDF accumulation, and ACR/PCR analysis. It is populated automatically when you run **Thickness Design** or **Life Analysis** on a flexible pavement section. Access it from the section tree under **Reports → Detailed Computation Report**.
+The **CM Report** is a comprehensive technical report that documents the full computational workflow of thickness design, CDF accumulation, and ACR/PCR analysis. It is populated automatically when you run **Thickness Design** or **Life Analysis** on a flexible pavement section. Access it from the section tree under **Reports > CM Report**.
+
+> [!NOTE]
+> The CM Report was originally named "Detailed Computation Report." Internal property names (`DetailedReportHtml`, `DetailedReportIsHidden`, `SerializationTag="DetailedReport"`) retain the original naming for serialization compatibility.
 
 **Key features:**
 
-- **Section A — Pavement Structure Summary:** Design layers and expanded sublayer structure (after modulus adjustment), evaluation depth at subgrade.
+- **Section A — Pavement Structure Summary:** Design layers and expanded sublayer structure (after modulus adjustment), evaluation depth at subgrade, aggregate sublayering procedure with modulus-depth profile chart.
 - **Section B — Design Equations:** Rendered equations for the subgrade strain failure model (AA, BB, N_fail), CDF formula, coverage-to-pass (Gaussian wander model), and convergence criterion.
 - **Section C — Coverage-to-Pass (C/P) Concept:** Educational diagram explaining how C/P is computed from Gaussian lateral wander (σ = 30.435 in.), multi-wheel superposition, and the 41 evaluation strips.
-- **Section D — Fatigue Characterization:** Subgrade fatigue curve plot with aircraft operating points, N_fail, repetitions, and model parameters.
-- **Section E — Per-Aircraft Detailed Breakdown:** For each aircraft: pavement cross-section with tire projection, gear parameters (load, tire pressure, contact area, tandem spacing), CDF vs. offset chart, wheel-level C/P decomposition, and a step-by-step computation walkthrough.
+- **Section D — Fatigue Characterization:** Subgrade fatigue curve plot with aircraft operating points, plus asphalt (HMA) layer fatigue when applicable (RDEC or AI models).
+- **Section E — Per-Aircraft Detailed Breakdown:** For each aircraft: gear configuration plan view, pavement cross-section with tire projection, gear parameters, CDF vs. offset chart, wheel-level C/P decomposition, and step-by-step computation walkthrough.
 - **Section F — C/P Distribution:** C/P ratio vs. lateral offset for all aircraft.
 - **Section G — CDF Sweep Table:** Full 41-offset table of C/P and CDF per aircraft and total CDF; critical offset identification.
 - **Section H — CDF Distribution Across Pavement Width:** Composite CDF chart and contribution summary at the critical strip.
-- **Section I — Newton-Raphson Convergence:** Dual-axis convergence plot (|ln(CDF)| and thickness vs. iteration), iteration log, and convergence summary.
-- **Section J — ACR Details:** Reference structure, designed base thickness, DSWL iteration log, and final ACR per subgrade category.
-- **Section K — PCR Elimination Rounds:** Critical aircraft per round, MGW iteration, round PCR, and early-exit flag.
-- **Section L — ACR vs. Damage Per Departure:** Chart relating ACR to normalized CDF per departure; bubble size proportional to annual departures.
+- **Section I — Newton-Raphson Convergence:** Dual-axis convergence plot and iteration log.
+- **Section J — ACR Details** *(conditional)*: Reference structure, DSWL iterations, final ACR per subgrade category.
+- **Section K — PCR Elimination Rounds** *(conditional)*: Critical aircraft per round, MGW iteration, round PCR.
+- **Section L — ACR vs. Damage Per Departure** *(conditional)*: Bubble chart relating ACR to normalized CDF per departure.
 
-The report data is captured during analysis by `clsDetailedReportData` (in `FaarFieldAnalysis/clsDetailedReportData.vb`) and rendered in `MainWindowViewModel.refreshDetailedReport()`.
+<details>
+<summary><strong>Rendering architecture</strong></summary>
 
-**Rendering architecture:**
+The report data is captured during analysis by `clsDetailedReportData` (in `FaarFieldAnalysis/clsDetailedReportData.vb`) and rendered via two parallel pipelines:
 
-The report is generated as a self-contained HTML string with inline base64-encoded PNG charts. The pipeline is:
+**PDF pipeline (GDI+ bitmaps):**
+```
+Analysis Engine → clsDetailedReportData
+  → MainWindowViewModel.refreshDetailedReport()
+    → 12 GDI+ chart functions (2x/3x supersampled bitmaps)
+    → HtmlUtils (base64 PNG embedding)
+    → Reports.css
+    → BrowserBehavior (WebBrowser display)
+    → SelectPdf HtmlToPdf (PDF export)
+```
 
-1. **Data capture** — During thickness design or life analysis, intermediate computational values are stored in `clsDetailedReportData` (aircraft strains, CDF arrays, iteration logs, ACR/PCR results).
-2. **HTML generation** — `refreshDetailedReport()` in `MainWindowViewModel.vb` (~line 8336) builds the complete HTML document using `HtmlUtils` helper methods (`wrap_p`, `wrap_table`, `wrap_bmp_img`, etc.).
-3. **Chart rendering** — 12 private GDI+ drawing functions produce `System.Drawing.Bitmap` objects at 2x or 3x resolution via `ScaleTransform()`, then downscale with bicubic interpolation (`SupersampleBitmap()`). Each bitmap is PNG-encoded to base64 and embedded inline.
-4. **Styling** — `Reports.css` (embedded resource) provides all styling including dashboard cards, table-of-contents, section headers, equation boxes, and chart containers.
-5. **Display** — The HTML string is bound to a WPF `WebBrowser` control via `BrowserBehavior` (attached behavior). PDF export uses SelectPdf's `HtmlToPdf` converter.
+**HTML pipeline (native SVG):**
+```
+HtmlReportGenerator.Generate()
+  → Complete HTML5 document via StringBuilder
+  → Inline SVG charts (viewBox-based, responsive)
+  → CSS inlined in <style> block
+  → Self-contained .html with zero external dependencies
+  → Opens in default browser
+```
+
+The PDF export now uses the SVG pipeline for the CM Report, producing vector-quality charts.
 
 **Chart functions** (all in `MainWindowViewModel.vb`):
 
@@ -403,9 +449,13 @@ The report is generated as a self-contained HTML string with inline base64-encod
 | `DrawCoveragePlot()` | C/P ratio distribution for all aircraft |
 | `DrawCoverageConceptDiagram()` | 4-panel educational diagram on Gaussian wander C/P computation |
 | `DrawWheelCPVisualization()` | Per-aircraft C/P with inferred wheel-level contributions |
+| `DrawGearConfiguration()` | Plan view of wheel positions with CDF strips and Gaussian wander |
 | `DrawACRDamageChart()` | ACR vs. CDF-per-departure bubble chart |
 | `DrawCDFContributionChart()` | Horizontal bar chart of CDF % contribution per aircraft |
 | `DrawLifeRatioChart()` | Diverging bar chart of fatigue life reserve ratio |
+| `DrawModulusDepthProfile()` | Modulus vs. depth step chart for sublayered sections |
+
+</details>
 
 ---
 
@@ -415,7 +465,7 @@ The report is generated as a self-contained HTML string with inline base64-encod
 |-----------|--------|
 | **Language** | Visual Basic .NET (VB.NET) |
 | **Framework** | .NET Framework 4.8 |
-| **IDE / Build** | Visual Studio 2019+ / MSBuild (ToolsVersion 15+) |
+| **IDE / Build** | Visual Studio 2022 (Community or higher) / MSBuild |
 | **UI** | WPF (FF2) and Windows Forms (FaarFieldAnalysis) |
 | **Third-party** | Telerik UI for WPF (`lib/RCWPF/`), iTextSharp (PDF), Select.HtmlToPdf |
 | **Testing** | MSTest 2.1.1 |
@@ -423,15 +473,171 @@ The report is generated as a self-contained HTML string with inline base64-encod
 
 ---
 
-## Quick start (build)
+## Build setup & compilation
 
-1. **Prerequisites** — Visual Studio 2019 or later with the **.NET desktop development** workload and .NET Framework 4.8 targeting pack.
-2. **Open** `FAARFIELD.sln` in Visual Studio.
-3. **Restore NuGet packages** (Visual Studio does this automatically on first build).
-4. **Build** the solution (`Ctrl+Shift+B`). The startup project is **FF2**.
-5. **Run** — press `F5` to launch the WPF application.
+This section provides step-by-step instructions for setting up a development environment capable of building and running FAARFIELD from source.
 
-> The `lib/` folder contains pre-packaged Telerik assemblies; no separate Telerik license is needed to build.
+### Prerequisites
+
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| **Windows** | 10 or 11 (64-bit) | Required — this is a WPF desktop application |
+| **Visual Studio** | 2022 Community (free) or higher | [Download here](https://visualstudio.microsoft.com/vs/community/) |
+| **.NET Framework** | 4.8 Targeting Pack | Installed via Visual Studio workloads |
+| **Disk space** | ~3 GB | For Visual Studio + workloads; the FAARFIELD source itself is ~150 MB |
+
+> [!NOTE]
+> Visual Studio **2019** also works but is no longer receiving feature updates. Visual Studio 2022 Community Edition is free for individual developers, open-source projects, academic research, and small teams (up to 5 users).
+
+### Installation walkthrough
+
+#### Step 1 — Download Visual Studio 2022 Community
+
+Download the installer from https://visualstudio.microsoft.com/vs/community/ and run it. The Visual Studio Installer will launch and present a list of **Workloads**.
+
+#### Step 2 — Select the required workload
+
+In the **Workloads** tab, check:
+
+- [x] **.NET desktop development**
+
+This single workload installs everything you need: the VB.NET compiler, .NET Framework 4.8 targeting pack, WPF designer, Windows Forms designer, NuGet package manager, and MSBuild.
+
+> [!TIP]
+> You do **not** need the "ASP.NET and web development", "Azure development", or ".NET Multi-platform App UI" workloads. Only ".NET desktop development" is required. Keeping the install minimal saves disk space and download time.
+
+#### Step 3 — Verify .NET Framework 4.8 targeting pack
+
+In the **Individual components** tab (next to Workloads), search for `.NET Framework 4.8` and confirm these are checked:
+
+- [x] .NET Framework 4.8 SDK
+- [x] .NET Framework 4.8 targeting pack
+
+These are normally included with the ".NET desktop development" workload, but it's worth confirming.
+
+> [!WARNING]
+> If the .NET Framework 4.8 targeting pack is missing, the solution will open but every project will show **"The reference assemblies for .NETFramework,Version=v4.8 were not found"** and the build will fail with hundreds of errors. This is the single most common setup problem.
+
+#### Step 4 — Install
+
+Click **Install** (or **Modify** if Visual Studio is already installed). The download is typically 2–3 GB. Once complete, launch Visual Studio.
+
+### Opening and building the solution
+
+1. **Clone or download** this repository to a local folder (e.g., `C:\Repos\FAARFIELD-2.1.1`).
+
+2. **Open the solution** — Double-click `FAARFIELD.sln` or use **File > Open > Project/Solution** in Visual Studio.
+
+3. **NuGet restore** — Visual Studio automatically restores NuGet packages on the first build. You should see a brief "Restoring NuGet packages..." notification in the status bar. If prompted, click **Restore**.
+
+4. **Set the startup project** — In Solution Explorer, right-click the **FF2** project and select **Set as Startup Project**. The project name should appear in **bold**.
+
+5. **Build the solution** — Press `Ctrl+Shift+B` or go to **Build > Build Solution**.
+
+> [!TIP]
+> **Command-line build** (optional): If you prefer building from the command line or need to automate builds:
+> ```
+> "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" FAARFIELD.sln -p:Configuration=Debug
+> ```
+> If you installed VS Build Tools instead of the full IDE, the path is:
+> ```
+> "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe" FAARFIELD.sln -p:Configuration=Debug
+> ```
+
+### Expected build output
+
+A successful build produces output similar to:
+
+```
+Build started...
+1>------ Build started: Project: FaarFieldModel, Configuration: Debug Any CPU ------
+2>------ Build started: Project: LEAFClassLib, Configuration: Debug Any CPU ------
+...
+========== Build: 12 succeeded, 0 failed, 0 up-to-date, 1 skipped ==========
+```
+
+> [!NOTE]
+> **Expected warnings.** The build produces several pre-existing warnings that are safe to ignore:
+> - **BC42024** — Unused local variables (`ac7`, `_factory`, etc.). Dead code, no runtime impact.
+> - **BC42105** — Anonymous `Function` lambdas in `InvokeAsync` without explicit return. Return value is discarded by the dispatcher.
+> - **MSB3270** — `FAAMeshClassLib` processor architecture mismatch. Works at runtime because the app targets x86.
+> - **MSB3187** — Referenced assembly version mismatch. Resolved at runtime by binding redirects.
+>
+> These warnings have been evaluated and determined to pose no runtime risk. See [Modification 14](#14-build-warning-cleanup) for details.
+
+> [!CAUTION]
+> If you see **errors** (not warnings), the most common causes are:
+> 1. Missing .NET Framework 4.8 targeting pack — see [Step 3](#step-3--verify-net-framework-48-targeting-pack)
+> 2. Failed NuGet restore — right-click the solution in Solution Explorer and select **Restore NuGet Packages**
+> 3. The FAARFIELD.Installer project may fail if you don't have the WiX Toolset installed — this is safe to ignore (it only builds the `.msi` installer, not the application itself). You can right-click it in Solution Explorer and select **Unload Project** to suppress its errors.
+
+### Running the application
+
+1. Press **F5** (Start Debugging) or **Ctrl+F5** (Start Without Debugging).
+2. The FAARFIELD WPF window will open with the main job/section tree on the left and the working area on the right.
+3. To verify everything works, create a new job, add a flexible section with a few aircraft, and run **Thickness Design**.
+
+> [!TIP]
+> The first analysis run may take 10–30 seconds depending on the number of aircraft and your hardware. The status tab shows a progress banner with elapsed time. If the progress bar appears stuck, the solver is likely in the FEM or LEAF computation loop — let it finish.
+
+### Troubleshooting
+
+<details>
+<summary><strong>"The reference assemblies for .NETFramework,Version=v4.8 were not found"</strong></summary>
+
+**Cause:** The .NET Framework 4.8 targeting pack is not installed.
+
+**Fix:** Open Visual Studio Installer → Modify → Individual Components → check ".NET Framework 4.8 targeting pack" and ".NET Framework 4.8 SDK" → click Modify.
+
+</details>
+
+<details>
+<summary><strong>Build fails with "Could not copy file... because it is being used by another process"</strong></summary>
+
+**Cause:** A previous instance of FAARFIELD is still running and has locked the output DLL/EXE files in `bin/Debug/`.
+
+**Fix:** Close all running instances of FAARFIELD (check the system tray), then rebuild. If the problem persists, use Task Manager to end any `FF2.exe` processes.
+
+</details>
+
+<details>
+<summary><strong>NuGet packages fail to restore</strong></summary>
+
+**Cause:** Network issues or a corrupted package cache.
+
+**Fix:**
+1. Right-click the solution in Solution Explorer → **Restore NuGet Packages**
+2. If that fails, delete the `packages/` folder and rebuild — NuGet will re-download everything
+3. Check that `nuget.org` is listed under **Tools > NuGet Package Manager > Package Sources**
+
+</details>
+
+<details>
+<summary><strong>FAARFIELD.Installer project errors (WiX)</strong></summary>
+
+**Cause:** The WiX Toolset v3.x Visual Studio extension is not installed. This project builds the `.msi` installer and is not required for development.
+
+**Fix:** Right-click `FAARFIELD.Installer` in Solution Explorer → **Unload Project**. The rest of the solution will build and run normally without it.
+
+</details>
+
+<details>
+<summary><strong>Telerik-related warnings or missing references</strong></summary>
+
+**Cause:** Telerik assemblies in `lib/RCWPF/` may not be loading correctly.
+
+**Fix:** The `lib/` folder must be present at the repository root with all `.dll` files. If you cloned with a shallow checkout or the folder is empty, do a full clone. The assemblies are checked into the repository — no Telerik license or NuGet feed is required.
+
+</details>
+
+<details>
+<summary><strong>Application launches but shows blank/white window</strong></summary>
+
+**Cause:** Typically a XAML binding error or missing resource. Check the **Output** window in Visual Studio (View > Output, select "Debug" in the dropdown) for binding errors.
+
+**Fix:** Ensure you are running the **FF2** project (not FaarFieldAnalysis) as the startup project. Clean and rebuild the solution (**Build > Clean Solution**, then **Build > Rebuild Solution**).
+
+</details>
 
 ---
 
@@ -444,7 +650,14 @@ Test files live in `FAARFIELDUnitTests/` and use the MSTest framework.
 | [AircraftUnitTests.vb](FAARFIELDUnitTests/AircraftUnitTests.vb) | Aircraft model validation |
 | [UnitTest1.vb](FAARFIELDUnitTests/UnitTest1.vb) | General functionality checks |
 
-Run tests from the Visual Studio Test Explorer or via `dotnet test` (if the .NET CLI is configured for .NET Framework projects).
+Run tests from the Visual Studio **Test Explorer** (`Ctrl+E, T`) or via command line:
+
+```
+vstest.console FAARFIELDUnitTests\bin\Debug\FAARFIELDUnitTests.dll
+```
+
+> [!WARNING]
+> Numerical results must match FAA-published verification cases. Do not "fix" floating-point tolerances that look loose — they reflect validated engineering accuracy.
 
 ---
 
@@ -488,9 +701,14 @@ FAARFIELD.sln
 
 This section documents all changes made to this codebase relative to the unmodified FAA-published FAARFIELD 2.1.1 source code.
 
+> [!IMPORTANT]
+> These modifications are for computational mechanics research purposes. The original FAARFIELD computational engines (LEAF, FEM, CDF, ACN/PCN) have **not** been altered — all changes are in the UI layer, reporting pipeline, and input validation bounds.
+
+---
+
 ### 1. Detailed Computation Report (new feature)
 
-Added a comprehensive HTML report that documents the full computational trace of flexible pavement thickness design. The report is generated automatically after running Thickness Design or Life Analysis and is accessible from the section tree under **Reports > Detailed Computation Report**.
+Added a comprehensive HTML report that documents the full computational trace of flexible pavement thickness design. The report is generated automatically after running Thickness Design or Life Analysis and is accessible from the section tree under **Reports > CM Report**.
 
 **Files added:**
 - `FaarFieldAnalysis/clsDetailedReportData.vb` — Data collection classes populated during analysis (aircraft details, iteration records, CDF sweep data, sublayer info, ACR/PCR results).
@@ -506,6 +724,8 @@ Added a comprehensive HTML report that documents the full computational trace of
 
 The report includes 15 sections (A through L) covering pavement structure, design equations, coverage-to-pass concepts, fatigue characterization, per-aircraft breakdowns, CDF sweep tables, convergence history, and ACR/PCR details. All charts are rendered as supersampled GDI+ bitmaps encoded as inline base64 PNG.
 
+---
+
 ### 2. Annual departure limit increased to 500,000
 
 Raised the maximum allowable annual departures per aircraft from 100,000 to 500,000.
@@ -517,13 +737,15 @@ Raised the maximum allowable annual departures per aircraft from 100,000 to 500,
 
 The original 100,000 limit was an engineering reasonableness bound with no regulatory citation in the code. This change allows analysis of higher-traffic scenarios. All other input limits (design life 1–50 years per AC 150/5320-6D §302.a, growth rate ±10%) remain unchanged.
 
+---
+
 ### 3. Native HTML Report with SVG Charts ("Open in Browser")
 
-Added an **Open in Browser** button next to the existing "Save As PDF" button on the Detailed Computation Report pane. This generates a **completely independent HTML report** (not a re-export of the PDF) using a parallel rendering pipeline with native browser technologies:
+Added an **Open in Browser** button next to the existing "Save As PDF" button on the CM Report pane. This generates a **completely independent HTML report** (not a re-export of the PDF) using a parallel rendering pipeline with native browser technologies:
 
-- **Inline SVG charts** — All visualizations (fatigue curve, convergence plot, C/P distribution, composite CDF, CDF contribution bars, life ratio bars, ACR bubble chart, per-aircraft CDF, pavement cross-section, C/P concept diagram) are rendered as scalable vector graphics directly in the HTML, replacing the GDI+ bitmap pipeline. Charts scale perfectly at any zoom level and look crisp in print.
-- **Bleasdale piecewise visualization** — When the Bleasdale subgrade model is used, the fatigue curve SVG shows three color-coded zones (endurance limit, Bleasdale curve, power-law tail) with transition markers, dual-color curve segments, and an equation info box.
-- **Clean Unicode** — HTML entities (`&epsilon;`, `&sigma;`, `&times;`, subscripts/superscripts) render natively in any modern browser, eliminating the GDI+ text-to-bitmap Unicode corruption.
+- **Inline SVG charts** — All visualizations are rendered as scalable vector graphics directly in the HTML, replacing the GDI+ bitmap pipeline. Charts scale perfectly at any zoom level and look crisp in print.
+- **Bleasdale piecewise visualization** — When the Bleasdale subgrade model is used, the fatigue curve SVG shows three color-coded zones with transition markers and equation info box.
+- **Clean Unicode** — HTML entities render natively in any modern browser, eliminating GDI+ text-to-bitmap Unicode issues.
 - **Modern CSS** — CSS Grid dashboard, CSS variables for theming, responsive layout, professional typography, hover effects, print-optimized styles.
 - **Clickable table of contents** — All 12 sections (A–L) have anchor links for instant navigation.
 - **Collapsible data tables** — Large per-offset tables use HTML `<details>` elements to keep the report compact.
@@ -532,23 +754,25 @@ Added an **Open in Browser** button next to the existing "Save As PDF" button on
 The existing PDF report (GDI+ bitmaps → SelectPdf) remains completely untouched.
 
 **Files added:**
-- `FF2/Libs/HtmlReportGenerator.vb` — New `HtmlReportGenerator` class (~1400 lines) with `Generate()` method, 10 SVG chart functions, CSS stylesheet, and helper utilities.
+- `FF2/Libs/HtmlReportGenerator.vb` — New `HtmlReportGenerator` class (~2600 lines) with `Generate()` method, 10+ SVG chart functions, CSS stylesheet, and helper utilities.
 
 **Files modified:**
 - `FF2/Libs/HtmlUtils.vb` — Added `HtmlToFile()` method (saves HTML with UTF-8 encoding, launches default browser).
 - `FF2/Views/MainWindow.xaml` — Added "Open in Browser" button bound to `OnSectionReportOpenHtml` command.
-- `FF2/ViewModels/MainWindowViewModel.vb` — Added `OnSectionReportOpenHtml` command property and `SectionReportOpenHtml` handler. The handler calls `HtmlReportGenerator.Generate()` (not `refreshDetailedReport()`).
+- `FF2/ViewModels/MainWindowViewModel.vb` — Added `OnSectionReportOpenHtml` command property and handler.
 - `FF2/FF2.vbproj` — Added `HtmlReportGenerator.vb` to compilation.
+
+---
 
 ### 4. CM Report rename and gear configuration visualization
 
-Renamed **"Detailed Computation Report"** to **"CM Report"** (Computational Mechanics) across all user-facing strings. Internal property names (`DetailedReportHtml`, `DetailedReportIsHidden`, `SerializationTag="DetailedReport"`) remain unchanged for serialization compatibility.
+Renamed **"Detailed Computation Report"** to **"CM Report"** (Computational Mechanics) across all user-facing strings. Internal property names remain unchanged for serialization compatibility.
 
 **UI changes:**
-- Report tab now displays "CM Report" with a SemiBold font, an info icon (ⓘ in FAA blue), and a multi-line tooltip explaining the report's purpose.
+- Report tab now displays "CM Report" with a SemiBold font, an info icon, and a multi-line tooltip.
 - PDF and HTML default filenames use "CM Report" instead of "Detailed Computation Report".
 
-**Gear configuration visualization** added to Section E of both the PDF (GDI+ bitmap) and HTML (native SVG) report pipelines:
+**Gear configuration visualization** added to Section E of both report pipelines:
 - Plan view of wheel positions with tire contact patches drawn as semi-transparent circles.
 - CDF offset strips (41 dashed vertical lines at 10-inch intervals) with the critical strip highlighted in red.
 - Gaussian lateral wander overlay (σ=30.435 in.) as a translucent filled bell curve.
@@ -556,157 +780,134 @@ Renamed **"Detailed Computation Report"** to **"CM Report"** (Computational Mech
 - Coordinate labels at each wheel showing (X, Y) in the gear coordinate system.
 
 **Data model extensions** (`clsAircraftDetail` in `clsDetailedReportData.vb`):
-- `WheelX()`, `WheelY()` — lateral/longitudinal position of each wheel (from `libTX`/`libTY`)
-- `NWheels` — number of tires (from `libNTires`)
-- `DualSpacing`, `GearSpacing` — gear geometry (from `libB`/`libTG`)
-- Fixed population of `TandemSpacing` (from `libTS`) and `ContactArea` (computed from gross load, tire count, contact pressure)
+- `WheelX()`, `WheelY()` — lateral/longitudinal position of each wheel
+- `NWheels` — number of tires
+- `DualSpacing`, `GearSpacing` — gear geometry dimensions
+- Fixed population of `TandemSpacing` and `ContactArea`
 
 **Files modified:**
-- `FaarFieldAnalysis/clsDetailedReportData.vb` — Added 5 fields to `clsAircraftDetail`, updated doc comment.
-- `FaarFieldAnalysis/modCDF.vb` — Populated `WheelX`/`WheelY`, `DualSpacing`, `GearSpacing`, `TandemSpacing`, `ContactArea` during CDF computation.
-- `FF2/Views/MainWindow.xaml` — Replaced RadPane `Header` attribute with StackPanel content (CM Report + ⓘ icon + tooltip).
-- `FF2/ViewModels/DetailedReportViewModel.vb` — Renamed tree node to "CM Report".
-- `FF2/ViewModels/MainWindowViewModel.vb` — Renamed user-facing strings (5 locations), added `DrawGearConfiguration()` (900×600 GDI+, 2x supersampling), inserted gear chart in Section E.
-- `FF2/Libs/HtmlReportGenerator.vb` — Renamed user-facing strings (2 locations), added `AppendGearConfigSVG()`, inserted SVG gear chart in Section E.
+- `FaarFieldAnalysis/clsDetailedReportData.vb` — Added 5 fields to `clsAircraftDetail`.
+- `FaarFieldAnalysis/modCDF.vb` — Populated new gear geometry fields during CDF computation.
+- `FF2/Views/MainWindow.xaml` — Replaced header with styled StackPanel content.
+- `FF2/ViewModels/DetailedReportViewModel.vb` — Renamed tree node.
+- `FF2/ViewModels/MainWindowViewModel.vb` — Renamed strings, added `DrawGearConfiguration()`.
+- `FF2/Libs/HtmlReportGenerator.vb` — Added `AppendGearConfigSVG()`.
+
+---
 
 ### 5. About window
 
-Added an **About** button to the main toolbar (left of the Help button) that opens a custom borderless dialog window with a teal gradient header. The window provides:
+Added an **About** button to the main toolbar that opens a custom borderless dialog with:
 
-- **Beta disclosure** — Prominent amber notice stating this is a customized beta version, not the official FAA release, with guidance that results should be independently verified.
-- **Credits** — Customization by Johann Cardenas for computational mechanics research; original FAA authors acknowledged (Dr. Izydor Kawa, Y. G. Chen, Qiang Wang, Kairat Assemblayev).
+- **Beta disclosure** — Prominent amber notice that this is a customized version, not the official FAA release.
+- **Credits** — Customization by Johann Cardenas; original FAA authors acknowledged.
 - **License** — Permissive use with full liability disclaimer; original FAARFIELD IP remains with the FAA.
-- **Version display** — Shows `v2.1.1-CM` and the build date from `BuildDate.txt`.
-- **Draggable borderless chrome** — Custom window style with drop shadow, rounded corners, and teal close button.
+- **Version display** — Shows `v2.1.1-CM` and the build date.
 
 **Files added:**
-- `FF2/Views/AboutWindow.xaml` — WPF window with teal gradient header, beta disclosure, credits, license, and styled close button.
-- `FF2/Views/AboutWindow.xaml.vb` — Code-behind: build date loading, close handler, drag support.
+- `FF2/Views/AboutWindow.xaml` — WPF window with styled layout.
+- `FF2/Views/AboutWindow.xaml.vb` — Code-behind for build date loading and drag support.
 
 **Files modified:**
-- `FF2/Application.xaml` — Added `AboutButton` resource (teal circle icon with "About" text).
-- `FF2/Views/MainWindow.xaml` — Added About button to toolbar with `ItemAlignment="Right"`.
-- `FF2/ViewModels/MainWindowViewModel.vb` — Added `OnAbout_Command` property and `OnAbout` handler.
-- `FF2/FF2.vbproj` — Added `AboutWindow.xaml` and `AboutWindow.xaml.vb` to compilation.
+- `FF2/Application.xaml` — Added `AboutButton` resource.
+- `FF2/Views/MainWindow.xaml` — Added About button to toolbar.
+- `FF2/ViewModels/MainWindowViewModel.vb` — Added `OnAbout_Command` and handler.
+- `FF2/FF2.vbproj` — Added `AboutWindow.xaml` and code-behind to compilation.
+
+---
 
 ### 6. Analysis progress banner and auto-tab switching
 
-Added a visual progress banner to the **Status tab** in the Structure window's right panel. When the user clicks **Run** (for any analysis module — Thickness Design, Life, PCR, etc.), the UI now:
+Added a visual progress banner to the **Status tab** that shows:
 
-1. **Automatically switches** to the Status tab regardless of which tab (Status/Gear/Structure) was active. (The `SelectedTabIndex = 0` switch already existed in `RunAnalysis.RunOrCancel()`; no change needed.)
-2. **Shows an indeterminate progress bar** in a blue-themed banner with an hourglass icon, the elapsed time (HH:MM:SS in Consolas), and a sub-text line that updates every second with the latest analysis status from `MessageText`.
-3. **Transitions to a green "completed" banner** when the analysis finishes — full progress bar, check mark icon, and "Completed in HH:MM:SS — results are ready for review."
-4. **Shows an amber "canceled" banner** if the user clicks Cancel during analysis.
+1. **Indeterminate progress bar** in blue with hourglass icon, elapsed time (HH:MM:SS), and live status text.
+2. **Green "completed" banner** when analysis finishes — check mark icon, final elapsed time, and "results are ready for review."
+3. **Amber "canceled" banner** if the user clicks Cancel during analysis.
 
-The legacy overlay TextBoxes (RunningTime, StopWatch, CrossSection) are preserved in the XAML at zero opacity for data-binding compatibility but are no longer visually displayed — their information is now integrated into the progress banner.
+Legacy overlay TextBoxes are preserved at zero opacity for data-binding compatibility.
 
 **Files modified:**
-- `FF2/Views/MainWindow.xaml` — Redesigned Status tab with Grid layout, progress banner (icon + status text + elapsed timer + ProgressBar + sub-text), and repositioned message display. Legacy TextBoxes hidden at 1x1px with Opacity=0.
-- `FF2/ViewModels/MainWindowViewModel.vb` — Added 11 progress banner properties (`ProgressBannerVisibility`, `ProgressBannerBackground`, `ProgressIcon`, `ProgressStatusText`, `ProgressTextBrush`, `ProgressIsIndeterminate`, `ProgressValue`, `ProgressBarBrush`, `ProgressSubText`, `ProgressSubTextVisibility`, `ProgressSubTextBrush`) and 4 helper methods (`ShowProgressRunning`, `ShowProgressCompleted`, `ShowProgressCanceled`, `HideProgressBanner`). Modified `RunButton_Click` to activate running/canceled states and `dispatcherTimer_Tick` to update sub-text during analysis and show completion state.
+- `FF2/Views/MainWindow.xaml` — Redesigned Status tab with Grid layout and progress banner.
+- `FF2/ViewModels/MainWindowViewModel.vb` — Added 11 progress banner properties and 4 helper methods.
+
+---
 
 ### 7. Gear tab visualization modernization
 
-Rewrote the `PaintGear()` method in `FF2/Libs/ModuleDrawProfile.vb` with modern GDI+ rendering techniques. The gear configuration drawing in the right-panel Gear tab now features:
+Rewrote the `PaintGear()` method in `FF2/Libs/ModuleDrawProfile.vb` with modern GDI+ rendering:
 
-- **Anti-aliased rendering** with ClearType text hints and high-quality bicubic interpolation.
-- **Teal gradient header bar** (#004D40 → #00796B) displaying the aircraft name, gear type badge (e.g., "Dual Tandem"), and wheel/tire summary.
-- **Dot grid background** on warm gray (#FCFCFA) for a clean, modern appearance.
-- **Modernized axes** with labeled "Lateral" / "Longitudinal" headings and unit annotations (in. or mm).
-- **Rounded-rectangle tire imprints** with gradient fills (deep gray → medium gray), replacing the original flat rectangles.
-- **Numbered wheel labels** (white text centered on each tire) for easy identification.
-- **Coordinate annotations** in Consolas 6.5pt showing (X, Y) values at each wheel position.
-- **Mirrored wheels** rendered with softer transparency to visually distinguish the mirror plane.
-- **Evaluation point markers** as red dots with stroke, preserving original evaluation-point display.
-- **Dimension annotations** with dashed lines for dual spacing (B) and tandem spacing (Ts).
-- **Legend box** (bottom-left) with entries for tire imprint, mirrored wheel, and evaluation point.
+- Anti-aliased rendering with ClearType text hints
+- Teal gradient header bar with aircraft name and gear type badge
+- Dot grid background on warm gray
+- Rounded-rectangle tire imprints with gradient fills
+- Numbered wheel labels and coordinate annotations
+- Mirrored wheels rendered with softer transparency
+- Dimension annotations for dual spacing and tandem spacing
+- Legend box with entries for tire imprint, mirrored wheel, and evaluation point
 
-The original coordinate transform logic is fully preserved — scale, scaleRatio, ScaledPictureBox, B-52/A380 special cases, US Customary/Metric branching, and mirrored-wheel rendering all function identically.
+Original coordinate transform logic (scale, scaleRatio, B-52/A380 special cases, unit branching) is fully preserved.
 
 **Files modified:**
-- `FF2/Libs/ModuleDrawProfile.vb` — Complete rewrite of `PaintGear()` (lines 44–370). Original `PaintUserDefinedGear()` unchanged.
+- `FF2/Libs/ModuleDrawProfile.vb` — Complete rewrite of `PaintGear()` (lines 44–370).
+
+---
 
 ### 8. Aggregate sublayer modulus documentation in CM Report
 
-Added a comprehensive explanation of the **unbound aggregate sublayering procedure** to Section A of both the PDF (GDI+ bitmap) and HTML (native SVG) CM Report pipelines. When aggregate base (P-209) or subbase (P-154) layers are present, the report now shows:
+Added a comprehensive explanation of the **unbound aggregate sublayering procedure** to Section A of both report pipelines:
 
-- **Explanation note** — Why aggregate layers don't have a single fixed modulus and how FAARFIELD subdivides them into sublayers with depth-dependent moduli computed bottom-up.
-- **Mathematical formula** — The empirical sublayer modulus reduction formula: E_i = E_{i-1} × (f1 - f2), where f1 and f2 depend on sublayer thickness and the C/D coefficients.
-- **Parameters table** — C, D coefficients, modulus of layer below, and sublayer count for each aggregate type present (P-209: C=10.52, D=2.0; P-154: C=6.88, D=1.56).
-- **Sublayer detail tables** — Individual sublayer thickness and computed modulus, showing the modulus gradient from bottom to top, with the reference "layer below" modulus highlighted.
-- **Modulus-depth profile chart** — Visual step chart with left panel showing stacked layer bars (colored by type, aggregate layers shaded by modulus magnitude) and right panel showing the teal step-line tracing modulus at each depth. Aggregate sublayers highlighted with translucent fill.
-
-**Data model extensions** (`clsSublayerData` in `clsDetailedReportData.vb`):
-- `HasAggregateSublayers`, `BaseCoeffC`, `BaseCoeffD`, `SubbaseCoeffC`, `SubbaseCoeffD` — Sublayering formula coefficients.
-- `BaseModUnder`, `SubbaseModUnder` — Modulus of the layer below each aggregate layer.
-- `BaseSublayerCount`, `SubbaseSublayerCount` — Number of sublayers per aggregate type.
-- `BaseSublayers`, `SubbaseSublayers` — `List(Of clsLayerInfo)` with individual sublayer thickness/modulus.
+- Explanation of why aggregate layers require sublayering and depth-dependent moduli
+- Mathematical formula: E_i = E_{i-1} × (f1 - f2)
+- Parameters table with C, D coefficients per aggregate type (P-209: C=10.52, D=2.0; P-154: C=6.88, D=1.56)
+- Sublayer detail tables showing the modulus gradient
+- Modulus-depth profile chart (step chart with stacked layer bars)
 
 **Files modified:**
-- `FaarFieldAnalysis/clsDetailedReportData.vb` — Extended `clsSublayerData` with 10 new fields for sublayering parameters and per-sublayer data.
-- `FaarFieldAnalysis/modStrDesignFlex.vb` — Populated sublayering parameters (C, D, ModUnder, sublayer lists) from `BaseMod()`, `SubbaseMod()`, `TSS_P209()`, `TSS_P154()` during report data capture.
-- `FF2/ViewModels/MainWindowViewModel.vb` — Added `DrawModulusDepthProfile()` (850×500 GDI+, 2x supersampling). Inserted explanation, formula, parameter tables, sublayer detail tables, and chart in Section A of the PDF report.
-- `FF2/Libs/HtmlReportGenerator.vb` — Added `AppendSublayerModulusSection()`, `AppendModulusDepthSVG()`, `SvgDepthToY()`, `SvgModToX()`, `IsAggregateSublayer()`, `Fmt()`. Inserted explanation, formula, parameter tables, sublayer detail tables, and SVG chart in Section A of the HTML report. Added CSS for `.sublayer-modulus-section`, `.modulus-depth-svg`, `.sublayer-main-eq`, `.sublayer-detail`, `.ref-row`, `.mod-label`, `.fig-caption`.
+- `FaarFieldAnalysis/clsDetailedReportData.vb` — Extended `clsSublayerData` with 10 new fields.
+- `FaarFieldAnalysis/modStrDesignFlex.vb` — Populated sublayering parameters during data capture.
+- `FF2/ViewModels/MainWindowViewModel.vb` — Added `DrawModulusDepthProfile()` and Section A content.
+- `FF2/Libs/HtmlReportGenerator.vb` — Added `AppendSublayerModulusSection()`, `AppendModulusDepthSVG()`, and related helpers.
+
+---
 
 ### 9. Gross weight guardrail override
 
-Changed the gross weight validation in `FaarFieldModel/AirplaneInfo.vb` (line ~505) from a hard block to a user-overridable warning. Previously, entering a gross taxi weight outside the 0.6×–1.25× default range triggered a `MessageBox.Show` that silently reverted the value. Now the dialog shows:
-
-- The allowed range (min/max in both lb and kg)
-- The entered value that is out of range
-- **Yes** to override the limit and continue with the entered value (for research purposes)
-- **No** to revert to the previous value
+Changed the gross weight validation in `FaarFieldModel/AirplaneInfo.vb` from a hard block to a user-overridable warning. The dialog now shows the allowed range and offers **Yes** (override for research) / **No** (revert to previous value).
 
 **Files modified:**
-- `FaarFieldModel/AirplaneInfo.vb` — Replaced two `MessageBox.Show` + hard revert blocks with a single `MessageBoxButtons.YesNo` dialog that allows the user to proceed.
+- `FaarFieldModel/AirplaneInfo.vb` — Replaced `MessageBox.Show` + hard revert with `MessageBoxButtons.YesNo` dialog.
 
 ---
 
 ### 10. Asphalt (HMA) CDF documentation in CM Report
 
-Added asphalt layer fatigue characterization to both the PDF (GDI+) and HTML (SVG) CM Report pipelines. FAARFIELD computes asphalt CDF in parallel with subgrade CDF using horizontal tensile strain at the bottom of the HMA layer. Two fatigue models are supported:
+Added asphalt layer fatigue characterization to both report pipelines. Two fatigue models:
 
-- **RDEC model** — Rate of Dissipated Energy Change: `PV = 44.422 × ε^5.14 × (E×0.0068948)^2.993 × VP^1.85 × GP^(-0.4063)`; `N_fail = 0.4801 × PV^(-0.90074)`. Uses mix-specific volumetric and gradation parameters (air voids, asphalt content, PNMS, PPCS, P200).
-- **AI model** — Asphalt Institute: `AA = 2.68 - 5.0×log10(ε)`; `BB = 2.665×log10(E_asp)`; `N_fail = 10^(AA-BB)`.
+- **RDEC model** — Rate of Dissipated Energy Change with mix-specific volumetric parameters.
+- **AI model** — Asphalt Institute simplified model.
 
-The report now includes in Section D (Fatigue Characterization):
-- RDEC or AI equation rendering (bitmap in PDF, styled HTML in browser report)
-- RDEC mix parameters table (flexural modulus, air voids, asphalt content, void/gradation parameters)
-- Per-aircraft asphalt CDF table (HMA strain, N_fail_HMA, CDF_HMA vs CDF_Subgrade, governing indicator)
-- CDF comparison summary (total asphalt CDF vs total subgrade CDF with governing mode)
-- Explanatory note on the role of asphalt CDF in the design process
-
-**Data model extensions** (`FaarFieldAnalysis/clsDetailedReportData.vb`):
-- `clsDetailedReportData`: `AsphaltCDFTotal`, `AsphaltCDFComputed`, `AsphaltModel`, RDEC parameters (`RdecFlexuralMod`, `RdecAirVoids`, `RdecAsphaltContent`, `RdecVoidParameter`, `RdecPNMS`, `RdecPPCS`, `RdecP200`, `RdecGradationParameter`)
-- `clsAircraftDetail`: `AsphaltCDF`, `AsphaltNtoFail`, `AsphaltStrain`
-
-**Data capture** (`FaarFieldAnalysis/modStrDesignFlex.vb`):
-- Per-aircraft asphalt N_fail and strain captured immediately after `LeafCDFFlex` with `Overflow=False` (before subgrade computation overwrites `gNtoFail()`)
-- Section-level CDFAsp total and RDEC parameters captured at the report data finalization point
+The report now includes in Section D: equation rendering, RDEC mix parameters table, per-aircraft asphalt CDF table, and CDF comparison summary (subgrade vs. asphalt, with governing mode indicator).
 
 **Files modified:**
-- `FaarFieldAnalysis/clsDetailedReportData.vb` — Added 11 section-level and 3 per-aircraft fields
-- `FaarFieldAnalysis/modStrDesignFlex.vb` — Added asphalt data capture at two pipeline stages
-- `FF2/ViewModels/MainWindowViewModel.vb` — Added D.2 Asphalt (HMA) Layer Fatigue subsection in Section D
-- `FF2/Libs/HtmlReportGenerator.vb` — Added D.2 subsection with equation cards, RDEC parameters table, per-aircraft CDF table, CDF comparison cards, and new CSS classes
+- `FaarFieldAnalysis/clsDetailedReportData.vb` — Added 11 section-level and 3 per-aircraft fields.
+- `FaarFieldAnalysis/modStrDesignFlex.vb` — Added asphalt data capture at two pipeline stages.
+- `FF2/ViewModels/MainWindowViewModel.vb` — Added D.2 Asphalt subsection in Section D.
+- `FF2/Libs/HtmlReportGenerator.vb` — Added D.2 subsection with equation cards, tables, and CSS.
 
 ---
 
 ### 11. High-quality vector PDF export
 
-Rerouted the CM Report PDF export from the GDI+ bitmap pipeline to the SVG-based HTML pipeline (`HtmlReportGenerator.Generate()`). Previously, "Save As PDF" rendered all charts as raster bitmaps (GDI+ → base64 PNG → SelectPdf), producing blurry charts especially at zoom. Now the PDF is generated from the same HTML/SVG source as "Open in Browser", giving:
+Rerouted the CM Report PDF export from the GDI+ bitmap pipeline to the SVG-based HTML pipeline (`HtmlReportGenerator.Generate()`). The PDF now contains vector SVG charts instead of raster bitmaps.
 
-- **Vector SVG charts** — infinitely sharp at any zoom level, no pixelation
-- **Native HTML text** — crisp labels and annotations instead of text-rendered-to-pixels
-- **Consistent output** — PDF and HTML reports are now identical in content and visual quality
-
-Additional improvements for all report types:
-- Increased SelectPdf web page width from 1024px to 1400px for higher-fidelity rendering of all reports (Summary, Structure, CDF Graph, PCR, etc.)
-- Enhanced print/PDF media queries: `page-break-inside: avoid` on figures, tables, equations, CDF comparison cards; `shape-rendering: geometricPrecision` on SVGs; `color-adjust: exact` for backgrounds
+Additional improvements:
+- Increased SelectPdf web page width from 1024px to 1400px for all other report types.
+- Enhanced print/PDF media queries for background preservation and page-break control.
 
 **Files modified:**
-- `FF2/ViewModels/MainWindowViewModel.vb` — `SectionReportCreatePdf()`: CM Report now calls `HtmlReportGenerator.Generate()` instead of `refreshDetailedReport()`
-- `FF2/Libs/HtmlUtils.vb` — `HtmltoPdf()`: web page width 1024→1400
-- `FF2/Libs/HtmlReportGenerator.vb` — Enhanced `@media print` CSS rules for PDF optimization
+- `FF2/ViewModels/MainWindowViewModel.vb` — CM Report PDF now calls `HtmlReportGenerator.Generate()`.
+- `FF2/Libs/HtmlUtils.vb` — `HtmltoPdf()`: web page width 1024→1400.
+- `FF2/Libs/HtmlReportGenerator.vb` — Enhanced `@media print` CSS rules.
 
 ---
 
@@ -714,41 +915,164 @@ Additional improvements for all report types:
 
 Improved visual quality and PDF rendering fidelity across all 7 report types.
 
-**CM Report (SVG pipeline fix + polish):**
-- Added explicit `width`/`height` attributes to all 12 SVG elements in the HTML report. SelectPdf's WebKit engine cannot infer dimensions from `viewBox` alone, causing SVGs to render as ~50px thumbnails in PDF. With explicit dimensions, SVGs render at full size in PDF while CSS `width:100%; max-width` keeps them responsive in the browser.
-- Changed dashboard CSS from `grid-template-columns: repeat(auto-fit, ...)` to `display: flex; flex-wrap: wrap` for SelectPdf WebKit compatibility.
-- Added `<title>` child elements to all SVG charts for browser tooltip accessibility.
-- Added consistent `#FAFBFC` plot-area backgrounds to Life Ratio and CDF Contribution bar charts.
-- Added CSS hover interactivity on chart data points and bars (`.chart-svg circle:hover`, `.chart-svg rect.bar:hover`).
-- Enhanced print media queries: `page-break-inside: avoid` on `svg` and `figure` elements.
+**CM Report (SVG pipeline):**
+- Added explicit `width`/`height` attributes to all SVG elements (SelectPdf's WebKit cannot infer from `viewBox` alone).
+- Changed dashboard CSS from CSS Grid to flexbox for SelectPdf compatibility.
+- Added `<title>` child elements to SVGs for accessibility.
+- Added plot-area backgrounds and CSS hover interactivity.
 
-**CDF Graph report:**
-- Re-enabled Y-axis gridlines (were commented out).
-- Changed chart rendering from 96 DPI to 192 DPI (2x supersampling) for crisper text and lines.
-- Changed image encoding from BMP to PNG (smaller file size, alpha channel support).
-- Added descriptive chart caption below the graph.
-
-**PCR Graph report:**
-- Changed chart rendering from 96 DPI to 192 DPI (2x supersampling).
-- Changed image encoding from BMP to PNG.
-- Added descriptive chart caption below the graph.
+**CDF Graph & PCR Graph reports:**
+- 2x supersampling (96 DPI → 192 DPI).
+- BMP → PNG encoding (smaller files, alpha support).
+- Added descriptive chart captions.
 
 **Structure Report:**
-- Changed pavement profile bitmap encoding from BMP to PNG in `BitmapImage2Bitmap()`.
+- BMP → PNG encoding for pavement profile bitmaps.
 
-**All tabular reports (Summary, Structure, PCR, Airport Master Record):**
+**All tabular reports:**
 - Increased zebra-stripe contrast from `#F8F9FA` to `#EEF2F8` in `Reports.css`.
 
 **Files modified:**
-- `FF2/Libs/HtmlReportGenerator.vb` — SVG width/height attributes, `<title>` elements, dashboard flexbox, plot backgrounds, hover CSS, print CSS
-- `FF2/ViewModels/MainWindowViewModel.vb` — CDF/PCR graph 2x supersampling, BMP→PNG encoding (3 locations), chart captions, re-enabled gridlines
-- `FF2/Resources/Reports.css` — Improved table zebra-stripe contrast
+- `FF2/Libs/HtmlReportGenerator.vb` — SVG dimensions, dashboard flexbox, hover CSS, print CSS.
+- `FF2/ViewModels/MainWindowViewModel.vb` — 2x supersampling, BMP→PNG, chart captions, gridlines.
+- `FF2/Resources/Reports.css` — Improved table contrast.
+
+---
+
+### 13. CM Report PDF quality overhaul
+
+Addressed multiple quality issues that made the CM Report PDF difficult to read at printed size.
+
+> [!NOTE]
+> The root cause was a mismatch between the SelectPdf web page width (1400px) and the HTML body max-width (1100px), wasting 300px and scaling all content down to ~0.44pt per CSS pixel — making 9px SVG fonts render at an illegible ~4pt.
+
+**SelectPdf rendering settings** (`FF2/Libs/HtmlUtils.vb`):
+- `webPageWidth` 1400 → 1100, matching CSS `max-width`. New scale: 0.556pt per CSS-px (27% increase).
+- Added `CssMediaType = Screen` to prevent background-color stripping.
+
+**Table header visibility** — Hardcoded `#1a3c6e !important` with `print-color-adjust: exact` (CSS `var()` may not resolve in SelectPdf's WebKit).
+
+**Header metadata spacing** — Added `border-left` separator as fallback for CSS `gap` (not supported in SelectPdf's WebKit).
+
+**SVG font sizes** — All fonts below 10px increased to 10–14px range. Minimum font size rule: no SVG text below 10px.
+
+| CSS Class | Before | After |
+|-----------|--------|-------|
+| `.chart-svg .chart-title` | bold 12px | bold 14px |
+| `.chart-svg .axis-label` | 11px | 600 12px |
+| `.chart-svg .tick` | 9px | 10px |
+| `.chart-svg .label` | 10px | 11px |
+| `.chart-svg .legend-text` | 10px | 11px |
+
+**Stroke widths** — Grid lines 0.5 → 0.8; data curves 1.5 → 2.
+
+**CDF Y-axis** — Added `FmtCDFSvg()` helper: values ≥ 0.001 use fixed notation; smaller values use scientific notation with SVG `<tspan>` superscripts.
+
+**Page breaks** — Each aircraft section starts on a new page; sub-elements (figures, tables) use `break-inside: avoid`.
+
+**Chart left margins** — Increased by 10–15px across CDF and gear config charts.
+
+**Files modified:**
+- `FF2/Libs/HtmlUtils.vb` — webPageWidth 1400→1100, CssMediaType=Screen.
+- `FF2/Libs/HtmlReportGenerator.vb` — CSS overhaul, inline font sizes, stroke widths, FmtCDFSvg(), margins.
+
+---
+
+### 14. Build warning cleanup
+
+Fixed 8 pre-existing compiler warnings that represented potential runtime risks. No functional behavior was changed.
+
+**Uninitialized variable warnings (BC42104):**
+- `MainWindowViewModel.vb` — `FrostDepthReading` given explicit `= Nothing` initializer.
+- `RunAnalysis.vb` — `S1`–`S5` split into individual declarations with `= ""` initializers.
+
+**Function missing return on all paths (BC42105):**
+- `ThicknessConverter.vb` — Added `Return ""` for unset `DimensionalProperty`.
+- `AircraftLibrary.vb` — Added `Return Nothing` when save dialog is canceled.
+- `MainWindowViewModel.vb` — `PCRReportPage()` empty stub given `Return Nothing`.
+
+**Duplicate XML doc comment (BC42305):**
+- `MainWindowViewModel.vb` — Removed stale duplicate `''' <summary>` block.
+
+> [!NOTE]
+> **Intentionally not fixed** (low risk, no runtime impact):
+> - BC42024 — Unused local variables (dead code)
+> - BC42105 — Anonymous `Function` lambdas in `InvokeAsync` (return value discarded by dispatcher)
+> - MSB3270/MSB3187 — Processor architecture mismatch (works at runtime targeting x86)
+
+**Files modified:**
+- `FF2/ViewModels/MainWindowViewModel.vb`
+- `FF2/Models/RunAnalysis.vb`
+- `FF2/Converters/ThicknessConverter.vb`
+- `FF2/Libs/AircraftLibrary.vb`
+
+---
+
+### 15. UI/UX modernization (41 improvements)
+
+Comprehensive visual and interaction refresh of the WPF interface, guided by a 48-item audit (`UI_UX_Audit.md`). All changes are in the presentation layer — no computational code was modified.
+
+**Theme system** (`FF2/Themes/ModernTheme.xaml`):
+- 16 named `SolidColorBrush` resources (FAA Blue palette, grays, semantic colors).
+- Implicit styles for `Button` (rounded, animated hover/press), `TextBox` (animated focus border), `DataGridRow` (animated hover + selection), `DataGridColumnHeader` (blue header), `GroupBox` (14pt SemiBold header, 2px left blue accent border via ControlTemplate), `Label` (secondary text).
+- Keyed styles: `PrimaryButton` (blue bg, white text, animated), `WatermarkTextBox` (placeholder via Tag), `NumericCellStyle` (right-aligned), `ToolbarShadowBorder`, `AnimatedPaneStyle`.
+- 4 typography heading styles (`TypeHeadingLarge`/`Medium`/`Small`/`Title`).
+
+**MainWindow.xaml changes:**
+- Replaced all hardcoded colors (`WhiteSmoke`, `Blue`, `DarkGray`, `White`, `Black`, `Red`, `Gray`, `#e6e6e6`) with `StaticResource` references.
+- Keyboard shortcuts: `Ctrl+N` (new), `Ctrl+O` (open), `Ctrl+S` (save), `F1` (help).
+- Status bar at bottom with job name, structure name, analysis type.
+- Traffic DataGrid: `FrozenColumnCount="1"`, `AlternatingRowBackground`, `NumericCellStyle` on 12 numeric columns, `Width="Auto"` with `MinWidth` for numeric columns.
+- Explorer/Material `RadTreeView`: hover + selection backgrounds, padding, Unicode node icons via `TreeNodeIconConverter`.
+- Aircraft and material filter `TextBox` fields with watermark placeholders and live filtering.
+- Toolbar group labels ("AIRCRAFT", "BATCH") in 9pt SemiBold secondary color.
+- `PrimaryButton` style on Run button.
+- `DropShadowEffect` on cross-section panel.
+- Progress banner with color-coded states (blue=running, green=success, amber=warning, red=failure) and left accent border.
+- Toast notification overlay (auto-dismissing) for save/export actions.
+
+**GDI+ rendering** (`FF2/Libs/ModuleDrawProfile.vb`):
+- Anti-aliasing, ClearTypeGridFit, HighQualityBicubic rendering.
+- `MeasureString`-sized semi-transparent label boxes (replaced fixed-width green).
+- Design layer highlight: FAA blue (replaced bright green), width 8 → 6.
+- Dotted grid lines at tick intervals.
+- Axis label font: 7.5pt → 9.0pt.
+- Legend: bottom-right with rounded rectangle background, dynamic sizing.
+- Gear badge: pill-shape using `GraphicsPath` arcs.
+
+**ViewModel** (`FF2/ViewModels/MainWindowViewModel.vb`):
+- Aircraft filter: `AircraftFilterText` property with `ApplyAircraftFilter()`.
+- Material filter: `MaterialFilterText` property with `ApplyMaterialFilter()` and category auto-expand.
+- Toast notification: `ShowToast()` with auto-dismiss via `DispatcherTimer`, success/error styles.
+- Progress states: `ShowProgressFailed()` for red error banner.
+
+**DPI awareness** (`FF2/My Project/app.manifest`):
+- `PerMonitorV2` DPI awareness enabled.
+- Windows 10 `supportedOS` declared.
+
+**Files added:**
+- `FF2/Themes/ModernTheme.xaml` — Central theme resource dictionary.
+- `FF2/Converters/TreeNodeIconConverter.vb` — Maps ViewModel types to Unicode icon characters.
+
+**Files modified:**
+- `FF2/Views/MainWindow.xaml` — All visual changes listed above.
+- `FF2/ViewModels/MainWindowViewModel.vb` — Filter, toast, progress properties.
+- `FF2/Libs/ModuleDrawProfile.vb` — GDI+ rendering improvements.
+- `FF2/Application.xaml` — Theme dictionary merge, converter registration, window font.
+- `FF2/My Project/app.manifest` — DPI and OS compatibility.
+- `FF2/FF2.vbproj` — New file references.
 
 ---
 
 ## Backlog — Engineering reasonableness guardrails to review
 
-The original FAARFIELD code contains numerous hard-coded limits and engineering reasonableness checks. As the codebase is customized, each of these assumptions should be reviewed to determine whether it should be retained, relaxed, or made configurable. The list below catalogues every guardrail identified in the source.
+The original FAARFIELD code contains numerous hard-coded limits and engineering reasonableness checks. As the codebase is customized, each of these assumptions should be reviewed to determine whether it should be retained, relaxed, or made configurable.
+
+> [!TIP]
+> Each item should be evaluated for one of three dispositions:
+> 1. **Retain** — The limit reflects a genuine physical or regulatory constraint. Document the citation.
+> 2. **Make configurable** — Reasonable but should be user-adjustable for research. Move to a settings panel.
+> 3. **Remove** — A legacy software constraint with no engineering basis.
 
 ### Input validation limits
 
@@ -871,12 +1195,4 @@ These are fixed grid sizes in the LEAF/CDF solver, not strictly "guardrails" but
 
 | # | Parameter | Range | Location | Notes |
 |---|-----------|-------|----------|-------|
-| 48 | Gross weight | 0.6×–1.25× default weight | `AirplaneInfo.vb` ~L492 | Dynamic per-aircraft |
-
-### How to use this list
-
-Each item above should be evaluated for one of three dispositions:
-
-1. **Retain** — The limit reflects a genuine physical or regulatory constraint (e.g., AC 150/5320-6 requirements). Document the citation.
-2. **Make configurable** — The limit is reasonable but should be user-adjustable for research or non-standard applications. Move to a settings/options panel.
-3. **Remove** — The limit was a legacy software constraint (e.g., array sizing) with no engineering basis and can be eliminated.
+| 48 | Gross weight | 0.6×–1.25× default weight | `AirplaneInfo.vb` ~L492 | Dynamic per-aircraft; now overridable (see [Modification 9](#9-gross-weight-guardrail-override)) |

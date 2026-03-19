@@ -69,10 +69,15 @@ Namespace ViewModels
                     OnPropertyChanged(NameOf(IsSelected))
                     If Value Then
                         Dim sectionview = CType(Parent, SectionViewModel)
-                        FaarFieldViewModel.SetCurrentSection(sectionview)
-                        FaarFieldViewModel.CDFGraphIsHidden = True
+                        If FaarFieldViewModel.CurrentSectionView IsNot sectionview Then
+                            FaarFieldViewModel.SetCurrentSection(sectionview)
+                        End If
+                        Dim html = FaarFieldViewModel.refreshcdfgraph()
+                        If html <> FaarFieldViewModel.CDFGraphHtml Then
+                            FaarFieldViewModel.CDFGraphIsHidden = True
+                            FaarFieldViewModel.CDFGraphHtml = html
+                        End If
                         FaarFieldViewModel.CDFGraphIsHidden = False
-                        FaarFieldViewModel.CDFGraphHtml = FaarFieldViewModel.refreshcdfgraph()
                     End If
                 End If
             End Set

@@ -959,7 +959,11 @@ Public Class RunAnalysis
 
 
     Private Sub EndTask()
-        Dim S1, S2, S3, S4, S5 As String
+        Dim S1 As String = ""
+        Dim S2 As String = ""
+        Dim S3 As String = ""
+        Dim S4 As String = ""
+        Dim S5 As String = ""
         Dim finalCDF As Double
         Dim finalCDFHMA As Double
 

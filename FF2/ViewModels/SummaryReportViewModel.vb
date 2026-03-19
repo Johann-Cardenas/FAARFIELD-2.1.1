@@ -64,10 +64,15 @@ Namespace ViewModels
 
                     If Value Then
                         Dim jobview = CType(Parent, JobViewModel)
-                        ViewModel.SetCurrentJob(jobview)
-                        ViewModel.SummaryReportIsHidden = True
+                        If ViewModel.CurrentJobView IsNot jobview Then
+                            ViewModel.SetCurrentJob(jobview)
+                        End If
+                        Dim html = ViewModel.RefreshHtml()
+                        If html <> ViewModel.SummaryReportHtml Then
+                            ViewModel.SummaryReportIsHidden = True
+                            ViewModel.SummaryReportHtml = html
+                        End If
                         ViewModel.SummaryReportIsHidden = False
-                        ViewModel.SummaryReportHtml = ViewModel.RefreshHtml()
                     End If
                 End If
             End Set

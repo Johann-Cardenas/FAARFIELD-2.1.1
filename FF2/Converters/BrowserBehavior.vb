@@ -15,7 +15,13 @@
 
         Private Shared Sub OnHtmlChanged(ByVal dependencyObject As DependencyObject, ByVal e As DependencyPropertyChangedEventArgs)
             Dim webBrowser As WebBrowser = TryCast(dependencyObject, WebBrowser)
-            If webBrowser IsNot Nothing Then webBrowser.NavigateToString(If(TryCast(e.NewValue, String), "&nbsp;"))
+            If webBrowser IsNot Nothing Then
+                Dim newHtml = TryCast(e.NewValue, String)
+                Dim oldHtml = TryCast(e.OldValue, String)
+                If Not String.Equals(newHtml, oldHtml, StringComparison.Ordinal) Then
+                    webBrowser.NavigateToString(If(newHtml, "&nbsp;"))
+                End If
+            End If
         End Sub
     End Class
 End Namespace

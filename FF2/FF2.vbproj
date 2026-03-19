@@ -313,6 +313,7 @@
     <Compile Include="Utilities\ListBoxCopyDragDropBehavior.vb" />
     <Compile Include="Models\RunAnalysis.vb" />
     <Compile Include="Converters\BooleanToVisibilityConverter.vb" />
+    <Compile Include="Converters\TreeNodeIconConverter.vb" />
     <Compile Include="Utilities\DelegateCommand.vb" />
     <Compile Include="Utilities\EventToCommandBehavior.vb" />
     <Compile Include="Utilities\UpdateManager.vb" />

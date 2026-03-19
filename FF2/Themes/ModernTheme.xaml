@@ -5,9 +5,9 @@
     <!-- ============================================================ -->
     <!-- Color Palette                                                 -->
     <!-- ============================================================ -->
-    <SolidColorBrush x:Key="FaaPrimaryBlue"       Color="#2E5EA8"/>
-    <SolidColorBrush x:Key="FaaPrimaryBlueDark"   Color="#1E3F72"/>
-    <SolidColorBrush x:Key="FaaPrimaryBlueLight"  Color="#E8EEF7"/>
+    <SolidColorBrush x:Key="FaaPrimary"             Color="#00796B"/>
+    <SolidColorBrush x:Key="FaaPrimaryDark"         Color="#004D40"/>
+    <SolidColorBrush x:Key="FaaPrimaryLight"        Color="#E0F2F1"/>
     <SolidColorBrush x:Key="FaaBackgroundGray"    Color="#F5F6F8"/>
     <SolidColorBrush x:Key="FaaSurfaceWhite"      Color="#FFFFFF"/>
     <SolidColorBrush x:Key="FaaBorderGray"        Color="#D1D5DB"/>
@@ -16,8 +16,12 @@
     <SolidColorBrush x:Key="FaaTextSecondary"     Color="#6B7280"/>
     <SolidColorBrush x:Key="FaaValidationRed"     Color="#DC2626"/>
     <SolidColorBrush x:Key="FaaHoverGray"         Color="#F0F1F3"/>
-    <SolidColorBrush x:Key="FaaFocusBorder"       Color="#6B8DC7"/>
+    <SolidColorBrush x:Key="FaaFocusBorder"       Color="#4DB6AC"/>
     <SolidColorBrush x:Key="FaaToolbarBg"         Color="#FAFBFC"/>
+    <SolidColorBrush x:Key="FaaSurfaceOffWhite"   Color="#FAFAFA"/>
+    <SolidColorBrush x:Key="FaaAlternatingRow"     Color="#F9FAFB"/>
+    <SolidColorBrush x:Key="FaaDisabledGray"       Color="#E6E6E6"/>
+    <SolidColorBrush x:Key="FaaErrorRed"           Color="#DC2626"/>
 
     <!-- Easing function for animations -->
     <QuadraticEase x:Key="EaseOut" EasingMode="EaseOut"/>
@@ -137,7 +141,7 @@
                     <BeginStoryboard>
                         <Storyboard>
                             <ColorAnimation Storyboard.TargetProperty="(TextBox.BorderBrush).(SolidColorBrush.Color)"
-                                            To="#6B8DC7" Duration="0:0:0.2"
+                                            To="#4DB6AC" Duration="0:0:0.2"
                                             EasingFunction="{StaticResource EaseOut}"/>
                         </Storyboard>
                     </BeginStoryboard>
@@ -153,6 +157,46 @@
                 </Trigger.ExitActions>
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- Watermark TextBox (keyed style for filter/search fields)      -->
+    <!-- ============================================================ -->
+    <Style x:Key="WatermarkTextBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Grid>
+                        <Border x:Name="WmBorder"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Background="{TemplateBinding Background}"
+                                SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="1"/>
+                        </Border>
+                        <TextBlock x:Name="Watermark"
+                                   Text="{TemplateBinding Tag}"
+                                   Foreground="{StaticResource FaaTextSecondary}"
+                                   Opacity="0.6"
+                                   Margin="6,3,0,0"
+                                   IsHitTestVisible="False"
+                                   Visibility="Collapsed"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Text" Value=""/>
+                                <Condition Property="IsFocused" Value="False"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Watermark" Property="Visibility" Value="Visible"/>
+                        </MultiTrigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="WmBorder" Property="BorderBrush" Value="{StaticResource FaaFocusBorder}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ============================================================ -->
@@ -182,7 +226,7 @@
                 </Trigger.ExitActions>
             </Trigger>
             <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="{StaticResource FaaPrimaryBlueLight}"/>
+                <Setter Property="Background" Value="{StaticResource FaaPrimaryLight}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -191,7 +235,7 @@
     <!-- DataGridColumnHeader Style (implicit)                         -->
     <!-- ============================================================ -->
     <Style TargetType="DataGridColumnHeader">
-        <Setter Property="Background"  Value="{StaticResource FaaPrimaryBlue}"/>
+        <Setter Property="Background"  Value="{StaticResource FaaPrimary}"/>
         <Setter Property="Foreground"  Value="White"/>
         <Setter Property="Padding"     Value="6,8"/>
         <Setter Property="FontWeight"  Value="SemiBold"/>
@@ -203,7 +247,7 @@
     <!-- ============================================================ -->
     <!-- RadPane Fade-In (keyed style)                                 -->
     <!-- ============================================================ -->
-    <Style x:Key="AnimatedPaneStyle" TargetType="telerik:RadPane">
+    <Style x:Key="AnimatedPaneStyle" TargetType="telerik:RadPane" BasedOn="{StaticResource {x:Type telerik:RadPane}}">
         <Style.Triggers>
             <EventTrigger RoutedEvent="Loaded">
                 <BeginStoryboard>
@@ -218,13 +262,53 @@
     </Style>
 
     <!-- ============================================================ -->
-    <!-- GroupBox Refinement (implicit)                                 -->
+    <!-- GroupBox Refinement (implicit) — left accent border            -->
     <!-- ============================================================ -->
     <Style TargetType="GroupBox">
         <Setter Property="BorderBrush" Value="{StaticResource FaaBorderGray}"/>
         <Setter Property="Padding"     Value="8"/>
-        <Setter Property="Foreground"  Value="{StaticResource FaaPrimaryBlue}"/>
+        <Setter Property="Foreground"  Value="{StaticResource FaaPrimary}"/>
         <Setter Property="FontFamily"  Value="Segoe UI"/>
+        <Setter Property="HeaderTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{StaticResource FaaPrimary}"
+                               Margin="0,0,0,4"/>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GroupBox">
+                    <Grid SnapsToDevicePixels="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <!-- Header -->
+                        <ContentPresenter Grid.Row="0"
+                                          ContentSource="Header"
+                                          ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                          Margin="10,4,0,0"/>
+                        <!-- Content area with left accent -->
+                        <Border Grid.Row="1"
+                                BorderBrush="{StaticResource FaaBorderGray}"
+                                BorderThickness="1"
+                                CornerRadius="0,3,3,0"
+                                Margin="0,4,0,0"
+                                Background="{TemplateBinding Background}">
+                            <Border BorderBrush="{StaticResource FaaPrimary}"
+                                    BorderThickness="2,0,0,0"
+                                    CornerRadius="0"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter ContentSource="Content"/>
+                            </Border>
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ============================================================ -->
@@ -250,6 +334,175 @@
                                   Color="Black"/>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- Right-Aligned Numeric Cell Style (keyed)                      -->
+    <!-- ============================================================ -->
+    <Style x:Key="NumericCellStyle" TargetType="TextBlock">
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="Padding" Value="4,0"/>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- Primary Action Button Style (keyed)                           -->
+    <!-- ============================================================ -->
+    <Style x:Key="PrimaryButton" TargetType="Button">
+        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="FontSize"   Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Padding"    Value="12,6"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="PrimaryBd" CornerRadius="3"
+                            Background="{StaticResource FaaPrimary}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          RecognizesAccessKey="True"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="PrimaryBd"
+                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                        To="#004D40" Duration="0:0:0.15"
+                                                        EasingFunction="{StaticResource EaseOut}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="PrimaryBd"
+                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                        To="#00796B" Duration="0:0:0.15"
+                                                        EasingFunction="{StaticResource EaseOut}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="PrimaryBd"
+                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                        To="#00332B" Duration="0:0:0.1"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="PrimaryBd"
+                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                        To="#00796B" Duration="0:0:0.1"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PrimaryBd" Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- DataGrid Style (implicit)                                    -->
+    <!-- ============================================================ -->
+    <Style TargetType="DataGrid">
+        <Setter Property="GridLinesVisibility"       Value="All"/>
+        <Setter Property="HorizontalGridLinesBrush"  Value="{StaticResource FaaBorderGrayLight}"/>
+        <Setter Property="VerticalGridLinesBrush"     Value="{StaticResource FaaBorderGrayLight}"/>
+        <Setter Property="AlternatingRowBackground"   Value="{StaticResource FaaAlternatingRow}"/>
+        <Setter Property="MinRowHeight"               Value="26"/>
+        <Setter Property="ColumnHeaderHeight"         Value="36"/>
+        <Setter Property="BorderBrush"                Value="{StaticResource FaaBorderGray}"/>
+        <Setter Property="BorderThickness"            Value="1"/>
+        <Setter Property="Background"                 Value="{StaticResource FaaSurfaceWhite}"/>
+        <Setter Property="CanUserResizeRows"          Value="False"/>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- DataGridCell Style (implicit)                                -->
+    <!-- ============================================================ -->
+    <Style TargetType="DataGridCell">
+        <Setter Property="Padding"                    Value="4,2"/>
+        <Setter Property="VerticalContentAlignment"   Value="Center"/>
+        <Setter Property="BorderBrush"                Value="Transparent"/>
+        <Setter Property="FocusVisualStyle"           Value="{x:Null}"/>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{StaticResource FaaPrimaryLight}"/>
+                <Setter Property="Foreground" Value="{StaticResource FaaTextPrimary}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- Wrapping Column Header (keyed)                               -->
+    <!-- ============================================================ -->
+    <Style x:Key="WrappingColumnHeader" TargetType="DataGridColumnHeader"
+           BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <TextBlock TextWrapping="Wrap" Text="{Binding}" ToolTip="{Binding}"/>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- RadToolBar Style (implicit)                                  -->
+    <!-- ============================================================ -->
+    <Style TargetType="telerik:RadToolBar">
+        <Setter Property="MinHeight"        Value="40"/>
+        <Setter Property="Background"       Value="{StaticResource FaaToolbarBg}"/>
+        <Setter Property="BorderBrush"      Value="{StaticResource FaaBorderGrayLight}"/>
+        <Setter Property="BorderThickness"  Value="0,0,0,1"/>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- RadToolBarSeparator Style (implicit)                         -->
+    <!-- ============================================================ -->
+    <Style TargetType="telerik:RadToolBarSeparator">
+        <Setter Property="Width"      Value="1"/>
+        <Setter Property="Margin"     Value="4,6"/>
+        <Setter Property="Background" Value="{StaticResource FaaBorderGray}"/>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- ComboBox Style (implicit)                                    -->
+    <!-- ============================================================ -->
+    <Style TargetType="ComboBox">
+        <Setter Property="FontFamily"     Value="Segoe UI"/>
+        <Setter Property="FontSize"       Value="13"/>
+        <Setter Property="Padding"        Value="4,3"/>
+        <Setter Property="BorderBrush"    Value="{StaticResource FaaBorderGray}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource FaaFocusBorder}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- CheckBox Style (implicit)                                    -->
+    <!-- ============================================================ -->
+    <Style TargetType="CheckBox">
+        <Setter Property="FontFamily"               Value="Segoe UI"/>
+        <Setter Property="FontSize"                  Value="13"/>
+        <Setter Property="Foreground"                Value="{StaticResource FaaTextPrimary}"/>
+        <Setter Property="VerticalContentAlignment"  Value="Center"/>
     </Style>
 
 </ResourceDictionary>

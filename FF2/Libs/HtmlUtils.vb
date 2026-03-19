@@ -163,6 +163,7 @@ Namespace Libs
 
                 html = html & "<html>"
                 html = html & "<head>"
+                html = html & "<meta http-equiv='X-UA-Compatible' content='IE=edge'>"
                 html = html & "<meta charset='UTF-8'>"
                 html = html & "<title>"
                 html = html & reportname
@@ -212,7 +213,7 @@ Namespace Libs
                         [Enum].Parse(GetType(PdfPageOrientation),
                         pdf_orientation, True), PdfPageOrientation)
 
-                Dim webPageWidth As Integer = 1400
+                Dim webPageWidth As Integer = 1100
 
                 Dim webPageHeight As Integer = 0
 
@@ -224,6 +225,7 @@ Namespace Libs
                 converter.Options.PdfPageOrientation = pdfOrientation
                 converter.Options.WebPageWidth = webPageWidth
                 converter.Options.WebPageHeight = webPageHeight
+                converter.Options.CssMediaType = HtmlToPdfCssMediaType.Screen
                 converter.Options.KeepImagesTogether = True
                 converter.Options.MarginTop = 36
                 converter.Options.MarginBottom = 18
