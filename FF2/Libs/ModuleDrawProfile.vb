@@ -117,12 +117,12 @@ Namespace Libs
             Dim toY = Function(val As Single) cy - val * scaleRatio * ScaledPictureBox
 
             ' ── Fonts ──
-            Dim titleFont As New Font("Segoe UI", 9.0F, FontStyle.Bold)
-            Dim subtitleFont As New Font("Segoe UI", 7.5F)
-            Dim tickFont As New Font("Segoe UI", 8.0F)
-            Dim labelFont As New Font("Segoe UI", 9.0F, FontStyle.Regular)
-            Dim coordFont As New Font("Consolas", 6.5F)
-            Dim badgeFont As New Font("Segoe UI", 7.0F, FontStyle.Bold)
+            Dim titleFont As New Font("Segoe UI", 11.0F, FontStyle.Bold)
+            Dim subtitleFont As New Font("Segoe UI", 9.0F)
+            Dim tickFont As New Font("Segoe UI", 10.0F)
+            Dim labelFont As New Font("Segoe UI", 11.0F, FontStyle.Regular)
+            Dim coordFont As New Font("Consolas", 8.0F)
+            Dim badgeFont As New Font("Segoe UI", 8.5F, FontStyle.Bold)
 
             ' ── Colors ──
             Dim teal As Color = Color.FromArgb(0, 121, 107)       ' #00796B
@@ -147,11 +147,11 @@ Namespace Libs
                 If px > 10 AndAlso px < W - 10 Then
                     Dim dotPen As New Pen(Color.FromArgb(50, gridColor.R, gridColor.G, gridColor.B), 0.5F)
                     dotPen.DashStyle = Drawing2D.DashStyle.Dot
-                    g.DrawLine(dotPen, px, 44, px, CSng(H - 20))
+                    g.DrawLine(dotPen, px, 48, px, CSng(H - 20))
                     dotPen.Dispose()
                 End If
                 ' Horizontal grid line
-                If py > 44 AndAlso py < H - 20 Then
+                If py > 48 AndAlso py < H - 20 Then
                     Dim dotPen As New Pen(Color.FromArgb(50, gridColor.R, gridColor.G, gridColor.B), 0.5F)
                     dotPen.DashStyle = Drawing2D.DashStyle.Dot
                     g.DrawLine(dotPen, 10, py, CSng(W - 10), py)
@@ -162,7 +162,7 @@ Namespace Libs
             ' ── Axes ──
             Dim axisPen As New Pen(axisColor, 1.2F)
             g.DrawLine(axisPen, 10, cy, CSng(W - 10), cy)    ' horizontal
-            g.DrawLine(axisPen, cx, 44, cx, CSng(H - 20))    ' vertical
+            g.DrawLine(axisPen, cx, 48, cx, CSng(H - 20))    ' vertical
 
             ' ── Grid lines + Tick marks and labels ──
             gridPen.DashStyle = Drawing2D.DashStyle.Dot
@@ -175,15 +175,15 @@ Namespace Libs
                 ' Horizontal axis ticks + vertical grid line
                 Dim px As Single = CSng(cx + i * scale * axisRatio / 5)
                 If px > 10 AndAlso px < W - 10 Then
-                    g.DrawLine(gridPen, px, 44, px, CSng(H - 20))
+                    g.DrawLine(gridPen, px, 48, px, CSng(H - 20))
                     g.DrawLine(axisPen, px, cy - 4, px, cy + 4)
                     Dim sz = g.MeasureString(dlabel, tickFont)
-                    g.DrawString(dlabel, tickFont, tickBrush, px - sz.Width / 2, cy + 6)
+                    g.DrawString(dlabel, tickFont, tickBrush, px - sz.Width / 2, cy + 7)
                 End If
 
                 ' Vertical axis ticks + horizontal grid line (note: Y is inverted so negate label)
                 Dim py As Single = CSng(cy + i * scale * axisRatio / 5)
-                If py > 44 AndAlso py < H - 20 Then
+                If py > 48 AndAlso py < H - 20 Then
                     g.DrawLine(gridPen, 10, py, CSng(W - 10), py)
                     g.DrawLine(axisPen, cx - 4, py, cx + 4, py)
                     Dim negD As Single = -d
@@ -195,17 +195,17 @@ Namespace Libs
 
             ' ── Axis unit labels ──
             Dim axUnitBrush As New SolidBrush(Color.FromArgb(140, 140, 135))
-            g.DrawString("Lateral (" & unitLabel & ")", labelFont, axUnitBrush, CSng(W - 100), cy - 18)
+            g.DrawString("Lateral (" & unitLabel & ")", labelFont, axUnitBrush, CSng(W - 120), cy - 18)
             Dim sfVert As New StringFormat()
             sfVert.FormatFlags = StringFormatFlags.DirectionVertical
-            g.DrawString("Longitudinal (" & unitLabel & ")", labelFont, axUnitBrush, cx - 20, 46, sfVert)
+            g.DrawString("Longitudinal (" & unitLabel & ")", labelFont, axUnitBrush, cx - 20, 52, sfVert)
             sfVert.Dispose()
 
             ' Origin marker
             g.FillEllipse(New SolidBrush(axisColor), cx - 2.5F, cy - 2.5F, 5, 5)
 
             ' ── Title bar (teal header band) ──
-            Dim headerRect As New RectangleF(0, 0, W, 38)
+            Dim headerRect As New RectangleF(0, 0, W, 44)
             Dim headerBrush As New Drawing2D.LinearGradientBrush(headerRect, Color.FromArgb(0, 77, 64), teal, Drawing2D.LinearGradientMode.Horizontal)
             g.FillRectangle(headerBrush, headerRect)
             g.DrawString(airplane.Name, titleFont, Brushes.White, 10, 5)
@@ -299,103 +299,6 @@ Namespace Libs
                 g.DrawEllipse(New Pen(evalColor, 0.8F), ex - 3, ey - 3, 6, 6)
             Next
 
-            ' ── Evaluation point coordinate readouts ──
-            If airplane.EvaluationPoints.Count > 0 Then
-                ' Precompute legend rectangle for collision detection
-                Dim lgItemCount As Integer = 2 + 1 ' tire right + mirror + eval points
-                Dim legendWidth As Single = 180
-                Dim legendHeight As Single = CSng(lgItemCount * 16 + 10)
-                Dim legendRectX As Single = CSng(W - legendWidth - 14)
-                Dim legendRectY As Single = CSng(H - legendHeight - 24)
-                Dim legendBounds As New RectangleF(legendRectX, legendRectY, legendWidth, legendHeight)
-
-                Dim readoutFont As New Font("Segoe UI", 9.0F, FontStyle.Bold)
-                Dim readoutBrush As New SolidBrush(evalColor)
-                Dim readoutBorderPen As New Pen(evalColor, 1.2F)
-                Dim readoutLinePen As New Pen(Color.FromArgb(100, evalColor.R, evalColor.G, evalColor.B), 1.0F)
-                Dim readoutFill As New SolidBrush(Color.FromArgb(235, 255, 255, 255))
-                Dim readoutShadow As New SolidBrush(Color.FromArgb(25, 0, 0, 0))
-                Dim rcr As Single = 4.0F  ' corner radius
-                Dim padH As Single = 6, padV As Single = 3
-
-                For Each ep In airplane.EvaluationPoints
-                    Dim epx As Single = toX(ep.X.UsCustomary)
-                    Dim epy As Single = toY(ep.Y.UsCustomary)
-
-                    ' Consolidated coordinate readout
-                    Dim epXVal As Single = ep.X.GetValue(measurementSystem)
-                    Dim epYVal As Single = ep.Y.GetValue(measurementSystem)
-                    Dim readoutText As String = "(" & Format(epXVal, "0") & ", " & Format(epYVal, "0") & ")"
-                    Dim textSize = g.MeasureString(readoutText, readoutFont)
-
-                    Dim boxW As Single = textSize.Width + padH * 2
-                    Dim boxH As Single = textSize.Height + padV * 2
-
-                    ' Default position: above-right of evaluation point
-                    Dim boxX As Single = epx + 12
-                    Dim boxY As Single = epy - boxH - 10
-
-                    ' Check boundary overflow
-                    If boxX + boxW > W - 10 Then boxX = epx - boxW - 12
-                    If boxY < 44 Then boxY = epy + 15
-                    If boxX < 10 Then boxX = 10
-
-                    ' Check legend collision
-                    Dim boxRect As New RectangleF(boxX, boxY, boxW, boxH)
-                    If boxRect.IntersectsWith(legendBounds) Then
-                        ' Try opposite horizontal side
-                        If boxX > epx Then
-                            boxX = epx - boxW - 12
-                        Else
-                            boxX = epx + 12
-                        End If
-                        boxRect = New RectangleF(boxX, boxY, boxW, boxH)
-                        ' If still collides, nudge above legend
-                        If boxRect.IntersectsWith(legendBounds) Then
-                            boxY = legendRectY - boxH - 5
-                            boxRect = New RectangleF(boxX, boxY, boxW, boxH)
-                        End If
-                    End If
-
-                    ' Draw connecting line from label to evaluation point
-                    Dim lineStartX As Single = If(boxX + boxW / 2 < epx, boxX + boxW, boxX)
-                    Dim lineStartY As Single = boxY + boxH / 2
-                    g.DrawLine(readoutLinePen, lineStartX, lineStartY, epx, epy)
-
-                    ' Draw drop shadow (1px offset)
-                    Using shadowPath As New Drawing2D.GraphicsPath()
-                        Dim shadowRect As New RectangleF(boxX + 1, boxY + 1, boxW, boxH)
-                        shadowPath.AddArc(shadowRect.X, shadowRect.Y, rcr * 2, rcr * 2, 180, 90)
-                        shadowPath.AddArc(shadowRect.Right - rcr * 2, shadowRect.Y, rcr * 2, rcr * 2, 270, 90)
-                        shadowPath.AddArc(shadowRect.Right - rcr * 2, shadowRect.Bottom - rcr * 2, rcr * 2, rcr * 2, 0, 90)
-                        shadowPath.AddArc(shadowRect.X, shadowRect.Bottom - rcr * 2, rcr * 2, rcr * 2, 90, 90)
-                        shadowPath.CloseFigure()
-                        g.FillPath(readoutShadow, shadowPath)
-                    End Using
-
-                    ' Draw rounded background and border
-                    Using readoutPath As New Drawing2D.GraphicsPath()
-                        Dim readoutRect As New RectangleF(boxX, boxY, boxW, boxH)
-                        readoutPath.AddArc(readoutRect.X, readoutRect.Y, rcr * 2, rcr * 2, 180, 90)
-                        readoutPath.AddArc(readoutRect.Right - rcr * 2, readoutRect.Y, rcr * 2, rcr * 2, 270, 90)
-                        readoutPath.AddArc(readoutRect.Right - rcr * 2, readoutRect.Bottom - rcr * 2, rcr * 2, rcr * 2, 0, 90)
-                        readoutPath.AddArc(readoutRect.X, readoutRect.Bottom - rcr * 2, rcr * 2, rcr * 2, 90, 90)
-                        readoutPath.CloseFigure()
-                        g.FillPath(readoutFill, readoutPath)
-                        g.DrawPath(readoutBorderPen, readoutPath)
-                    End Using
-
-                    ' Draw coordinate text
-                    g.DrawString(readoutText, readoutFont, readoutBrush, boxX + padH, boxY + padV)
-                Next
-
-                readoutFont.Dispose()
-                readoutBrush.Dispose()
-                readoutBorderPen.Dispose()
-                readoutLinePen.Dispose()
-                readoutFill.Dispose()
-                readoutShadow.Dispose()
-            End If
 
             ' ── Dimension annotations ──
             Dim dimPen As New Pen(Color.FromArgb(160, 160, 155), 0.8F)
@@ -442,11 +345,11 @@ Namespace Libs
             End If
 
             ' ── Legend (bottom-right, rounded box) ──
-            Dim lgFont As New Font("Segoe UI", 7.0F)
+            Dim lgFont As New Font("Segoe UI", 8.5F)
             Dim lgBrush As New SolidBrush(Color.FromArgb(100, 100, 95))
             Dim lgItems As Integer = 2 + If(airplane.EvaluationPoints.Count > 0, 1, 0)
-            Dim lgW As Single = 180
-            Dim lgH As Single = CSng(lgItems * 16 + 10)
+            Dim lgW As Single = 200
+            Dim lgH As Single = CSng(lgItems * 18 + 12)
             Dim lgX As Single = CSng(W - lgW - 14)
             Dim lgY As Single = CSng(H - lgH - 24)
 
@@ -470,12 +373,12 @@ Namespace Libs
             g.FillRectangle(New SolidBrush(wheelFill), lgRowX, lgRowY + 2, 10, 10)
             g.DrawRectangle(New Pen(wheelStroke, 0.8F), lgRowX, lgRowY + 2, 10, 10)
             g.DrawString("Tire imprint (right side)", lgFont, lgBrush, lgRowX + 14, lgRowY)
-            lgRowY += 16
+            lgRowY += 18
             g.FillRectangle(New SolidBrush(mirrorFill), lgRowX, lgRowY + 2, 10, 10)
             g.DrawRectangle(New Pen(mirrorStroke, 0.8F), lgRowX, lgRowY + 2, 10, 10)
             g.DrawString("Mirrored (left side)", lgFont, lgBrush, lgRowX + 14, lgRowY)
             If airplane.EvaluationPoints.Count > 0 Then
-                lgRowY += 16
+                lgRowY += 18
                 g.FillEllipse(New SolidBrush(evalColor), lgRowX + 2, lgRowY + 3, 6, 6)
                 g.DrawString("Evaluation points", lgFont, lgBrush, lgRowX + 14, lgRowY)
             End If
