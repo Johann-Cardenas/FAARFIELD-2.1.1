@@ -119,3 +119,5 @@ __pycache__/
 
 # Cursor / Claude (IDE-specific, not project source)
 .claude/
+
+.mcp.json
