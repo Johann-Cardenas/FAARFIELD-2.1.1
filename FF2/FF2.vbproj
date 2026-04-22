@@ -69,7 +69,7 @@
     <OptionInfer>On</OptionInfer>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Resources\BackC.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\FAA-Icon.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <TargetZone>LocalIntranet</TargetZone>
@@ -508,6 +508,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Resource Include="Resources\BackC.ico" />
+    <Resource Include="Resources\FAA-Icon.ico" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ACClassLib\ACClassLib.vbproj">

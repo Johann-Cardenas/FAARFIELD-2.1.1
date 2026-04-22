@@ -322,6 +322,28 @@ Targeted readability pass across report charts, embedded CSS, and the main WPF s
 
 ---
 
+#### Change 13: Application Icon Fix
+
+**Date:** 2026-04-22 | **Category:** UI (bug fix)
+
+Replaced the application icon with a proper multi-resolution file. The previous `<ApplicationIcon>` pointed at `Resources\BackC.ico`, a single 32×32 / 16-color frame; Windows had no high-res frame to pick from for taskbar (48 px), Alt+Tab, Start menu, or jump lists (all want 48 or 256 px), so the icon rendered pixelated and washed-out. Generated `FAA-Icon.ico` from the new `FAA-Icon.svg` source with seven PNG-compressed frames (16, 24, 32, 48, 64, 128, 256 px, 32-bit RGBA). Also set `Window.Icon` explicitly on `MainWindow.xaml` so the title-bar icon is no longer an implicit fallback.
+
+**Files added:**
+| File | Purpose |
+|------|---------|
+| `FF2/Resources/FAA-Icon.svg` | Vector source for the application icon |
+| `FF2/Resources/FAA-Icon.ico` | Multi-resolution .ico (7 frames) generated from the SVG |
+
+**Files modified:**
+| File | Change summary |
+|------|---------------|
+| `FF2/FF2.vbproj` | `<ApplicationIcon>` now points to `Resources\FAA-Icon.ico`; `FAA-Icon.ico` added as a WPF `<Resource>` |
+| `FF2/Views/MainWindow.xaml` | Added `Icon="/FF2;component/Resources/FAA-Icon.ico"` |
+
+**Computation impact:** None.
+
+---
+
 ## Summary: Files Changed vs. Original FAA Source
 
 **42 files changed** | **11,480 lines added** | **753 lines deleted**

@@ -12,6 +12,7 @@
         Height="768"
         Width="1265"
         WindowStartupLocation="CenterScreen"
+        Icon="/FF2;component/Resources/FAA-Icon.ico"
         Title="{Binding MainWindowTitle}"
         WindowState="{Binding WindowState, Mode=TwoWay}"
         DataContext="{StaticResource MainWindowViewModel}">
