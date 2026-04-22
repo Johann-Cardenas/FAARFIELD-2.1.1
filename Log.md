@@ -302,6 +302,26 @@ Fixed 8 pre-existing compiler warnings representing potential runtime risks. No 
 
 ---
 
+#### Change 12: Report & UI Readability Pass
+
+**Date:** 2026-04-14 | **Commit:** `b8dfcb7` | **Category:** UI / Report (enhancement)
+
+Targeted readability pass across report charts, embedded CSS, and the main WPF shell. Font sizes bumped uniformly (chart titles 10→11 pt, axis labels 8.5→9.5 pt, legends 7→8 pt, concept-diagram headings 8→9 pt); `.detailed-table` and dashboard-card spacing increased; color swatches enlarged with a hairline border. Several hardcoded hex colors in the primary view were replaced with theme tokens (`FaaPrimaryLight`, `FaaBorderGrayLight`, `FaaBackgroundGray`, `FaaTextPrimary`). Added implicit `ToolTip` and `Separator` styles to `ModernTheme.xaml`. Enlarged the Run button, design-layer selection buttons, and the analysis progress bar for better hit targets.
+
+**Files modified:**
+| File | Change summary |
+|------|---------------|
+| `FF2/ViewModels/MainWindowViewModel.vb` | Standardized chart font sizes across all 13 `Draw*` functions; unified annotation/legend sizing |
+| `FF2/Libs/HtmlReportGenerator.vb` | SVG font-size alignment matching the GDI+ pipeline for consistent report output |
+| `FF2/Resources/Reports.css` | Increased `.detailed-table` padding and font; larger color swatches with border; dashboard-card label size bump; refined chart-caption color |
+| `FF2/Themes/ModernTheme.xaml` | Added implicit `ToolTip` style (rounded, drop shadow) and `Separator` style; bumped `DataGrid` row/header heights and cell padding |
+| `FF2/Views/MainWindow.xaml` | Replaced hardcoded colors with theme tokens; enlarged Run button and design-layer buttons; bumped toolbar label and progress bar sizes |
+| `FF2/Views/AboutWindow.xaml` | Bullet and disclaimer text bumped to 11 pt |
+
+**Computation impact:** None. All changes are in the presentation layer.
+
+---
+
 ## Summary: Files Changed vs. Original FAA Source
 
 **42 files changed** | **11,480 lines added** | **753 lines deleted**
@@ -340,5 +360,5 @@ Fixed 8 pre-existing compiler warnings representing potential runtime risks. No 
 
 ---
 
-*Last updated: 2026-03-20*
+*Last updated: 2026-04-22*
 *Maintained by: HAL9000 (automated) and Johann Cardenas*

@@ -145,7 +145,12 @@ FAARFIELD-2.1.1/
 ├── FAARFIELDUnitTests/                  MSTest unit tests
 ├── FAARFIELD.Installer/                 WiX installer project
 ├── lib/                                 Third-party assemblies (Telerik)
-└── packages/                            NuGet packages
+├── packages/                            NuGet packages
+│
+│  ── Documentation ─────────────────────────────────────────────
+└── Documentation/                       Standalone documentation site
+    ├── build_docs.py                     CHM → HTML generator
+    └── Documentation.html                Self-contained docs (163 sections, 18 MB)
 ```
 
 > [!TIP]
