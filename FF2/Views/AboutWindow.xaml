@@ -142,27 +142,27 @@
                             <TextBlock Text="What's New in This Build" FontSize="12" FontWeight="SemiBold"
                                        Foreground="#00695C" FontFamily="Segoe UI" Margin="0,0,0,8"/>
                             <StackPanel Margin="4,0,0,0">
-                                <TextBlock FontSize="10.5" Foreground="#37474F" FontFamily="Segoe UI"
+                                <TextBlock FontSize="11" Foreground="#37474F" FontFamily="Segoe UI"
                                            Margin="0,0,0,4">
                                     <Run Text="&#x2022;" Foreground="#00897B" FontWeight="Bold"/>
                                     <Run Text="  CM Report"/> <Run Text="— computational mechanics trace with 15 sections" Foreground="#546E7A"/>
                                 </TextBlock>
-                                <TextBlock FontSize="10.5" Foreground="#37474F" FontFamily="Segoe UI"
+                                <TextBlock FontSize="11" Foreground="#37474F" FontFamily="Segoe UI"
                                            Margin="0,0,0,4">
                                     <Run Text="&#x2022;" Foreground="#00897B" FontWeight="Bold"/>
                                     <Run Text="  Gear Configuration Visualization"/> <Run Text="— plan-view wheel positions with CDF strips" Foreground="#546E7A"/>
                                 </TextBlock>
-                                <TextBlock FontSize="10.5" Foreground="#37474F" FontFamily="Segoe UI"
+                                <TextBlock FontSize="11" Foreground="#37474F" FontFamily="Segoe UI"
                                            Margin="0,0,0,4">
                                     <Run Text="&#x2022;" Foreground="#00897B" FontWeight="Bold"/>
                                     <Run Text="  Native HTML/SVG Reports"/> <Run Text="— scalable vector charts, print-ready" Foreground="#546E7A"/>
                                 </TextBlock>
-                                <TextBlock FontSize="10.5" Foreground="#37474F" FontFamily="Segoe UI"
+                                <TextBlock FontSize="11" Foreground="#37474F" FontFamily="Segoe UI"
                                            Margin="0,0,0,4">
                                     <Run Text="&#x2022;" Foreground="#00897B" FontWeight="Bold"/>
                                     <Run Text="  Annual Departure Limit"/> <Run Text="— raised from 100,000 to 500,000" Foreground="#546E7A"/>
                                 </TextBlock>
-                                <TextBlock FontSize="10.5" Foreground="#37474F" FontFamily="Segoe UI">
+                                <TextBlock FontSize="11" Foreground="#37474F" FontFamily="Segoe UI">
                                     <Run Text="&#x2022;" Foreground="#00897B" FontWeight="Bold"/>
                                     <Run Text="  48 Engineering Guardrails"/> <Run Text="— fully documented in README" Foreground="#546E7A"/>
                                 </TextBlock>
@@ -257,7 +257,7 @@
                     <TextBlock Text="License and Disclaimer" FontSize="13" FontWeight="SemiBold"
                                Foreground="#00695C" FontFamily="Segoe UI" Margin="0,0,0,10"/>
 
-                    <TextBlock TextWrapping="Wrap" FontSize="10.5" Foreground="#546E7A"
+                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#546E7A"
                                FontFamily="Segoe UI" LineHeight="17">
                         This customized version is provided freely for educational, research,
                         and engineering purposes. You may use, copy, and distribute this
@@ -266,7 +266,7 @@
                         including but not limited to the warranties of merchantability, fitness
                         for a particular purpose, and noninfringement.
                     </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="10.5" Foreground="#546E7A"
+                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#546E7A"
                                FontFamily="Segoe UI" LineHeight="17" Margin="0,8,0,0">
                         In no event shall the author of this customization be held liable for
                         any claim, damages, or other liability arising from the use of this
@@ -275,7 +275,7 @@
                         This software is not endorsed by, affiliated with, or certified by the
                         Federal Aviation Administration.
                     </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="10.5" Foreground="#546E7A"
+                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#546E7A"
                                FontFamily="Segoe UI" LineHeight="17" Margin="0,8,0,0">
                         The original FAARFIELD source code remains the intellectual property
                         of the Federal Aviation Administration. All rights to the original

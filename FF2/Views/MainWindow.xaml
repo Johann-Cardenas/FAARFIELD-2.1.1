@@ -53,7 +53,7 @@
                 ToolTip="Close active FAARFIELD Job.  If the Job has unsaved data you will be prompted to save the job before the file closes."
                 Command="{Binding OnCloseJob_Command}" />
             <telerik:RadToolBarSeparator />
-            <Label Content="AIRCRAFT" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource FaaTextSecondary}" VerticalAlignment="Center"/>            
+            <Label Content="AIRCRAFT" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource FaaTextSecondary}" VerticalAlignment="Center"/>            
             <Button Content="{StaticResource ImportButton}"
                 ToolTip="Create New User Defined Aircraft"               
                 Command="{Binding OnCreateUserDefined_Command}"/>
@@ -61,7 +61,7 @@
                 ToolTip="Edit User Defined Aircraft"
                 Command="{Binding OnEditUserDefined_Command}"/>            
             <telerik:RadToolBarSeparator />
-            <Label Content="BATCH" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource FaaTextSecondary}" VerticalAlignment="Center"/>
+            <Label Content="BATCH" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource FaaTextSecondary}" VerticalAlignment="Center"/>
             <Button Content="{StaticResource SelectAllButton}"
                 ToolTip="Select all structures for Batch Run"
                 Command="{Binding OnSelectAllSections_Command}"/>
@@ -94,10 +94,11 @@
                    Background="{StaticResource FaaToolbarBg}"
                    BorderBrush="{StaticResource FaaBorderGrayLight}"
                    BorderThickness="0,1,0,0"
-                   FontSize="11">
+                   FontSize="12">
             <StatusBarItem>
                 <TextBlock Text="{Binding CurrentJob.Name, StringFormat='Job: {0}', FallbackValue='No job open'}"
-                           Foreground="{StaticResource FaaTextSecondary}"/>
+                           Foreground="{StaticResource FaaTextPrimary}"
+                           FontWeight="Medium"/>
             </StatusBarItem>
             <Separator/>
             <StatusBarItem>
@@ -362,8 +363,9 @@
                                                     </ComboBox>
                                                     <Button Name="RunButton"
                                                             Style="{StaticResource PrimaryButton}"
-                                                            Width="120"
-                                                            Height="30"
+                                                            Width="136"
+                                                            Height="34"
+                                                            FontSize="14"
                                                             Canvas.Top="5"
                                                             Canvas.Left="520"
                                                             Content="{Binding RunButtonText}"
@@ -408,15 +410,15 @@
                                                                       SelectedIndex="{Binding Path=AnalysisListSelectedIndex, Mode=TwoWay}" >
                                                             </ComboBox>
 
-                                                            <Button Padding="0"
-                                                                    Height="30"
+                                                            <Button Padding="8,4"
+                                                                    Height="32"
                                                                     Width="190"
                                                                     Canvas.Left="245"
                                                                     Canvas.Top="256"
                                                                     IsEnabled="{Binding Path=SelectDesignLayerEnabled}"
                                                                     Command="{Binding SelectDesignLayerCommand}">Select As The Design Layer</Button>
-                                                            <Button Padding="0"
-                                                                    Height="30"
+                                                            <Button Padding="8,4"
+                                                                    Height="32"
                                                                     Width="160"
                                                                     Canvas.Left="455"
                                                                     Canvas.Top="256"
@@ -775,7 +777,7 @@
                                                                 <Border Grid.Column="1"
                                                                         BorderThickness="1"
                                                                         BorderBrush="{StaticResource FaaBorderGray}"
-                                                                        Background="#F0F7F0"
+                                                                        Background="{StaticResource FaaPrimaryLight}"
                                                                         CornerRadius="2"
                                                                         VerticalAlignment="Center">
                                                                     <TextBlock Name="CalculatedLife"
@@ -796,7 +798,7 @@
                                                                 <Border Grid.Column="4"
                                                                         BorderThickness="1"
                                                                         BorderBrush="{StaticResource FaaBorderGray}"
-                                                                        Background="#F0F7F0"
+                                                                        Background="{StaticResource FaaPrimaryLight}"
                                                                         CornerRadius="2"
                                                                         VerticalAlignment="Center">
                                                                     <TextBlock Name="TotalThicknessUpdate"
@@ -869,24 +871,24 @@
                                                                         </Grid>
                                                                         <!-- Progress bar with percentage overlay -->
                                                                         <Grid Margin="0,8,0,0">
-                                                                            <ProgressBar Height="16"
+                                                                            <ProgressBar Height="20"
                                                                                          IsIndeterminate="{Binding ProgressIsIndeterminate}"
                                                                                          Value="{Binding ProgressValue}"
                                                                                          Maximum="100"
                                                                                          Foreground="{Binding ProgressBarBrush}"
-                                                                                         Background="#E0E0E0"
+                                                                                         Background="{StaticResource FaaBorderGrayLight}"
                                                                                          BorderThickness="0"/>
                                                                             <TextBlock Text="{Binding ProgressPercentText}"
                                                                                        HorizontalAlignment="Center"
                                                                                        VerticalAlignment="Center"
-                                                                                       FontSize="9"
+                                                                                       FontSize="10"
                                                                                        FontWeight="SemiBold"
                                                                                        FontFamily="Segoe UI"
                                                                                        Foreground="White"/>
                                                                         </Grid>
                                                                         <!-- Subtitle (cross-section info, iteration, etc.) -->
                                                                         <TextBlock Text="{Binding ProgressSubText}"
-                                                                                   FontSize="10.5"
+                                                                                   FontSize="11"
                                                                                    FontWeight="Medium"
                                                                                    Foreground="{Binding ProgressSubTextBrush}"
                                                                                    FontFamily="Segoe UI"
@@ -3476,7 +3478,7 @@
                     <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" x:Name="radPane4" Header="PAVEAIR Login" CanUserClose="True" CanUserPin="False"
                                      IsHidden="{Binding LoginWindowIsHidden, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      DataContext="{StaticResource MainWindowViewModel}" telerik:RadDocking.SerializationTag="ProgressWindow">
-                        <Grid Background="#FFE7E7E7">
+                        <Grid Background="{StaticResource FaaBackgroundGray}">
                             <TextBox 
                                 x:Name="usernameBox" 
                                 HorizontalAlignment="Left" Height="33" Margin="199,160,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="311"

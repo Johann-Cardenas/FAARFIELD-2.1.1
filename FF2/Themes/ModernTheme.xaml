@@ -423,8 +423,8 @@
         <Setter Property="HorizontalGridLinesBrush"  Value="{StaticResource FaaBorderGrayLight}"/>
         <Setter Property="VerticalGridLinesBrush"     Value="{StaticResource FaaBorderGrayLight}"/>
         <Setter Property="AlternatingRowBackground"   Value="{StaticResource FaaAlternatingRow}"/>
-        <Setter Property="MinRowHeight"               Value="26"/>
-        <Setter Property="ColumnHeaderHeight"         Value="36"/>
+        <Setter Property="MinRowHeight"               Value="30"/>
+        <Setter Property="ColumnHeaderHeight"         Value="38"/>
         <Setter Property="BorderBrush"                Value="{StaticResource FaaBorderGray}"/>
         <Setter Property="BorderThickness"            Value="1"/>
         <Setter Property="Background"                 Value="{StaticResource FaaSurfaceWhite}"/>
@@ -435,7 +435,7 @@
     <!-- DataGridCell Style (implicit)                                -->
     <!-- ============================================================ -->
     <Style TargetType="DataGridCell">
-        <Setter Property="Padding"                    Value="4,2"/>
+        <Setter Property="Padding"                    Value="6,4"/>
         <Setter Property="VerticalContentAlignment"   Value="Center"/>
         <Setter Property="BorderBrush"                Value="Transparent"/>
         <Setter Property="FocusVisualStyle"           Value="{x:Null}"/>
@@ -503,6 +503,46 @@
         <Setter Property="FontSize"                  Value="13"/>
         <Setter Property="Foreground"                Value="{StaticResource FaaTextPrimary}"/>
         <Setter Property="VerticalContentAlignment"  Value="Center"/>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- ToolTip Style (implicit)                                     -->
+    <!-- ============================================================ -->
+    <Style TargetType="ToolTip">
+        <Setter Property="FontFamily"      Value="Segoe UI"/>
+        <Setter Property="FontSize"        Value="12"/>
+        <Setter Property="Foreground"      Value="{StaticResource FaaTextPrimary}"/>
+        <Setter Property="Background"      Value="{StaticResource FaaSurfaceWhite}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource FaaBorderGray}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding"         Value="10,7"/>
+        <Setter Property="HasDropShadow"   Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToolTip">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="4"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <Border.Effect>
+                            <DropShadowEffect ShadowDepth="2" BlurRadius="6"
+                                              Opacity="0.12" Color="Black" Direction="270"/>
+                        </Border.Effect>
+                        <ContentPresenter/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================================================ -->
+    <!-- Separator Style (implicit)                                   -->
+    <!-- ============================================================ -->
+    <Style TargetType="Separator">
+        <Setter Property="Background" Value="{StaticResource FaaBorderGray}"/>
+        <Setter Property="Margin"     Value="6,2"/>
     </Style>
 
 </ResourceDictionary>

@@ -97,6 +97,11 @@ Supporting:
   FAARFIELD.Installer/               WiX installer project
   lib/RCWPF/                         Vendored Telerik assemblies
   packages/                          NuGet packages (iTextSharp, MSTest, etc.)
+
+Documentation:
+  Documentation/                     Standalone documentation site
+    build_docs.py                      Python generator (parses CHM → HTML)
+    Documentation.html                 18 MB self-contained docs (163 sections, base64 images)
 ```
 
 ## Build commands
@@ -336,17 +341,17 @@ All chart functions use a consistent set of font sizes:
 
 | Role | Font | Size |
 |------|------|------|
-| Chart title | Segoe UI Bold | 10pt |
-| Axis label | Segoe UI | 8.5pt |
-| Axis tick values | Segoe UI | 7.5pt |
-| Legend text | Segoe UI | 7.0pt |
-| Small annotations | Segoe UI | 6.5pt |
+| Chart title | Segoe UI Bold | 11pt |
+| Axis label | Segoe UI Bold | 9.5pt |
+| Axis tick values | Segoe UI | 8.5pt |
+| Legend text | Segoe UI | 8.0pt |
+| Small annotations | Segoe UI | 7.5pt |
 | Equation title (3x) | Segoe UI Bold | 8.5pt (×3 = 25.5 render) |
 | Equation body (3x) | Cambria Math / Consolas | 9.0pt (×3 = 27 render) |
-| Concept diagram title | Segoe UI Bold | 10pt |
-| Concept diagram headings | Segoe UI Bold | 8pt |
-| Concept diagram text | Segoe UI | 7pt |
-| Concept diagram small | Segoe UI | 6.5pt |
+| Concept diagram title | Segoe UI Bold | 11pt |
+| Concept diagram headings | Segoe UI Bold | 9pt |
+| Concept diagram text | Segoe UI | 8pt |
+| Concept diagram small | Segoe UI | 7.5pt |
 | Concept diagram math | Consolas | 7pt |
 
 ### CSS classes (in `Reports.css`)

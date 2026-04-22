@@ -8884,6 +8884,7 @@ Namespace ViewModels
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
@@ -8896,7 +8897,7 @@ Namespace ViewModels
                 Dim plotHeight As Integer = chartHeight - marginTop - marginBottom
 
                 ' Draw title
-                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
                 Dim titleSize = g.MeasureString(title & " — CDF vs Offset", titleFont)
                 g.DrawString(title & " — CDF vs Offset", titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 10)
 
@@ -8922,11 +8923,11 @@ Namespace ViewModels
                 g.DrawRectangle(Pens.DarkGray, plotRect)
 
                 ' Draw gridlines
-                Dim gridPen As New Pen(Color.FromArgb(230, 230, 230), 1)
+                Dim gridPen As New Pen(Color.FromArgb(210, 214, 220), 1)
                 gridPen.DashStyle = Drawing2D.DashStyle.Dot
                 Dim nGridY As Integer = 5
-                Dim axisFont As New Font("Segoe UI", 7.5F)
-                Dim labelFont As New Font("Segoe UI", 9.0F, FontStyle.Bold)
+                Dim axisFont As New Font("Segoe UI", 8.5F)
+                Dim labelFont As New Font("Segoe UI", 9.5F, FontStyle.Bold)
 
                 For i As Integer = 0 To nGridY
                     Dim yVal As Double = yMax * i / nGridY
@@ -9258,7 +9259,7 @@ Namespace ViewModels
                 g.FillPolygon(Brushes.Red, diamondPtsL)
 
                 ' Draw legend
-                Dim legendFont As New Font("Segoe UI", 7.0F)
+                Dim legendFont As New Font("Segoe UI", 8.0F)
                 Dim legendLineH As Integer = 15
                 Dim nLegendEntries As Integer = 4
                 Dim legendTireCount As Integer = If(effectiveWheelsX IsNot Nothing, effectiveWheelsX.Count, det.NWheels)
@@ -9269,7 +9270,7 @@ Namespace ViewModels
                 Dim legendY As Integer = marginTop + 10
                 Dim legendBg As New Rectangle(legendX, legendY, legendW, legendH)
                 g.FillRectangle(New SolidBrush(Color.FromArgb(240, 245, 245, 245)), legendBg)
-                g.DrawRectangle(Pens.LightGray, legendBg)
+                g.DrawRectangle(New Pen(Color.FromArgb(200, 204, 210), 1), legendBg)
 
                 Dim ly As Integer = legendY + 5
 
@@ -9344,6 +9345,7 @@ Namespace ViewModels
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
@@ -9356,7 +9358,7 @@ Namespace ViewModels
                 Dim plotHeight As Integer = chartHeight - marginTop - marginBottom
 
                 ' Draw title
-                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
                 Dim titleText = "CDF Distribution Across Pavement Width"
                 Dim titleSize = g.MeasureString(titleText, titleFont)
                 g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 10)
@@ -9378,11 +9380,11 @@ Namespace ViewModels
                 g.DrawRectangle(Pens.DarkGray, plotRect)
 
                 ' Draw gridlines
-                Dim gridPen As New Pen(Color.FromArgb(230, 230, 230), 1)
+                Dim gridPen As New Pen(Color.FromArgb(210, 214, 220), 1)
                 gridPen.DashStyle = Drawing2D.DashStyle.Dot
                 Dim nGridY As Integer = 5
-                Dim axisFont As New Font("Segoe UI", 7.5F)
-                Dim labelFont As New Font("Segoe UI", 8.5F)
+                Dim axisFont As New Font("Segoe UI", 8.5F)
+                Dim labelFont As New Font("Segoe UI", 9.5F)
 
                 ' Draw Y=0 baseline explicitly
                 Dim zeroYPx As Integer = CInt(marginTop + plotHeight)
@@ -9481,7 +9483,7 @@ Namespace ViewModels
                 g.FillEllipse(Brushes.Red, critXPx - 6, maxCumYPx - 6, 12, 12)
 
                 ' Draw legend — measure content width dynamically
-                Dim legendFont As New Font("Segoe UI", 7.0F)
+                Dim legendFont As New Font("Segoe UI", 8.0F)
                 Dim legendLineH As Integer = 14
                 Dim legendH As Integer = legendEntries.Count * legendLineH + 8
 
@@ -9496,7 +9498,7 @@ Namespace ViewModels
                 Dim legendY As Integer = marginTop + plotHeight - legendH - 8
                 Dim legendBg As New Rectangle(legendX, legendY, legendW, legendH)
                 g.FillRectangle(New SolidBrush(Color.FromArgb(240, 245, 245, 245)), legendBg)
-                g.DrawRectangle(Pens.LightGray, legendBg)
+                g.DrawRectangle(New Pen(Color.FromArgb(200, 204, 210), 1), legendBg)
 
                 For idx As Integer = 0 To legendEntries.Count - 1
                     Dim entry = legendEntries(idx)
@@ -9508,7 +9510,7 @@ Namespace ViewModels
                 Next
 
                 ' Add critical strip label
-                Dim critFont As New Font("Segoe UI", 6.5F, FontStyle.Italic)
+                Dim critFont As New Font("Segoe UI", 7.5F, FontStyle.Italic)
                 Dim critLabel = "Critical: " & Format(critOffsetVal, "0") & " " & offsetUnit
                 g.DrawString(critLabel, critFont, Brushes.Red, critXPx + 4, marginTop + 4)
 
@@ -9729,11 +9731,12 @@ Namespace ViewModels
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 ' Title
-                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
                 Dim titleText = "Pavement Cross-Section & Tire Stress Projection — " & det.ACName
                 Dim titleSize = g.MeasureString(titleText, titleFont)
                 g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 8)
@@ -9744,9 +9747,9 @@ Namespace ViewModels
                 Dim projX As Integer = 480 ' left edge of projection diagram
                 Dim projW As Integer = 370 ' width of projection area
                 Dim topY As Integer = 50
-                Dim labelFont As New Font("Segoe UI", 7.5F)
-                Dim labelFontBold As New Font("Segoe UI", 7.5F, FontStyle.Bold)
-                Dim dimFont As New Font("Segoe UI", 6.5F, FontStyle.Italic)
+                Dim labelFont As New Font("Segoe UI", 8.5F)
+                Dim labelFontBold As New Font("Segoe UI", 8.5F, FontStyle.Bold)
+                Dim dimFont As New Font("Segoe UI", 7.5F, FontStyle.Italic)
 
                 ' Layer colors by type
                 Dim layerColors() As Color = {
@@ -10004,6 +10007,7 @@ Namespace ViewModels
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
@@ -10162,11 +10166,11 @@ Namespace ViewModels
                              End Function
 
                 ' Grid lines
-                Dim gridPen As New Pen(Color.FromArgb(220, 220, 220), 1)
+                Dim gridPen As New Pen(Color.FromArgb(210, 214, 220), 1)
                 gridPen.DashStyle = Drawing2D.DashStyle.Dot
-                Dim axisFont As New Font("Segoe UI", 8.5F)
+                Dim axisFont As New Font("Segoe UI", 9.5F)
                 Dim labelFont As New Font("Segoe UI", 9.5F, FontStyle.Bold)
-                Dim minorFont As New Font("Segoe UI", 7.0F)
+                Dim minorFont As New Font("Segoe UI", 8.0F)
                 Dim minorPen As New Pen(Color.FromArgb(240, 240, 240), 1)
                 minorPen.DashStyle = Drawing2D.DashStyle.Dot
 
@@ -10220,8 +10224,8 @@ Namespace ViewModels
 
                 ' Bleasdale transition markers and zone labels
                 If isBleasdale Then
-                    Dim transFont As New Font("Segoe UI", 7.0F, FontStyle.Bold)
-                    Dim zoneFont As New Font("Segoe UI", 7.5F, FontStyle.Italic)
+                    Dim transFont As New Font("Segoe UI", 8.0F, FontStyle.Bold)
+                    Dim zoneFont As New Font("Segoe UI", 8.5F, FontStyle.Italic)
                     Dim plotT As Single = CSng(marginTop)
                     Dim plotB As Single = CSng(marginTop + plotHeight)
                     Dim plotL As Single = CSng(marginLeft)
@@ -10476,10 +10480,10 @@ Namespace ViewModels
                 ' Scatter points and labels
                 Dim labelPositions As New List(Of RectangleF)
                 labelPositions.Add(infoRect)
-                Dim ptFont As New Font("Segoe UI", 8.5F, FontStyle.Bold)
+                Dim ptFont As New Font("Segoe UI", 9.5F, FontStyle.Bold)
 
                 ' Legend — bottom-left (curve typically descends from upper-left to lower-right)
-                Dim legendFont As New Font("Segoe UI", If(isBleasdale, 6.375F, 8.5F))
+                Dim legendFont As New Font("Segoe UI", If(isBleasdale, 8.0F, 8.5F))
                 Dim legendLineH As Integer = If(isBleasdale, 14, 18)
                 Dim legendEntries As Integer = acPoints.Count + If(isBleasdale, 3, 2)
                 Dim legendH As Integer = legendEntries * legendLineH + 12
@@ -10667,6 +10671,7 @@ Namespace ViewModels
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
@@ -10678,7 +10683,7 @@ Namespace ViewModels
                 Dim plotHeight As Integer = chartHeight - marginTop - marginBottom
 
                 ' Title
-                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
                 Dim titleText = "Newton-Raphson Convergence History"
                 Dim titleSize = g.MeasureString(titleText, titleFont)
                 g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 10)
@@ -10714,8 +10719,8 @@ Namespace ViewModels
                 g.DrawRectangle(Pens.DarkGray, plotRect)
 
                 ' X-axis (iterations)
-                Dim axisFont As New Font("Segoe UI", 7.5F)
-                Dim labelFont As New Font("Segoe UI", 8.5F)
+                Dim axisFont As New Font("Segoe UI", 8.5F)
+                Dim labelFont As New Font("Segoe UI", 9.5F)
                 Dim xStep As Integer = Math.Max(1, nIter \ 10)
                 For i As Integer = 1 To nIter Step xStep
                     Dim xPx As Single = CSng(marginLeft + (i - 1) / Math.Max(nIter - 1, 1) * plotWidth)
@@ -10767,7 +10772,7 @@ Namespace ViewModels
                     Dim threshPen As New Pen(Color.FromArgb(34, 139, 34), 1.5F)
                     threshPen.DashStyle = Drawing2D.DashStyle.DashDot
                     g.DrawLine(threshPen, marginLeft, exitYPx, marginLeft + plotWidth, exitYPx)
-                    g.DrawString("Convergence threshold = " & Format(CDF.CDFExitErr, "0.000"), New Font("Segoe UI", 7, FontStyle.Italic), New SolidBrush(Color.FromArgb(34, 139, 34)), marginLeft + 5, exitYPx - 14)
+                    g.DrawString("Convergence threshold = " & Format(CDF.CDFExitErr, "0.000"), New Font("Segoe UI", 8, FontStyle.Italic), New SolidBrush(Color.FromArgb(34, 139, 34)), marginLeft + 5, exitYPx - 14)
                     threshPen.Dispose()
                 End If
 
@@ -10811,16 +10816,16 @@ Namespace ViewModels
                     Dim slPen As New Pen(Color.FromArgb(148, 103, 189), 1.5F)
                     slPen.DashStyle = Drawing2D.DashStyle.Dash
                     g.DrawLine(slPen, slXPx, marginTop, slXPx, marginTop + plotHeight)
-                    g.DrawString("Sublayers ON", New Font("Segoe UI", 7, FontStyle.Italic), New SolidBrush(Color.FromArgb(148, 103, 189)), slXPx + 3, marginTop + plotHeight - 16)
+                    g.DrawString("Sublayers ON", New Font("Segoe UI", 8, FontStyle.Italic), New SolidBrush(Color.FromArgb(148, 103, 189)), slXPx + 3, marginTop + plotHeight - 16)
                     slPen.Dispose()
                 End If
 
                 ' Legend
-                Dim legendFont As New Font("Segoe UI", 7.0F)
+                Dim legendFont As New Font("Segoe UI", 8.0F)
                 Dim legendX As Integer = marginLeft + plotWidth - 170
                 Dim legendY As Integer = marginTop + 10
                 g.FillRectangle(New SolidBrush(Color.FromArgb(240, 245, 245, 245)), legendX, legendY, 160, 38)
-                g.DrawRectangle(Pens.LightGray, legendX, legendY, 160, 38)
+                g.DrawRectangle(New Pen(Color.FromArgb(200, 204, 210), 1), legendX, legendY, 160, 38)
                 g.DrawLine(bluePen, legendX + 6, legendY + 10, legendX + 22, legendY + 10)
                 g.DrawString("|ln(CDF)| (left axis)", legendFont, Brushes.Black, legendX + 26, legendY + 4)
                 g.DrawLine(redPen, legendX + 6, legendY + 24, legendX + 22, legendY + 24)
@@ -10850,6 +10855,7 @@ Namespace ViewModels
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
@@ -10861,7 +10867,7 @@ Namespace ViewModels
                 Dim plotHeight As Integer = chartHeight - marginTop - marginBottom
 
                 ' Title
-                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
                 Dim titleText = "Coverage-to-Pass (C/P) Distribution Across Pavement Width"
                 Dim titleSize = g.MeasureString(titleText, titleFont)
                 g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 10)
@@ -10886,10 +10892,10 @@ Namespace ViewModels
                 g.DrawRectangle(Pens.DarkGray, plotRect)
 
                 ' Grid
-                Dim gridPen As New Pen(Color.FromArgb(230, 230, 230), 1)
+                Dim gridPen As New Pen(Color.FromArgb(210, 214, 220), 1)
                 gridPen.DashStyle = Drawing2D.DashStyle.Dot
-                Dim axisFont As New Font("Segoe UI", 7.5F)
-                Dim labelFont As New Font("Segoe UI", 8.5F)
+                Dim axisFont As New Font("Segoe UI", 8.5F)
+                Dim labelFont As New Font("Segoe UI", 9.5F)
 
                 Dim nGridY As Integer = 5
                 For i As Integer = 0 To nGridY
@@ -10943,7 +10949,7 @@ Namespace ViewModels
                 Next
 
                 ' Legend — dynamic width, positioned at bottom-right
-                Dim legendFont As New Font("Segoe UI", 7.0F)
+                Dim legendFont As New Font("Segoe UI", 8.0F)
                 Dim legendLineH As Integer = 14
                 Dim legendH As Integer = legendEntries.Count * legendLineH + 8
 
@@ -10957,7 +10963,7 @@ Namespace ViewModels
                 Dim legendX As Integer = marginLeft + plotWidth - legendW - 8
                 Dim legendY As Integer = marginTop + plotHeight - legendH - 8
                 g.FillRectangle(New SolidBrush(Color.FromArgb(240, 245, 245, 245)), legendX, legendY, legendW, legendH)
-                g.DrawRectangle(Pens.LightGray, legendX, legendY, legendW, legendH)
+                g.DrawRectangle(New Pen(Color.FromArgb(200, 204, 210), 1), legendX, legendY, legendW, legendH)
 
                 For idx As Integer = 0 To legendEntries.Count - 1
                     Dim entry = legendEntries(idx)
@@ -10974,7 +10980,7 @@ Namespace ViewModels
                 Dim critPen As New Pen(Color.Red, 1.5F)
                 critPen.DashStyle = Drawing2D.DashStyle.Dash
                 g.DrawLine(critPen, critXPx, marginTop, critXPx, marginTop + plotHeight)
-                Dim critFont As New Font("Segoe UI", 6.5F, FontStyle.Italic)
+                Dim critFont As New Font("Segoe UI", 7.5F, FontStyle.Italic)
                 g.DrawString("Critical: " & Format(critOffsetVal, "0") & " " & offsetUnit, critFont, Brushes.Red, critXPx + 4, marginTop + 4)
 
                 ' Cleanup
@@ -11027,13 +11033,14 @@ Namespace ViewModels
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
-                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
-                Dim headFont As New Font("Segoe UI", 8, FontStyle.Bold)
-                Dim textFont As New Font("Segoe UI", 7.0F)
-                Dim smallFont As New Font("Segoe UI", 6.5F)
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
+                Dim headFont As New Font("Segoe UI", 9, FontStyle.Bold)
+                Dim textFont As New Font("Segoe UI", 8.0F)
+                Dim smallFont As New Font("Segoe UI", 7.5F)
                 Dim mathFont As New Font("Consolas", 7.0F)
                 Dim faaBlue As Color = Color.FromArgb(46, 94, 168)
                 Dim faaBlueLight As Color = Color.FromArgb(30, 46, 94, 168)
@@ -11278,16 +11285,17 @@ Namespace ViewModels
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 Dim faaBlue As Color = Color.FromArgb(46, 94, 168)
-                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
-                Dim labelFont As New Font("Segoe UI", 8.5F)
-                Dim smallFont As New Font("Segoe UI", 7.5F)
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
+                Dim labelFont As New Font("Segoe UI", 9.5F)
+                Dim smallFont As New Font("Segoe UI", 8.5F)
                 Dim mathFont As New Font("Consolas", 7.5F)
-                Dim axisTickFont As New Font("Segoe UI", 7.5F)
-                Dim axisLabelFont As New Font("Segoe UI", 9.0F, FontStyle.Bold)
+                Dim axisTickFont As New Font("Segoe UI", 8.5F)
+                Dim axisLabelFont As New Font("Segoe UI", 9.5F, FontStyle.Bold)
 
                 ' Title
                 Dim cpTitle = "C/P Analysis: " & det.ACName & " (" & det.GearType & ", TW=" & Format(det.TireWidth, "0.0") & """)"
@@ -11317,7 +11325,7 @@ Namespace ViewModels
                 g.DrawRectangle(Pens.DarkGray, plotRect)
 
                 ' Grid
-                Dim gridPen As New Pen(Color.FromArgb(230, 230, 230), 1)
+                Dim gridPen As New Pen(Color.FromArgb(210, 214, 220), 1)
                 gridPen.DashStyle = Drawing2D.DashStyle.Dot
                 Dim nGridY As Integer = 5
                 For i As Integer = 0 To nGridY
@@ -11499,7 +11507,7 @@ Namespace ViewModels
                 Next
 
                 ' Legend — compact box in upper-right (curves peak near offset=0 on the left, so upper-right is clear)
-                Dim legendFont As New Font("Segoe UI", 7.5F)
+                Dim legendFont As New Font("Segoe UI", 8.5F)
                 Dim legendLineH As Integer = 16
                 Dim legendCount As Integer = wheelPositions.Count + 2 ' wheels + actual + reconstructed
                 Dim lgH As Integer = legendCount * legendLineH + 10
@@ -11507,7 +11515,7 @@ Namespace ViewModels
                 Dim lgX As Integer = marginLeft + plotWidth - lgW - 10
                 Dim lgY2 As Integer = marginTop + 10
                 g.FillRectangle(New SolidBrush(Color.FromArgb(240, 245, 245, 245)), lgX, lgY2, lgW, lgH)
-                g.DrawRectangle(Pens.LightGray, lgX, lgY2, lgW, lgH)
+                g.DrawRectangle(New Pen(Color.FromArgb(200, 204, 210), 1), lgX, lgY2, lgW, lgH)
 
                 ' Actual C/P entry
                 Dim lgRow As Integer = lgY2 + 5
@@ -11564,15 +11572,16 @@ Namespace ViewModels
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 Dim faaBlue As Color = Color.FromArgb(46, 94, 168)
-                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
-                Dim labelFont As New Font("Segoe UI", 8.5F)
-                Dim tickFont As New Font("Segoe UI", 7.5F)
-                Dim legendFont As New Font("Segoe UI", 7.0F)
-                Dim annotFont As New Font("Segoe UI", 6.5F)
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
+                Dim labelFont As New Font("Segoe UI", 9.5F)
+                Dim tickFont As New Font("Segoe UI", 8.5F)
+                Dim legendFont As New Font("Segoe UI", 8.0F)
+                Dim annotFont As New Font("Segoe UI", 7.5F)
 
                 ' Title
                 Dim titleText = "Gear Configuration: " & det.ACName & " (" & det.GearType & ")"
@@ -11738,7 +11747,7 @@ Namespace ViewModels
 
                 ' Dimension annotations
                 Dim dimPen As New Pen(Color.FromArgb(180, 80, 80, 80), 0.8F)
-                Dim dimFont As New Font("Segoe UI", 6.5F)
+                Dim dimFont As New Font("Segoe UI", 7.5F)
 
                 ' Dual spacing annotation (find a pair of tires at same Y with different X)
                 If det.DualSpacing > 0 AndAlso allTiresX.Count >= 2 Then
@@ -11976,13 +11985,14 @@ FoundTandemPair:
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
-                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
-                Dim labelFont As New Font("Segoe UI", 8.5F)
-                Dim axisFont As New Font("Segoe UI", 7.5F)
-                Dim smallFont As New Font("Segoe UI", 6.5F)
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
+                Dim labelFont As New Font("Segoe UI", 9.5F)
+                Dim axisFont As New Font("Segoe UI", 8.5F)
+                Dim smallFont As New Font("Segoe UI", 7.5F)
 
                 Dim acrTitle As String = "Aircraft Classification Rating (ACR) vs. Damage per Departure"
                 Dim acrTitleSize = g.MeasureString(acrTitle, titleFont)
@@ -12045,7 +12055,7 @@ FoundTandemPair:
 
                 ' X-axis (ACR, linear)
                 Dim nTicksX As Integer = 5
-                Dim gridPen As New Pen(Color.FromArgb(230, 230, 230), 1)
+                Dim gridPen As New Pen(Color.FromArgb(210, 214, 220), 1)
                 gridPen.DashStyle = Drawing2D.DashStyle.Dot
                 For i As Integer = 0 To nTicksX
                     Dim acrVal As Double = minACR + (maxACR - minACR) * i / nTicksX
@@ -12381,11 +12391,12 @@ FoundTandemPair:
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 ' Title
-                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
                 Dim titleText = "CDF Contribution by Aircraft at Critical Offset"
                 Dim titleSize = g.MeasureString(titleText, titleFont)
                 g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 12)
@@ -12397,9 +12408,9 @@ FoundTandemPair:
                 Dim critOffset = rpt.CDFSweep.MaxCDFOffset
                 Dim totalCDF As Double = rpt.CDFSweep.CDFTotalPerOffset(critOffset)
 
-                Dim labelFont As New Font("Segoe UI", 8.5F)
-                Dim valueFont As New Font("Segoe UI", 7.5F)
-                Dim pctFont As New Font("Segoe UI", 8, FontStyle.Bold)
+                Dim labelFont As New Font("Segoe UI", 9.5F)
+                Dim valueFont As New Font("Segoe UI", 8.5F)
+                Dim pctFont As New Font("Segoe UI", 9, FontStyle.Bold)
 
                 Dim yPos As Integer = marginTop
                 For ia As Integer = 1 To nAC
@@ -12447,8 +12458,8 @@ FoundTandemPair:
 
                 ' Total bar
                 Dim totalLabel = "TOTAL"
-                Dim totalLabelSize = g.MeasureString(totalLabel, New Font("Segoe UI", 8.5F, FontStyle.Bold))
-                g.DrawString(totalLabel, New Font("Segoe UI", 8.5F, FontStyle.Bold), Brushes.Black, marginLeft - totalLabelSize.Width - 8, yPos + (barHeight - totalLabelSize.Height) / 2 + 2)
+                Dim totalLabelSize = g.MeasureString(totalLabel, New Font("Segoe UI", 9.5F, FontStyle.Bold))
+                g.DrawString(totalLabel, New Font("Segoe UI", 9.5F, FontStyle.Bold), Brushes.Black, marginLeft - totalLabelSize.Width - 8, yPos + (barHeight - totalLabelSize.Height) / 2 + 2)
                 Dim totalBarBrush As New SolidBrush(Color.FromArgb(80, 46, 94, 168))
                 g.FillRectangle(totalBarBrush, marginLeft, yPos + 2, plotWidth, barHeight)
                 g.DrawRectangle(New Pen(Color.FromArgb(46, 94, 168), 1.5F), marginLeft, yPos + 2, plotWidth, barHeight)
@@ -12517,11 +12528,12 @@ FoundTandemPair:
             Using g As Graphics = Graphics.FromImage(bmpHi)
                 g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
                 g.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+                g.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
                 g.ScaleTransform(2, 2)
                 g.Clear(Color.White)
 
                 ' Title
-                Dim titleFont As New Font("Segoe UI", 10, FontStyle.Bold)
+                Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
                 Dim titleText = "Fatigue Life Reserve (N_fail / Repetitions)"
                 Dim titleSize = g.MeasureString(titleText, titleFont)
                 g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 8)
@@ -12529,8 +12541,8 @@ FoundTandemPair:
                 ' Border
                 g.DrawRectangle(New Pen(Color.FromArgb(209, 213, 219), 1), 0, 0, chartWidth - 1, chartHeight - 1)
 
-                Dim labelFont As New Font("Segoe UI", 8.5F)
-                Dim valueFont As New Font("Segoe UI", 8.0F)
+                Dim labelFont As New Font("Segoe UI", 9.5F)
+                Dim valueFont As New Font("Segoe UI", 9.0F)
 
                 ' Reference line at ratio = 1.0 (center)
                 Dim refPen As New Pen(Color.FromArgb(100, 0, 0, 0), 1.5F)
@@ -12538,14 +12550,14 @@ FoundTandemPair:
                 g.DrawLine(refPen, centerX, marginTop - 5, centerX, chartHeight - 20)
 
                 ' "Ratio = 1.0" label — draw centered above the reference line, above the region labels
-                Dim ratioLabelFont As New Font("Segoe UI", 7.5F, FontStyle.Italic)
+                Dim ratioLabelFont As New Font("Segoe UI", 8.5F, FontStyle.Italic)
                 Dim ratioLabelText = "Ratio = 1.0"
                 Dim ratioLabelSize = g.MeasureString(ratioLabelText, ratioLabelFont)
                 g.DrawString(ratioLabelText, ratioLabelFont, Brushes.DarkGray, centerX - ratioLabelSize.Width / 2, marginTop - 30)
                 ratioLabelFont.Dispose()
 
                 ' Label regions — positioned just above the bars, spaced away from center label
-                Dim regionFont As New Font("Segoe UI", 8.0F)
+                Dim regionFont As New Font("Segoe UI", 9.0F)
                 Dim overstressedText = ChrW(&H2190) & " Overstressed"
                 g.DrawString(overstressedText, regionFont, New SolidBrush(Color.FromArgb(200, 214, 39, 40)), marginLeft + 5, marginTop - 16)
                 Dim reserveText = "Life Reserve " & ChrW(&H2192)

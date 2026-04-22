@@ -932,7 +932,7 @@ Namespace Libs
             Dim mt As Single = CSng(Math.Ceiling(modPadMin / modStep) * modStep)
             While mt <= modPadMax
                 Dim x As Single = SvgModToX(mt, plotL, modPadMin, modPadMax, plotW)
-                sb.AppendLine("<line x1='" & Fmt(x) & "' y1='" & Fmt(plotT) & "' x2='" & Fmt(x) & "' y2='" & Fmt(plotB) & "' stroke='#e0e0e0' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & Fmt(x) & "' y1='" & Fmt(plotT) & "' x2='" & Fmt(x) & "' y2='" & Fmt(plotB) & "' stroke='#d0d4da' stroke-width='0.9'/>")
                 sb.AppendLine("<text x='" & Fmt(x) & "' y='" & Fmt(plotB + 16) & "' text-anchor='middle' class='tick-label'>" & Format(mt, "#,##0") & "</text>")
                 mt += modStep
             End While
@@ -940,7 +940,7 @@ Namespace Libs
             ' Depth grid lines at layer interfaces
             For Each d As Single In depths
                 Dim y As Single = SvgDepthToY(d, plotT, maxDepth, plotH)
-                sb.AppendLine("<line x1='" & Fmt(plotL) & "' y1='" & Fmt(y) & "' x2='" & Fmt(plotR) & "' y2='" & Fmt(y) & "' stroke='#e8e8e8' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & Fmt(plotL) & "' y1='" & Fmt(y) & "' x2='" & Fmt(plotR) & "' y2='" & Fmt(y) & "' stroke='#d0d4da' stroke-width='0.9'/>")
                 ' Connector line from layer column to chart
                 sb.AppendLine("<line x1='" & Fmt(layerX + layerW) & "' y1='" & Fmt(y) & "' x2='" & Fmt(plotL) & "' y2='" & Fmt(y) & "' stroke='#ccc' stroke-width='0.4' stroke-dasharray='3,3'/>")
                 ' Depth label
@@ -948,8 +948,8 @@ Namespace Libs
             Next
 
             ' Axes
-            sb.AppendLine("<line x1='" & Fmt(plotL) & "' y1='" & Fmt(plotT) & "' x2='" & Fmt(plotL) & "' y2='" & Fmt(plotB) & "' stroke='#555' stroke-width='1.2'/>")
-            sb.AppendLine("<line x1='" & Fmt(plotL) & "' y1='" & Fmt(plotB) & "' x2='" & Fmt(plotR) & "' y2='" & Fmt(plotB) & "' stroke='#555' stroke-width='1.2'/>")
+            sb.AppendLine("<line x1='" & Fmt(plotL) & "' y1='" & Fmt(plotT) & "' x2='" & Fmt(plotL) & "' y2='" & Fmt(plotB) & "' stroke='#3a3f4a' stroke-width='1.4'/>")
+            sb.AppendLine("<line x1='" & Fmt(plotL) & "' y1='" & Fmt(plotB) & "' x2='" & Fmt(plotR) & "' y2='" & Fmt(plotB) & "' stroke='#3a3f4a' stroke-width='1.4'/>")
             sb.AppendLine("<text x='" & Fmt(plotL + plotW / 2) & "' y='" & Fmt(plotB + 36) & "' text-anchor='middle' class='axis-label'>Modulus (" & presUnit & ")</text>")
             sb.AppendLine("<text x='14' y='" & Fmt(plotT + plotH / 2) & "' text-anchor='middle' transform='rotate(-90,14," & Fmt(plotT + plotH / 2) & ")' class='axis-label'>Depth (" & thkUnit & ")</text>")
 
@@ -1107,7 +1107,7 @@ Namespace Libs
             sb.AppendLine("<title>Subgrade fatigue model chart</title>")
 
             ' Plot background
-            sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
+            sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#bcc3cc'/>")
 
             ' Bleasdale zone backgrounds
             If isBleasdale Then
@@ -1124,22 +1124,22 @@ Namespace Libs
                 sb.AppendLine("<rect x='" & Fmt(xTransition) & "' y='" & mt & "' width='" & Fmt(ml + pw - xTransition) & "' height='" & ph & "' fill='#D68228' opacity='0.07'/>")
 
                 ' Zone labels
-                sb.AppendLine("<text x='" & Fmt((ml + xAsymptote) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:12px;fill:#388E3C;font-style:italic'>Endurance Limit</text>")
-                sb.AppendLine("<text x='" & Fmt((xAsymptote + xTransition) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:12px;fill:#2E5EA8;font-style:italic'>Bleasdale Curve (Cov &ge; 1,000)</text>")
-                sb.AppendLine("<text x='" & Fmt((xTransition + ml + pw) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:12px;fill:#B4641E;font-style:italic'>Power Law (Cov &lt; 1,000)</text>")
+                sb.AppendLine("<text x='" & Fmt((ml + xAsymptote) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:13px;fill:#388E3C;font-style:italic'>Endurance Limit</text>")
+                sb.AppendLine("<text x='" & Fmt((xAsymptote + xTransition) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:13px;fill:#2E5EA8;font-style:italic'>Bleasdale Curve (Cov &ge; 1,000)</text>")
+                sb.AppendLine("<text x='" & Fmt((xTransition + ml + pw) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:13px;fill:#B4641E;font-style:italic'>Power Law (Cov &lt; 1,000)</text>")
 
                 ' Transition vertical lines
                 sb.AppendLine("<line x1='" & Fmt(xAsymptote) & "' y1='" & mt & "' x2='" & Fmt(xAsymptote) & "' y2='" & (mt + ph) & "' stroke='#388E3C' stroke-width='1.5' stroke-dasharray='6,3' opacity='0.6'/>")
-                sb.AppendLine("<text x='" & Fmt(xAsymptote + 3) & "' y='" & (mt + ph - 5) & "' style='font-size:12px;fill:#388E3C'>" & Format(microAsymptote, "0.0") & " &mu;&epsilon;</text>")
+                sb.AppendLine("<text x='" & Fmt(xAsymptote + 3) & "' y='" & (mt + ph - 5) & "' style='font-size:13px;fill:#388E3C'>" & Format(microAsymptote, "0.0") & " &mu;&epsilon;</text>")
 
                 sb.AppendLine("<line x1='" & Fmt(xTransition) & "' y1='" & mt & "' x2='" & Fmt(xTransition) & "' y2='" & (mt + ph) & "' stroke='#B4641E' stroke-width='1.5' stroke-dasharray='6,3' opacity='0.6'/>")
-                sb.AppendLine("<text x='" & Fmt(xTransition + 3) & "' y='" & (mt + ph - 5) & "' style='font-size:12px;fill:#B4641E'>" & Format(microTransition, "0.0") & " &mu;&epsilon;</text>")
+                sb.AppendLine("<text x='" & Fmt(xTransition + 3) & "' y='" & (mt + ph - 5) & "' style='font-size:13px;fill:#B4641E'>" & Format(microTransition, "0.0") & " &mu;&epsilon;</text>")
 
                 ' N=1000 horizontal line
                 Dim logN1000 As Double = 3
                 Dim y1000 = mt + ph - ((logN1000 - logNMin) / (logNMax - logNMin)) * ph
                 sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y1000) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y1000) & "' stroke='#B4641E' stroke-width='1' stroke-dasharray='4,4' opacity='0.5'/>")
-                sb.AppendLine("<text x='" & (ml + pw - 5) & "' y='" & Fmt(y1000 - 4) & "' text-anchor='end' style='font-size:12px;fill:#B4641E'>N = 1,000</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 5) & "' y='" & Fmt(y1000 - 4) & "' text-anchor='end' style='font-size:13px;fill:#B4641E'>N = 1,000</text>")
             End If
 
             ' Grid lines
@@ -1147,7 +1147,7 @@ Namespace Libs
             For i As Integer = 0 To nYDecades
                 Dim logVal = logNMin + i
                 Dim y = mt + ph - ((logVal - logNMin) / (logNMax - logNMin)) * ph
-                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#e0e0e0' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#d0d4da' stroke-width='0.9'/>")
                 sb.AppendLine("<text x='" & (ml - 5) & "' y='" & Fmt(y + 4) & "' text-anchor='end' class='tick'>10<tspan dy='-5' font-size='7'>" & CInt(logVal).ToString() & "</tspan></text>")
             Next
             ' X ticks
@@ -1155,7 +1155,7 @@ Namespace Libs
             Dim logXEnd = Math.Floor(logStrainMax)
             For i As Integer = CInt(logXStart) To CInt(logXEnd)
                 Dim x = ml + ((i - logStrainMin) / (logStrainMax - logStrainMin)) * pw
-                sb.AppendLine("<line x1='" & Fmt(x) & "' y1='" & mt & "' x2='" & Fmt(x) & "' y2='" & (mt + ph) & "' stroke='#e0e0e0' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & Fmt(x) & "' y1='" & mt & "' x2='" & Fmt(x) & "' y2='" & (mt + ph) & "' stroke='#d0d4da' stroke-width='0.9'/>")
                 Dim lbl = CInt(10 ^ i)
                 sb.AppendLine("<text x='" & Fmt(x) & "' y='" & (mt + ph + 18) & "' text-anchor='middle' class='tick'>" & Format(lbl, "#,##0") & "</text>")
             Next
@@ -1270,11 +1270,11 @@ Namespace Libs
             ' Bleasdale equation box
             If isBleasdale Then
                 sb.AppendLine("<rect x='" & (ml + pw - 260) & "' y='" & (mt + ph - 80) & "' width='255' height='75' fill='white' stroke='#ccc' rx='4' opacity='0.9'/>")
-                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 64) & "' style='font-size:12px;fill:#333;font-weight:600'>Bleasdale (Cov &ge; 1,000):</text>")
-                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 52) & "' style='font-size:12px;fill:#555;font-family:Cambria Math,serif'>N = 10^((a + b&middot;&epsilon;)^(-1/c))</text>")
-                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 38) & "' style='font-size:12px;fill:#333;font-weight:600'>Power Law (Cov &lt; 1,000):</text>")
-                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 26) & "' style='font-size:12px;fill:#555;font-family:Cambria Math,serif'>N = (0.00414 / &epsilon;)^8.1</text>")
-                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 12) & "' style='font-size:12px;fill:#888'>Asymptote: " & Format(microAsymptote, "0.0") & " &mu;&epsilon;  |  Transition: " & Format(microTransition, "0.0") & " &mu;&epsilon;</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 64) & "' style='font-size:13px;fill:#333;font-weight:600'>Bleasdale (Cov &ge; 1,000):</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 52) & "' style='font-size:13px;fill:#555;font-family:Cambria Math,serif'>N = 10^((a + b&middot;&epsilon;)^(-1/c))</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 38) & "' style='font-size:13px;fill:#333;font-weight:600'>Power Law (Cov &lt; 1,000):</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 26) & "' style='font-size:13px;fill:#555;font-family:Cambria Math,serif'>N = (0.00414 / &epsilon;)^8.1</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 12) & "' style='font-size:13px;fill:#5a6270'>Asymptote: " & Format(microAsymptote, "0.0") & " &mu;&epsilon;  |  Transition: " & Format(microTransition, "0.0") & " &mu;&epsilon;</text>")
             End If
 
             sb.AppendLine("</svg></div>")
@@ -1303,7 +1303,7 @@ Namespace Libs
             sb.AppendLine("<div class='chart-wrap'>")
             sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Fatigue life reserve diverging bar chart'>")
             sb.AppendLine("<title>Fatigue life reserve diverging bar chart</title>")
-            sb.AppendLine("<rect x='" & ml & "' y='30' width='" & pw & "' height='" & (svgH - 50) & "' fill='#FAFBFC' stroke='#ccc'/>")
+            sb.AppendLine("<rect x='" & ml & "' y='30' width='" & pw & "' height='" & (svgH - 50) & "' fill='#FAFBFC' stroke='#bcc3cc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>Fatigue Life Reserve (N<tspan dy='-4' font-size='8'>fail</tspan><tspan dy='4'> / Repetitions)</tspan></text>")
 
             Dim maxLogRatio As Double = 0
@@ -1368,7 +1368,7 @@ Namespace Libs
             sb.AppendLine("<div class='chart-wrap'>")
             sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='CDF vs offset chart for " & WebEncode(det.ACName) & "'>")
             sb.AppendLine("<title>CDF vs offset chart for " & WebEncode(det.ACName) & "</title>")
-            sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
+            sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#bcc3cc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>" & WebEncode(det.ACName) & " &mdash; CDF vs Offset</text>")
 
             ' Per-tire CDF curves and tire bands
@@ -1621,7 +1621,7 @@ Namespace Libs
                 Dim val = yMax * i / nYTicks
                 Dim y = mt + ph - (i / CDbl(nYTicks)) * ph
                 sb.AppendLine("<text x='" & (ml - 5) & "' y='" & Fmt(y + 4) & "' text-anchor='end' class='tick'>" & FmtCDFSvg(val) & "</text>")
-                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#eee' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#d0d4da' stroke-width='0.9'/>")
             Next
             ' X axis ticks: -400, -300, ..., 0, ..., 300, 400
             For xTick As Integer = CInt(xMinVal) To CInt(xMaxVal) Step 100
@@ -1687,7 +1687,7 @@ Namespace Libs
             sb.AppendLine("<div class='chart-wrap'>")
             sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Coverage-to-pass distribution chart'>")
             sb.AppendLine("<title>Coverage-to-pass distribution chart</title>")
-            sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
+            sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#bcc3cc'/>")
             sb.AppendLine("<text x='" & Fmt(ml + pw / 2) & "' y='20' text-anchor='middle' class='chart-title'>Coverage-to-Pass (C/P) Distribution</text>")
 
             ' Centerline
@@ -1793,7 +1793,7 @@ Namespace Libs
                 Dim val = yMax * i / nYT
                 Dim y = mt + ph - (i / CDbl(nYT)) * ph
                 sb.AppendLine("<text x='" & (ml - 5) & "' y='" & Fmt(y + 4) & "' text-anchor='end' class='tick'>" & Format(val, "0.0000") & "</text>")
-                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#eee' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#d0d4da' stroke-width='0.9'/>")
             Next
             ' X ticks (bilateral: -400 to +400, step 100)
             For i As Integer = -4 To 4
@@ -1866,7 +1866,7 @@ Namespace Libs
             sb.AppendLine("<div class='chart-wrap'>")
             sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Composite CDF distribution across pavement width'>")
             sb.AppendLine("<title>Composite CDF distribution across pavement width</title>")
-            sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
+            sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#bcc3cc'/>")
             sb.AppendLine("<text x='" & Fmt(ml + pw / 2) & "' y='20' text-anchor='middle' class='chart-title'>Composite CDF Across Pavement Width</text>")
 
             ' Centerline
@@ -1926,7 +1926,7 @@ Namespace Libs
                 Dim val = yMax * i / nYT
                 Dim y = mt + ph - (i / CDbl(nYT)) * ph
                 sb.AppendLine("<text x='" & (ml - 5) & "' y='" & Fmt(y + 4) & "' text-anchor='end' class='tick'>" & FmtCDFSvg(val) & "</text>")
-                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#eee' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#d0d4da' stroke-width='0.9'/>")
             Next
             ' X ticks (bilateral: -400 to +400, step 100)
             For i As Integer = -4 To 4
@@ -1981,7 +1981,7 @@ Namespace Libs
             sb.AppendLine("<div class='chart-wrap'>")
             sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='CDF contribution percentage bar chart'>")
             sb.AppendLine("<title>CDF contribution percentage bar chart</title>")
-            sb.AppendLine("<rect x='" & ml & "' y='30' width='" & pw & "' height='" & (svgH - 50) & "' fill='#FAFBFC' stroke='#ccc'/>")
+            sb.AppendLine("<rect x='" & ml & "' y='30' width='" & pw & "' height='" & (svgH - 50) & "' fill='#FAFBFC' stroke='#bcc3cc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>CDF Contribution at Critical Offset (%)</text>")
 
             Dim yStart = 40
@@ -2034,7 +2034,7 @@ Namespace Libs
             sb.AppendLine("<div class='chart-wrap'>")
             sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Newton-Raphson convergence chart'>")
             sb.AppendLine("<title>Newton-Raphson convergence chart</title>")
-            sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
+            sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#bcc3cc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>Newton-Raphson Convergence</text>")
 
             ' Error line (left axis, blue)
@@ -2065,7 +2065,7 @@ Namespace Libs
             If logThresh >= minErr AndAlso logThresh <= maxErr Then
                 Dim yThresh = mt + ph - ((logThresh - minErr) / (maxErr - minErr)) * ph
                 sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(yThresh) & "' x2='" & (ml + pw) & "' y2='" & Fmt(yThresh) & "' stroke='#2CA02C' stroke-width='1' stroke-dasharray='6,3'/>")
-                sb.AppendLine("<text x='" & (ml + pw - 5) & "' y='" & Fmt(yThresh - 4) & "' text-anchor='end' style='font-size:12px;fill:#2CA02C'>Threshold = " & Format(CDF.CDFExitErr, "0.000") & "</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 5) & "' y='" & Fmt(yThresh - 4) & "' text-anchor='end' style='font-size:13px;fill:#2CA02C'>Threshold = " & Format(CDF.CDFExitErr, "0.000") & "</text>")
             End If
 
             ' Left Y axis ticks
@@ -2135,7 +2135,7 @@ Namespace Libs
             sb.AppendLine("<div class='chart-wrap'>")
             sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='ACR vs CDF per departure bubble chart'>")
             sb.AppendLine("<title>ACR vs CDF per departure bubble chart</title>")
-            sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#ccc'/>")
+            sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#bcc3cc'/>")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>ACR vs. CDF per Departure</text>")
 
             For Each pt In pts
@@ -2157,7 +2157,7 @@ Namespace Libs
             For i As Integer = CInt(minLogCPD) To CInt(maxLogCPD)
                 Dim y = mt + ph - ((i - minLogCPD) / (maxLogCPD - minLogCPD)) * ph
                 sb.AppendLine("<text x='" & (ml - 5) & "' y='" & Fmt(y + 4) & "' text-anchor='end' class='tick'>1E" & i.ToString() & "</text>")
-                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#eee' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#d0d4da' stroke-width='0.9'/>")
             Next
 
             ' X ticks for ACR
@@ -2166,7 +2166,7 @@ Namespace Libs
                 Dim val = minACR + (maxACR - minACR) * i / nXT
                 Dim x = ml + (i / CDbl(nXT)) * pw
                 sb.AppendLine("<text x='" & Fmt(x) & "' y='" & (mt + ph + 18) & "' text-anchor='middle' class='tick'>" & Format(val, "0.0") & "</text>")
-                sb.AppendLine("<line x1='" & Fmt(x) & "' y1='" & mt & "' x2='" & Fmt(x) & "' y2='" & (mt + ph) & "' stroke='#eee' stroke-width='0.8'/>")
+                sb.AppendLine("<line x1='" & Fmt(x) & "' y1='" & mt & "' x2='" & Fmt(x) & "' y2='" & (mt + ph) & "' stroke='#d0d4da' stroke-width='0.9'/>")
             Next
 
             ' Bubble size legend
@@ -2525,7 +2525,7 @@ Namespace Libs
                     End If
                     If ioff Mod 10 = 0 AndAlso ioff <> 0 Then
                         Dim stripLabel = If(ioff > 0, "+" & Format(offsetInches, "0"), Format(offsetInches, "0"))
-                        sb.AppendLine("<text x='" & Fmt(px) & "' y='" & (mT + pH + 14) & "' text-anchor='middle' fill='gray' style='font-size:13px'>" & stripLabel & "</text>")
+                        sb.AppendLine("<text x='" & Fmt(px) & "' y='" & (mT + pH + 14) & "' text-anchor='middle' fill='#5a6270' style='font-size:13px'>" & stripLabel & "</text>")
                     End If
                 End If
             Next
@@ -2653,8 +2653,8 @@ FoundTandemSVG:
             sb.AppendLine("<text x='" & mL & "' y='" & (mT + pH + 42) & "' fill='#2E5EA8' style='font-size:13px'>&sigma; = 30.435 in. (Gaussian lateral wander)</text>")
 
             ' Axes
-            sb.AppendLine("<line x1='" & mL & "' y1='" & mT & "' x2='" & mL & "' y2='" & (mT + pH) & "' stroke='black' stroke-width='1'/>")
-            sb.AppendLine("<line x1='" & mL & "' y1='" & (mT + pH) & "' x2='" & (mL + pW) & "' y2='" & (mT + pH) & "' stroke='black' stroke-width='1'/>")
+            sb.AppendLine("<line x1='" & mL & "' y1='" & mT & "' x2='" & mL & "' y2='" & (mT + pH) & "' stroke='#3a3f4a' stroke-width='1.3'/>")
+            sb.AppendLine("<line x1='" & mL & "' y1='" & (mT + pH) & "' x2='" & (mL + pW) & "' y2='" & (mT + pH) & "' stroke='#3a3f4a' stroke-width='1.3'/>")
             sb.AppendLine("<text x='" & (mL + pW / 2) & "' y='" & (svgH - 5) & "' text-anchor='middle' style='font-size:14px'>Lateral position (" & WebEncode(lengthUnit) & ")</text>")
 
             ' Y-axis label
@@ -2667,7 +2667,7 @@ FoundTandemSVG:
             Dim lgSwSz As Integer = 14
             Dim lgRowHeight As Integer = 20
             Dim lgPadding As Integer = 10
-            Dim lgFontStyle As String = "font-family:'Segoe UI',system-ui,sans-serif;font-size:11px"
+            Dim lgFontStyle As String = "font-family:'Segoe UI',system-ui,sans-serif;font-size:12px"
 
             ' Determine entry count (cap per-wheel at 4 tires for readability)
             Dim lgPerWheel As Boolean = allTiresX.Count > 1 AndAlso allTiresX.Count <= 4
@@ -2734,7 +2734,7 @@ FoundTandemSVG:
 
             ' Evaluation strips
             sb.AppendLine("<line x1='" & lgSX & "' y1='" & (lgCY + lgSwSz \ 2) & "' x2='" & (lgSX + lgSwSz) & "' y2='" & (lgCY + lgSwSz \ 2) & "' stroke='#A0A0A0' stroke-width='1' stroke-dasharray='3,3'/>")
-            sb.AppendLine("<text x='" & lgTX & "' y='" & (lgCY + lgSwSz \ 2 + 4) & "' fill='gray' style='" & lgFontStyle & "'>Eval. strips (" & Format(CDF.OFFSETINC, "0") & """ spacing)</text>")
+            sb.AppendLine("<text x='" & lgTX & "' y='" & (lgCY + lgSwSz \ 2 + 4) & "' fill='#5a6270' style='" & lgFontStyle & "'>Eval. strips (" & Format(CDF.OFFSETINC, "0") & """ spacing)</text>")
             lgCY += lgRowHeight
 
             ' Critical strip
@@ -2854,7 +2854,7 @@ FoundTandemSVG:
 
             Dim cpPlotL As Integer = 80, cpPlotW As Integer = 690, cpPlotH As Integer = 200
             Dim cpPlotT = panelBY + 15
-            sb.AppendLine("<rect x='" & cpPlotL & "' y='" & Fmt(cpPlotT) & "' width='" & cpPlotW & "' height='" & cpPlotH & "' fill='#FAFBFC' stroke='#ccc'/>")
+            sb.AppendLine("<rect x='" & cpPlotL & "' y='" & Fmt(cpPlotT) & "' width='" & cpPlotW & "' height='" & cpPlotH & "' fill='#FAFBFC' stroke='#bcc3cc'/>")
 
             ' Bilateral X range for Panel B
             Dim cpXMin As Double = -200, cpXMax As Double = 200, cpXRng As Double = 400
@@ -3028,7 +3028,7 @@ body {
 .card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .card.success { border-top: 3px solid #2CA02C; }
 .card.danger { border-top: 3px solid #D62728; }
-.card-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #556270; margin-bottom: 4px; }
+.card-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: #4B5563; margin-bottom: 6px; }
 .card-value { font-size: 20px; font-weight: 700; color: #1a3c6e; }
 .card-unit { font-size: 12px; font-weight: 400; color: #556270; }
 
@@ -3053,8 +3053,8 @@ section > h2 {
   font-size: 18px;
   color: #1a3c6e;
   border-bottom: 2px solid #e8eef6;
-  padding-bottom: 6px;
-  margin-bottom: 16px;
+  padding-bottom: 10px;
+  margin-bottom: 18px;
 }
 .sec-num {
   display: inline-block;
@@ -3091,14 +3091,14 @@ h4 { font-size: 14px; color: #556270; margin: 14px 0 8px; }
 }
 thead { display: table-header-group; }
 .data-table td {
-  padding: 6px 10px;
+  padding: 8px 12px;
   border-bottom: 1px solid #d5dce6;
 }
 .data-table tbody tr { transition: background 0.15s ease; }
 .data-table tbody tr:hover { background: #e8eef6; }
 .data-table tbody tr:nth-child(even) { background: #f8f9fb; }
 .data-table tbody tr:nth-child(even):hover { background: #e8eef6; }
-.data-table.compact td, .data-table.compact th { padding: 4px 8px; font-size: 12px; }
+.data-table.compact td, .data-table.compact th { padding: 6px 10px; font-size: 12px; }
 .highlight { background: #fff8e1 !important; }
 .highlight td { font-weight: 600; }
 .table-scroll { overflow-x: auto; margin-bottom: 16px; }
@@ -3154,7 +3154,7 @@ thead { display: table-header-group; }
 
 /* Figures */
 figure { margin: 16px 0; text-align: center; }
-figcaption { font-size: 12px; color: #556270; margin-top: 6px; font-style: italic; }
+figcaption { font-size: 13px; color: #4B5563; margin-top: 8px; font-style: italic; }
 
 /* Charts */
 .chart-wrap {
@@ -3277,11 +3277,11 @@ footer a { color: #1a3c6e; text-decoration: none; }
 .modulus-depth-svg .axis-label { font-size: 15px; fill: #444; font-family: 'Segoe UI', sans-serif; font-weight: 600; }
 .modulus-depth-svg .small-label { font-size: 12px; font-family: 'Segoe UI', sans-serif; }
 .modulus-depth-svg .mod-label { font-size: 13px; fill: #00796B; font-family: 'Segoe UI', sans-serif; font-weight: 600; }
-.fig-caption { font-size: 12px; color: #556270; text-align: center; margin: 8px 0 20px; font-style: italic; }
+.fig-caption { font-size: 13px; color: #4B5563; text-align: center; margin: 8px 0 20px; font-style: italic; }
 
 /* Print / PDF */
 @media print {
-  body { max-width: 100%; padding: 10px; font-size: 11px; zoom: 1; }
+  body { max-width: 100%; padding: 10px; font-size: 12px; zoom: 1; }
   .toc { break-after: page; }
   section { break-inside: avoid; }
   .dashboard { justify-content: flex-start; }
