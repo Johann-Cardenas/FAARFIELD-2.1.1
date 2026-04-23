@@ -527,6 +527,51 @@ Fixes grouped by chart function:
 
 ---
 
+#### Change 20: CM Report — Phase-B Polish (7 MEDIUM Findings)
+
+**Date:** 2026-04-23 | **Category:** Report (enhancement)
+
+Closed out the seven MEDIUM-severity findings from the full Detailed Computation Report diagnosis. All fixes are in `FF2/ViewModels/MainWindowViewModel.vb`; no computation touched.
+
+- **`DrawFatigueCurve`** — extended the existing 6-attempt aircraft label-shift algorithm to 10 right-side + 8 left-side attempts with plot-bound clipping, and added collision/bounds checks to the final above-point fallback so labels that genuinely cannot fit are skipped rather than drawn off-plot. Separately, minor log-axis tick labels (`2×`, `3×`, `5×`) are now suppressed when the strain span is under 1.5 decades (grid lines still draw) to stop 8 pt text from colliding on narrow-span plots.
+- **`DrawConvergencePlot`** — iteration dot markers now thin to ~20 visible per run when `nIter > 20`; first and last markers always retained. Prevents dense dot grids from blurring the convergence curve on 30+-iteration flexible designs.
+- **`DrawPavementCrossSection`** — layer labels ("Layer 3: P-501 PCC Overlay on Flexible, 4.5 in, E=450,000 psi") now render via `StringFormat.Trimming = EllipsisCharacter` when they exceed the 320 px layer-column width, so long material names stop bleeding into the tire-stress projection on the right.
+- **`DrawEquationImage`** — pre-measures each equation line with `MeasureFormattedString`; if the widest line exceeds available canvas width, shrinks the equation font uniformly (floor 75 %) so long multi-superscript lines don't overflow silently.
+- **`DrawGearConfiguration`** — Gaussian wander overlays for dense gears (≥12 wheels: A380, B747, B777) now use reduced fill alpha (`8` vs `20`) and stroke alpha (`60` vs `100`) so 14+ overlapping bell curves stop compositing into an opaque blob hiding the wheel circles beneath.
+- **`DrawCompositeCDFChart`** — cumulative CDF trace switched from solid `3.0 F` to dashed `2.0 F` so per-aircraft curves beneath stay visible where they cross the total. The semi-transparent fill area still gives the cumulative line its visual weight.
+- **`DrawSingleAircraftCDFChart`** — critical-offset red diamond now clamped vertically so the 7 px marker never pokes above the plot top or dips below into the x-axis tick label row when max CDF is near the axis limits.
+- **`DrawWheelCPVisualization`** — gear schematic now computes legend geometry first, then picks a scale factor (floor `0.6 px/in`) that prevents the schematic from overlapping the legend on very wide gears (A380, B777). Typical gears keep the previous `1.5 px/in`.
+
+Side effect: several inline `New SolidBrush` / `New Pen` allocations inside tight loops wrapped in `Using` blocks while touching the code (continues the Change 16 GDI+ hygiene pass).
+
+**Computation impact:** None.
+
+---
+
+#### Change 21: CM Report — Phase-C Polish (LOW-Severity Items)
+
+**Date:** 2026-04-23 | **Category:** Report (polish)
+
+Closed out the LOW-severity polish items from the diagnosis that are likely to actually fire in production. All fixes are in `FF2/ViewModels/MainWindowViewModel.vb`.
+
+- **`DrawSingleAircraftCDFChart`** title — now measures the full title ("<aircraft name> — CDF vs Offset") and falls back to a centered `StringFormat.Trimming = EllipsisCharacter` rendering when it would overflow the chart width, so long aircraft names ("Boeing 747-400ER Freighter") don't clip at both edges.
+- **`DrawCompositeCDFChart`** and **`DrawCoveragePlot`** critical-offset labels — when the label would overflow the right plot edge, it now flips to the left side of the dashed critical line with a measured gap; the Coverage chart additionally clamps to the left margin so the label never lands outside the plot on either side.
+- **`DrawModulusDepthProfile`** modulus labels — when a layer band is thinner than the label height (typical on dense aggregate-sublayer stacks), the per-layer modulus label is now skipped rather than vertically overlapping the neighbouring label. The profile line itself still draws so the stepped shape is preserved.
+
+**Items deliberately left alone after verification:**
+- `DrawLifeRatioChart` region labels ("Overstressed", "Life Reserve") against the "Ratio = 1.0" label — verified that the horizontal positions (left margin, plot center, right margin) place them in non-overlapping columns, and vertical positions already carry a 1–2 px buffer. No realistic collision.
+- `DrawPavementCrossSection` overlap / gap annotations — the two labels are in mutually-exclusive `If/Else` branches and only one ever fires per dual-wheel analysis; there is no stacking in practice.
+- `DrawCoverageConceptDiagram` — fixed 4-panel educational layout with no data-driven content, no realistic trigger.
+
+**Files modified (Changes 20 and 21 combined):**
+| File | Change summary |
+|------|---------------|
+| `FF2/ViewModels/MainWindowViewModel.vb` | 10 of 14 `Draw*` chart methods refined across Phases A + B + C. ~350 lines added / ~100 lines removed across the three phases. |
+
+**Computation impact:** None.
+
+---
+
 ## Summary: Files Changed vs. Original FAA Source
 
 **42 files changed** | **11,480 lines added** | **753 lines deleted**

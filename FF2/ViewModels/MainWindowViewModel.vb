@@ -8915,10 +8915,22 @@ Namespace ViewModels
                 Dim plotWidth As Integer = chartWidth - marginLeft - marginRight
                 Dim plotHeight As Integer = chartHeight - marginTop - marginBottom
 
-                ' Draw title
+                ' Draw title — truncate with ellipsis if a long aircraft name
+                ' would overflow the chart width.
                 Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
-                Dim titleSize = g.MeasureString(title & " — CDF vs Offset", titleFont)
-                g.DrawString(title & " — CDF vs Offset", titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 10)
+                Dim fullTitle As String = title & " — CDF vs Offset"
+                Dim titleSize = g.MeasureString(fullTitle, titleFont)
+                Dim maxTitleW As Integer = chartWidth - 20
+                If titleSize.Width <= maxTitleW Then
+                    g.DrawString(fullTitle, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 10)
+                Else
+                    Using fmt As New StringFormat()
+                        fmt.Trimming = StringTrimming.EllipsisCharacter
+                        fmt.FormatFlags = fmt.FormatFlags Or StringFormatFlags.NoWrap
+                        fmt.Alignment = StringAlignment.Center
+                        g.DrawString(fullTitle, titleFont, Brushes.Black, New RectangleF(10, 10, maxTitleW, titleSize.Height + 4), fmt)
+                    End Using
+                End If
 
                 ' Determine data range
                 Dim maxDataCDF As Double = 0
@@ -9556,10 +9568,17 @@ Namespace ViewModels
                     g.DrawString(entry.Item1, legendFont, Brushes.Black, lx + 21, ly)
                 Next
 
-                ' Add critical strip label
+                ' Add critical strip label. Flip to the left of the dashed
+                ' critical line when near the right edge so the text doesn't
+                ' overflow the plot bounds.
                 Dim critFont As New Font("Segoe UI", 7.5F, FontStyle.Italic)
                 Dim critLabel = "Critical: " & Format(critOffsetVal, "0") & " " & offsetUnit
-                g.DrawString(critLabel, critFont, Brushes.Red, critXPx + 4, marginTop + 4)
+                Dim critLabelSize = g.MeasureString(critLabel, critFont)
+                Dim critLabelX As Single = critXPx + 4
+                If critLabelX + critLabelSize.Width > marginLeft + plotWidth - 2 Then
+                    critLabelX = critXPx - 4 - critLabelSize.Width
+                End If
+                g.DrawString(critLabel, critFont, Brushes.Red, critLabelX, marginTop + 4)
 
                 ' Cleanup GDI+ objects
                 titleFont.Dispose()
@@ -11125,8 +11144,17 @@ Namespace ViewModels
                 Dim critPen As New Pen(Color.Red, 1.5F)
                 critPen.DashStyle = Drawing2D.DashStyle.Dash
                 g.DrawLine(critPen, critXPx, marginTop, critXPx, marginTop + plotHeight)
+                ' Critical-offset label — flip to the left of the dashed line
+                ' when near either plot edge so the text never overflows bounds.
                 Dim critFont As New Font("Segoe UI", 7.5F, FontStyle.Italic)
-                g.DrawString("Critical: " & Format(critOffsetVal, "0") & " " & offsetUnit, critFont, Brushes.Red, critXPx + 4, marginTop + 4)
+                Dim covCritLabel As String = "Critical: " & Format(critOffsetVal, "0") & " " & offsetUnit
+                Dim covCritSize = g.MeasureString(covCritLabel, critFont)
+                Dim covCritX As Single = critXPx + 4
+                If covCritX + covCritSize.Width > marginLeft + plotWidth - 2 Then
+                    covCritX = critXPx - 4 - covCritSize.Width
+                End If
+                If covCritX < marginLeft + 2 Then covCritX = marginLeft + 2
+                g.DrawString(covCritLabel, critFont, Brushes.Red, covCritX, marginTop + 4)
 
                 ' Cleanup
                 titleFont.Dispose()
@@ -12573,12 +12601,19 @@ FoundTandemPair:
                         g.DrawLine(profilePen, x, y2, xNext, y2)
                     End If
 
-                    ' Modulus value label
+                    ' Modulus value label. Skip when the layer band is thinner
+                    ' than the label height (typical on dense aggregate-sublayer
+                    ' stacks) so neighbouring labels don't vertically overlap.
+                    Dim lH As Single = Math.Abs(y2 - y1)
                     Dim modLabel As String = Format(allLayers(i).Modulus, "#,##0")
                     Dim mlsz = g.MeasureString(modLabel, smallFont)
-                    Dim labelX As Single = x + 4
-                    If labelX + mlsz.Width > plotRight - 5 Then labelX = x - mlsz.Width - 4
-                    g.DrawString(modLabel, smallFont, New SolidBrush(teal), labelX, (y1 + y2) / 2 - mlsz.Height / 2)
+                    If lH >= mlsz.Height + 2 Then
+                        Dim labelX As Single = x + 4
+                        If labelX + mlsz.Width > plotRight - 5 Then labelX = x - mlsz.Width - 4
+                        Using mlBrush As New SolidBrush(teal)
+                            g.DrawString(modLabel, smallFont, mlBrush, labelX, (y1 + y2) / 2 - mlsz.Height / 2)
+                        End Using
+                    End If
                 Next
 
                 ' Highlight aggregate sublayers with filled area
