@@ -391,7 +391,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <EmbeddedResource Include="Resources\BuildDate.txt" />
+    <None Include="Resources\BuildDate.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <Content Include="Resources\FAARFIELD.chm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

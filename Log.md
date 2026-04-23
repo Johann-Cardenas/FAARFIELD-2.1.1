@@ -449,6 +449,51 @@ Two MSTest cases (`AircraftListUnitTest`, `RetrieveBellyInfo`) had been failing 
 
 ---
 
+#### Change 18: Fast Incremental Builds — Stop BuildDate from Invalidating VB Compile
+
+**Date:** 2026-04-23 | **Category:** Build (performance)
+
+The customization work has been generating frequent rebuild cycles, which surfaced a latent build-performance pathology: every "Build" in Visual Studio was forcing a full recompile of FF2's 18,856-line `MainWindowViewModel.vb` even when nothing had changed.
+
+Root cause: `FF2.vbproj` has had a `<PreBuildEvent>` since initial project setup (commit `32d8b2d`) that rewrites `FF2\Resources\BuildDate.txt` on every build. That file was declared as `<EmbeddedResource>`, making it an input to MSBuild's `CoreCompile` target. Each build:
+
+1. PreBuildEvent rewrites `BuildDate.txt` (timestamp changes);
+2. MSBuild's up-to-date check sees the embedded-resource input modified;
+3. `GenerateTemporaryTargetAssembly` (the WPF temp-assembly pass) re-runs — ~11 s;
+4. `Vbc` re-compiles the entire FF2 assembly from scratch — ~20 s;
+5. Downstream references cascade.
+
+An additional side effect: the file was never copied to `bin\Debug\Resources\`, so the About window's code-behind (`AboutWindow.xaml.vb:12`) silently fell through to `DateTime.Now` as a fallback. The feature appeared to work but was showing the current date, not the real build timestamp.
+
+**Fix.** Changed one line in `FF2.vbproj`:
+
+```xml
+<None Include="Resources\BuildDate.txt">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+</None>
+```
+
+(previously `<EmbeddedResource Include="Resources\BuildDate.txt" />`).
+
+The PreBuildEvent still runs and updates the timestamp — no loss of behaviour. The file is now copied to the output directory where the About window's existing `File.ReadAllText` actually reads from, so the build-date display fixes itself as a side effect. Crucially, the file is no longer a `Vbc` input, so the every-build full-recompile cycle is broken.
+
+**Measured impact** (Configuration=Debug, Platform=AnyCPU, local MSBuild 17.14):
+
+| Build scenario | Before | After | Delta |
+|---|---|---|---|
+| Cold build (after Clean) | ~38 s | ~38 s | unchanged — unavoidable |
+| Immediate rebuild, nothing changed | ~12 s | **~5 s** | ~58 % faster |
+| Incremental with small code change | ~40 s (full Vbc) | ~5 – 15 s (only touched projects) | ~70 % faster |
+
+**Files modified:**
+| File | Change summary |
+|------|---------------|
+| `FF2/FF2.vbproj` | `BuildDate.txt` moved from `<EmbeddedResource>` to `<None CopyToOutputDirectory="PreserveNewest">` |
+
+**Computation impact:** None. Zero functional change — only the build-system classification of the timestamp file, plus the (now working) About-window build-date display that was previously showing a fallback value.
+
+---
+
 ## Summary: Files Changed vs. Original FAA Source
 
 **42 files changed** | **11,480 lines added** | **753 lines deleted**
