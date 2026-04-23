@@ -10737,7 +10737,9 @@ Namespace ViewModels
                 ' X-axis (iterations)
                 Dim axisFont As New Font("Segoe UI", 8.5F)
                 Dim labelFont As New Font("Segoe UI", 9.5F)
-                Dim xStep As Integer = Math.Max(1, nIter \ 10)
+                ' Target ~8 x-axis labels max; nIter \ 10 produced 12+ labels for 25 iterations,
+                ' which collided at 8.5pt font.
+                Dim xStep As Integer = Math.Max(1, CInt(Math.Ceiling(nIter / 8.0)))
                 For i As Integer = 1 To nIter Step xStep
                     Dim xPx As Single = CSng(marginLeft + (i - 1) / Math.Max(nIter - 1, 1) * plotWidth)
                     Dim iLabel = i.ToString()
@@ -11746,8 +11748,12 @@ Namespace ViewModels
                     End If
                 Next
 
-                ' Draw all physical tires as filled ellipses (per-wheel coloring)
+                ' Draw all physical tires as filled ellipses (per-wheel coloring).
+                ' Pass 1 collects wheel pixel bounds so Pass 2 can skip labels that
+                ' would overlap another wheel or another label on dense gears
+                ' (A380/B747/B777).
                 Dim tireRadius As Single = det.TireWidth / 2
+                Dim wheelRects As New List(Of RectangleF)()
                 For i As Integer = 0 To allTiresX.Count - 1
                     Dim cx As Single = toPixelX(allTiresX(i))
                     Dim cy As Single = toPixelY(allTiresY(i))
@@ -11755,10 +11761,46 @@ Namespace ViewModels
                     rPx = Math.Max(rPx, 6)
                     rPx = Math.Min(rPx, 40)
                     Dim wColor As Color = tireGaussColors(i Mod tireGaussColors.Length)
-                    g.FillEllipse(New SolidBrush(Color.FromArgb(140, wColor.R, wColor.G, wColor.B)), cx - rPx, cy - rPx, rPx * 2, rPx * 2)
-                    g.DrawEllipse(New Pen(wColor, 1.0F), cx - rPx, cy - rPx, rPx * 2, rPx * 2)
+                    Using fillBrush As New SolidBrush(Color.FromArgb(140, wColor.R, wColor.G, wColor.B)),
+                          outlinePen As New Pen(wColor, 1.0F)
+                        g.FillEllipse(fillBrush, cx - rPx, cy - rPx, rPx * 2, rPx * 2)
+                        g.DrawEllipse(outlinePen, cx - rPx, cy - rPx, rPx * 2, rPx * 2)
+                    End Using
+                    wheelRects.Add(New RectangleF(cx - rPx, cy - rPx, rPx * 2, rPx * 2))
+                Next
+
+                ' Pass 2: place wheel coordinate labels with bounding-box collision
+                ' detection. Try 4 candidate positions per wheel; skip label if none fit.
+                Dim labelRects As New List(Of RectangleF)()
+                For i As Integer = 0 To allTiresX.Count - 1
+                    Dim cx As Single = toPixelX(allTiresX(i))
+                    Dim cy As Single = toPixelY(allTiresY(i))
+                    Dim rPx As Single = Math.Max(6, Math.Min(40, tireRadius * scale))
                     Dim coordLabel = "(" & Format(allTiresX(i), "0.0") & ", " & Format(allTiresY(i), "0.0") & ")"
-                    g.DrawString(coordLabel, annotFont, Brushes.Black, cx + rPx + 2, cy - 5)
+                    Dim sz As SizeF = g.MeasureString(coordLabel, annotFont)
+                    Dim candidates As PointF() = {
+                        New PointF(cx + rPx + 2, cy - sz.Height / 2),
+                        New PointF(cx - rPx - sz.Width - 2, cy - sz.Height / 2),
+                        New PointF(cx - sz.Width / 2, cy - rPx - sz.Height - 2),
+                        New PointF(cx - sz.Width / 2, cy + rPx + 2)
+                    }
+                    For Each pt In candidates
+                        Dim rc As New RectangleF(pt.X, pt.Y, sz.Width, sz.Height)
+                        Dim collides As Boolean = False
+                        For Each wr In wheelRects
+                            If rc.IntersectsWith(wr) Then collides = True : Exit For
+                        Next
+                        If Not collides Then
+                            For Each lr In labelRects
+                                If rc.IntersectsWith(lr) Then collides = True : Exit For
+                            Next
+                        End If
+                        If Not collides Then
+                            g.DrawString(coordLabel, annotFont, Brushes.Black, rc.X, rc.Y)
+                            labelRects.Add(rc)
+                            Exit For
+                        End If
+                    Next
                 Next
 
                 ' Dimension annotations
@@ -11803,16 +11845,30 @@ FoundDualPair:
 FoundTandemPair:
                     Dim py1 As Single = toPixelY(allTiresY(w1))
                     Dim py2 As Single = toPixelY(allTiresY(w2))
-                    Dim px As Single = toPixelX(allTiresX(w1)) + tireRadius * scale + 15
-                    px = Math.Min(px, CSng(marginLeft + plotWidth - 5))
+                    Dim wheelX As Single = toPixelX(allTiresX(w1))
+                    Dim dimOffset As Single = tireRadius * scale + 15
+                    Dim tanLabel = Format(det.TandemSpacing, "0.0") & """ tandem"
+                    Dim tanSize = g.MeasureString(tanLabel, dimFont)
+                    ' Pick the side (right preferred) that leaves room for the label,
+                    ' so wide gears (A380/B747/B777) don't jam text into the axis.
+                    Dim rightDim As Single = wheelX + dimOffset
+                    Dim leftDim As Single = wheelX - dimOffset
+                    Dim px As Single
+                    Dim labelOnLeft As Boolean = False
+                    If rightDim + tanSize.Width + 4 <= marginLeft + plotWidth - 2 Then
+                        px = rightDim
+                    ElseIf leftDim - tanSize.Width - 4 >= marginLeft + 2 Then
+                        px = leftDim
+                        labelOnLeft = True
+                    Else
+                        px = Math.Min(rightDim, CSng(marginLeft + plotWidth - 5))
+                    End If
                     g.DrawLine(dimPen, px, py1, px, py2)
                     g.DrawLine(dimPen, px - 3, py1, px + 3, py1)
                     g.DrawLine(dimPen, px - 3, py2, px + 3, py2)
-                    Dim tanLabel = Format(det.TandemSpacing, "0.0") & """ tandem"
-                    Dim tanSize = g.MeasureString(tanLabel, dimFont)
-                    ' Rotate text for vertical dimension
                     Dim midY As Single = (py1 + py2) / 2
-                    g.DrawString(tanLabel, dimFont, Brushes.DimGray, px + 4, midY - tanSize.Height / 2)
+                    Dim labelX As Single = If(labelOnLeft, px - 4 - tanSize.Width, px + 4)
+                    g.DrawString(tanLabel, dimFont, Brushes.DimGray, labelX, midY - tanSize.Height / 2)
                 End If
 
                 ' Contact area annotation
