@@ -494,6 +494,39 @@ The PreBuildEvent still runs and updates the timestamp — no loss of behaviour.
 
 ---
 
+#### Change 19: CM Report — Phase-A Layout Overhaul for Complex Designs
+
+**Date:** 2026-04-23 | **Category:** Report (enhancement)
+
+Diagnosed and fixed the eight HIGH-severity layout/overlap issues in the Detailed Computation (CM) Report that previously made the report visually unusable for wide-body airport traffic mixes (A380/B747/B777 gears, or design mixes with 10+ aircraft). The full diagnosis identified 8 HIGH, 11 MEDIUM, and 7 LOW findings; this change ships all 8 HIGH fixes. All changes are in `FF2/ViewModels/MainWindowViewModel.vb`; no computation touched.
+
+Fixes grouped by chart function:
+
+**`DrawConvergencePlot`** — adaptive x-axis tick density: previously `xStep = nIter \ 10` produced 12+ overlapping labels at 25+ iterations, now `Math.Ceiling(nIter / 8)` caps at ~8 labels regardless of iteration count.
+
+**`DrawGearConfiguration`** — wheel coordinate labels and tandem dimensions: (a) coordinate labels previously stacked into an unreadable pile on dense bogies; split into a two-pass structure that collects wheel bounds first, then tries four candidate label positions per wheel with bounding-box collision detection — outer/isolated wheels keep their labels, dense clusters drop them cleanly. (b) tandem-spacing dimension text previously jammed against the right axis via `Math.Min` clamp on wide gears; now picks left or right side based on available space for the measured label width.
+
+**`DrawCompositeCDFChart`** and **`DrawCoveragePlot`** — legend repositioning: previously a fixed single-column legend at bottom-right grew to 200+ px tall for 15+ aircraft and landed squarely in the middle of the plot, occluding the per-aircraft curves. Same inline treatment in both: switch to 7 pt / 11 px line-height and 1–3 compact columns when the single-column legend would take more than 40 % of the plot height; column width derives from the widest entry measured at the final font, so long aircraft names still fit. Simple cases (≤10 aircraft) get exactly the current layout.
+
+**`DrawCDFContributionChart`** — compact rows and dynamic left margin: row pitch drops from 40 px to 30 px for 15+ aircraft, and `marginLeft` grows from its fixed 180 to whatever the widest aircraft name requires, preventing truncation of names like "Boeing 747-400ER Freighter".
+
+**`DrawLifeRatioChart`** — same compact-row + dynamic-marginLeft treatment as `DrawCDFContributionChart`.
+
+**`DrawACRDamageChart`** — bubble/label collision avoidance: the bubble draw loop was split into two passes. Pass 1 draws bubbles and collects their pixel rectangles; pass 2 places labels by trying four candidate positions (right / left / above / below) with collision checks against every prior bubble and every prior label. Aircraft with similar (ACR, damage) bubbles now keep readable, non-overlapping labels; labels that truly cannot fit are dropped rather than painted over a bubble.
+
+**Medium-severity items deliberately deferred** to a later Phase-B change: long-name truncation policy on title rows; extension of the existing `DrawFatigueCurve` label-shift algorithm; layer-label overflow on `DrawPavementCrossSection`; `DrawConvergencePlot` iteration-marker density. All fall out of the same helper extraction pattern and will be addressed in a dedicated commit.
+
+**Build & tests:** `MSBuild FAARFIELD.sln -t:FAARFIELDUnitTests` exit 0; `vstest.console` 5 / 5 passed after each of the three batch commits.
+
+**Files modified:**
+| File | Change summary |
+|------|---------------|
+| `FF2/ViewModels/MainWindowViewModel.vb` | All 14 `Draw*` chart methods reviewed; 7 of them edited (Convergence, GearConfig, CompositeCDF, Coverage, CDFContribution, LifeRatio, ACRDamage). ~170 lines added, ~40 lines removed. |
+
+**Computation impact:** None. All changes are rendering-loop only; no algorithm, formula, convergence criterion, or data class modified.
+
+---
+
 ## Summary: Files Changed vs. Original FAA Source
 
 **42 files changed** | **11,480 lines added** | **753 lines deleted**

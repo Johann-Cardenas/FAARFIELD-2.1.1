@@ -12191,7 +12191,12 @@ FoundTandemPair:
                 g.ResetTransform()
                 g.ScaleTransform(2, 2) ' Restore 2x supersampling scale
 
-                ' Plot points
+                ' Plot points — two passes so labels can avoid colliding with
+                ' bubbles or previously-placed labels on complex mixes.
+                Dim maxDep As Double = points.Max(Function(p) p.Item5)
+                Dim bubbleRects As New List(Of RectangleF)()
+                ' Item1=x, Item2=y, Item3=radius, Item4=color, Item5=name
+                Dim bubbleDraws As New List(Of Tuple(Of Single, Single, Integer, Color, String))()
                 For Each pt In points
                     Dim acr As Double = pt.Item1
                     Dim dmg As Double = pt.Item2
@@ -12202,16 +12207,54 @@ FoundTandemPair:
                     Dim xPx As Single = CSng(marginLeft + (acr - minACR) / (maxACR - minACR) * plotWidth)
                     Dim logDmg As Double = Math.Log10(Math.Max(dmg, 1.0E-20))
                     Dim yPx As Single = CSng(marginTop + plotHeight - (logDmg - logMinD) / (logMaxD - logMinD) * plotHeight)
-
-                    ' Size proportional to annual departures (scaled)
-                    Dim maxDep As Double = points.Max(Function(p) p.Item5)
                     Dim radius As Integer = CInt(Math.Max(6, Math.Min(20, 6 + 14 * annDep / Math.Max(maxDep, 1))))
 
-                    g.FillEllipse(New SolidBrush(Color.FromArgb(180, acColor.R, acColor.G, acColor.B)), xPx - radius, yPx - radius, radius * 2, radius * 2)
-                    g.DrawEllipse(New Pen(acColor, 1.5F), xPx - radius, yPx - radius, radius * 2, radius * 2)
+                    Using fillBrush As New SolidBrush(Color.FromArgb(180, acColor.R, acColor.G, acColor.B)),
+                          outlinePen As New Pen(acColor, 1.5F)
+                        g.FillEllipse(fillBrush, xPx - radius, yPx - radius, radius * 2, radius * 2)
+                        g.DrawEllipse(outlinePen, xPx - radius, yPx - radius, radius * 2, radius * 2)
+                    End Using
+                    bubbleRects.Add(New RectangleF(xPx - radius, yPx - radius, radius * 2, radius * 2))
+                    bubbleDraws.Add(New Tuple(Of Single, Single, Integer, Color, String)(xPx, yPx, radius, acColor, acName))
+                Next
 
-                    ' Label
-                    g.DrawString(acName, smallFont, New SolidBrush(acColor), xPx + radius + 3, yPx - 6)
+                ' Pass 2: place labels with collision avoidance
+                Dim labelRects As New List(Of RectangleF)()
+                For Each bd In bubbleDraws
+                    Dim xPx As Single = bd.Item1
+                    Dim yPx As Single = bd.Item2
+                    Dim radius As Integer = bd.Item3
+                    Dim acColor As Color = bd.Item4
+                    Dim acName As String = bd.Item5
+                    Dim lblSize As SizeF = g.MeasureString(acName, smallFont)
+                    Dim candidates As PointF() = {
+                        New PointF(xPx + radius + 3, yPx - lblSize.Height / 2),
+                        New PointF(xPx - radius - 3 - lblSize.Width, yPx - lblSize.Height / 2),
+                        New PointF(xPx - lblSize.Width / 2, yPx - radius - 3 - lblSize.Height),
+                        New PointF(xPx - lblSize.Width / 2, yPx + radius + 3)
+                    }
+                    Dim placed As Boolean = False
+                    For Each pt In candidates
+                        Dim rc As New RectangleF(pt.X, pt.Y, lblSize.Width, lblSize.Height)
+                        Dim collides As Boolean = False
+                        For Each br In bubbleRects
+                            If rc.IntersectsWith(br) Then collides = True : Exit For
+                        Next
+                        If Not collides Then
+                            For Each lr In labelRects
+                                If rc.IntersectsWith(lr) Then collides = True : Exit For
+                            Next
+                        End If
+                        If Not collides Then
+                            Using lblBrush As New SolidBrush(acColor)
+                                g.DrawString(acName, smallFont, lblBrush, rc.X, rc.Y)
+                            End Using
+                            labelRects.Add(rc)
+                            placed = True
+                            Exit For
+                        End If
+                    Next
+                    ' If no candidate fit, skip the label rather than paint over a bubble
                 Next
 
                 ' Note about bubble size
@@ -12489,13 +12532,29 @@ FoundTandemPair:
             Dim nAC As Integer = rpt.CDFSweep.NAircraftCaptured
             If nAC <= 0 Then Return New Bitmap(1, 1)
 
-            Dim barHeight As Integer = 32
-            Dim spacing As Integer = 8
+            ' Compact row layout when 15+ aircraft would otherwise push the chart
+            ' past 720 px tall (was 930 px for 20 aircraft at the default rhythm).
+            Dim barHeight As Integer = If(nAC >= 15, 24, 32)
+            Dim spacing As Integer = If(nAC >= 15, 6, 8)
             Dim chartWidth As Integer = 800
-            Dim chartHeight As Integer = 70 + (nAC + 1) * (barHeight + spacing) + 20
+            ' Dynamic left margin: grow to fit the widest aircraft name so long
+            ' names like "A380-800 WV002 Belly" don't get truncated by a fixed 180.
             Dim marginLeft As Integer = 180
             Dim marginRight As Integer = 90
             Dim marginTop As Integer = 50
+            Using measureFont As New Font("Segoe UI", 9.5F), tmpBmp As New Bitmap(1, 1), tmpG As Graphics = Graphics.FromImage(tmpBmp)
+                Dim maxNameW As Single = 0
+                For ia As Integer = 1 To nAC
+                    Dim nm As String = "AC" & ia.ToString()
+                    If rpt.AircraftDetails IsNot Nothing AndAlso ia <= UBound(rpt.AircraftDetails) AndAlso rpt.AircraftDetails(ia) IsNot Nothing Then
+                        nm = rpt.AircraftDetails(ia).ACName
+                    End If
+                    Dim sz = tmpG.MeasureString(nm, measureFont)
+                    If sz.Width > maxNameW Then maxNameW = sz.Width
+                Next
+                marginLeft = Math.Max(marginLeft, CInt(maxNameW) + 24)
+            End Using
+            Dim chartHeight As Integer = 70 + (nAC + 1) * (barHeight + spacing) + 20
             Dim plotWidth As Integer = chartWidth - marginLeft - marginRight
 
             Dim bmpHi As New Bitmap(chartWidth * 2, chartHeight * 2)
@@ -12613,13 +12672,26 @@ FoundTandemPair:
             Next
             If acList.Count = 0 Then Return New Bitmap(1, 1)
 
-            Dim barHeight As Integer = 32
-            Dim spacing As Integer = 8
+            ' Compact row layout when 15+ aircraft so the chart stays readable
+            ' (default 40 px/row would otherwise produce a ~900 px tall chart
+            ' for a 20-aircraft mix).
+            Dim barHeight As Integer = If(acList.Count >= 15, 24, 32)
+            Dim spacing As Integer = If(acList.Count >= 15, 6, 8)
             Dim chartWidth As Integer = 800
-            Dim chartHeight As Integer = 70 + acList.Count * (barHeight + spacing) + 30
             Dim marginLeft As Integer = 180
             Dim marginRight As Integer = 100
             Dim marginTop As Integer = 50
+            ' Grow the left margin to fit the widest aircraft name so long names
+            ' ("Boeing 747-400ER Freighter") don't get truncated.
+            Using measureFont As New Font("Segoe UI", 9.5F), tmpBmp As New Bitmap(1, 1), tmpG As Graphics = Graphics.FromImage(tmpBmp)
+                Dim maxNameW As Single = 0
+                For Each ac In acList
+                    Dim sz = tmpG.MeasureString(ac.Item1, measureFont)
+                    If sz.Width > maxNameW Then maxNameW = sz.Width
+                Next
+                marginLeft = Math.Max(marginLeft, CInt(maxNameW) + 24)
+            End Using
+            Dim chartHeight As Integer = 70 + acList.Count * (barHeight + spacing) + 30
             Dim plotWidth As Integer = chartWidth - marginLeft - marginRight
 
             ' Use log scale for bar width
