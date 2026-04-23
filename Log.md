@@ -422,6 +422,33 @@ Completed a full audit pass of the customized UI / report code for bugs that cou
 
 ---
 
+#### Change 17: Clean MSTest Suite — 5/5 Passing
+
+**Date:** 2026-04-22 | **Category:** Quality (test infrastructure)
+
+Two MSTest cases (`AircraftListUnitTest`, `RetrieveBellyInfo`) had been failing since long before the audit work. Root-cause analysis identified two independent defects:
+
+1. **Headless MessageBox.** `FF2/Libs/AircraftLibrary.GetAircrafts` shows a warning dialog when the aircraft library signature validation fails. Inside the message string it reads `My.Application.Info.DirectoryPath`, which returns `Nothing` under vstest.console, producing a `NullReferenceException` that crashed the test's `MainWindowViewModel` constructor. The constructor already accepted an `IsUnitTest` flag, but it was not propagated into `GetAircrafts`.
+
+2. **Stale assertion after Change 7.** `AircraftUnitTests.AircraftListUnitTest` at line 100 asserted that over-limit departures produce the message `"Maximum allowable number of Annual Departures is 100,000"` — but Change 7 (2026-03-15) raised the limit to 500,000 and updated the production error message accordingly. The test literal was never updated.
+
+**Fixes:**
+- Added an optional `isUnitTest As Boolean = False` parameter to `AircraftLibrary.GetAircrafts`. The constructor at `MainWindowViewModel.vb:4317` and `4319` now forwards its existing `IsUnitTest` value. When `isUnitTest = True`, the unsigned-library warning is written to `Debug.WriteLine` instead of `MessageBox.Show`. Production UX is unchanged — in interactive app use the dialog still appears exactly as before.
+- Updated the test assertion in `FAARFIELDUnitTests/AircraftUnitTests.vb:100` to expect `"500,000"` in line with the current production error message.
+
+**Verification:** `MSBuild FAARFIELD.sln -t:FAARFIELDUnitTests -p:Configuration=Debug` → exit 0. `vstest.console.exe FAARFIELDUnitTests\bin\Debug\FAARFIELDUnitTests.dll /Platform:x86` → **Total tests: 5, Passed: 5, Failed: 0**.
+
+**Files modified:**
+| File | Change summary |
+|------|---------------|
+| `FF2/Libs/AircraftLibrary.vb` | Added `isUnitTest As Boolean = False` optional parameter to `GetAircrafts`; wrapped the unsigned-library `MessageBox.Show` in an `If isUnitTest Then Debug.WriteLine Else MessageBox.Show End If`; added `Imports System.Diagnostics` |
+| `FF2/ViewModels/MainWindowViewModel.vb` | Passes the constructor's `IsUnitTest` flag into both `GetAircrafts` calls inside the constructor (line 4317/4319) — the separate `LoadAircraftLibrary()` refresh path is UI-triggered and keeps the default `False` |
+| `FAARFIELDUnitTests/AircraftUnitTests.vb` | Updated line 100 assertion to expect `500,000` (matches production behaviour introduced in Change 7) |
+
+**Computation impact:** None. Both fixes are in the test-plumbing and presentation layers.
+
+---
+
 ## Summary: Files Changed vs. Original FAA Source
 
 **42 files changed** | **11,480 lines added** | **753 lines deleted**

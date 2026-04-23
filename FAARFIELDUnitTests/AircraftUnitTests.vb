@@ -97,7 +97,7 @@ Imports FF2
         result = acList.UpdateNumberDepartures(0, 123456789)
         Assert.AreEqual(result, False)
         Assert.AreEqual(acList.ErrorMessages.Count(), 1)
-        Assert.AreEqual(acList.ErrorMessages(0), "Maximum allowable number of Annual Departures is 100,000")
+        Assert.AreEqual(acList.ErrorMessages(0), "Maximum allowable number of Annual Departures is 500,000")
 
         result = acList.UpdateNumberDepartures(0, -1)
         Assert.AreEqual(result, False)

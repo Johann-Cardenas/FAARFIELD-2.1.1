@@ -4314,9 +4314,9 @@ Namespace ViewModels
             End If
 
             'wrg xmlFilePath is for unit testing only
-            AircraftLibrary = GetAircrafts(FaarFieldFactory, airplaneXMLFileLocation, False)
+            AircraftLibrary = GetAircrafts(FaarFieldFactory, airplaneXMLFileLocation, False, IsUnitTest)
 
-            FullAircraftLibrary = GetAircrafts(FaarFieldFactory, airplaneXMLFileLocation, True)
+            FullAircraftLibrary = GetAircrafts(FaarFieldFactory, airplaneXMLFileLocation, True, IsUnitTest)
 
             If My.Settings.UDADirectory Is Nothing Or My.Settings.UDADirectory = "" Then
                 UDAFolderPath = SpecialDirectories.MyDocuments & Path.DirectorySeparatorChar & "My FAARFIELD" & Path.DirectorySeparatorChar & "User Defined Aircraft" & Path.DirectorySeparatorChar

@@ -1,4 +1,5 @@
 ﻿Imports System.Collections.ObjectModel
+Imports System.Diagnostics
 Imports System.IO
 Imports System.Runtime.Serialization
 Imports System.Runtime.Serialization.Json
@@ -54,8 +55,11 @@ Namespace Libs
         End Function
 
 
-        'wrg - parameter xmlFilePath added 
-        Public Function GetAircrafts(factory As IFaarFieldModelFactory, xmlPath As String, includeBellyAndDeprecated As Boolean) As List(Of IAirplaneInfo)
+        'wrg - parameter xmlFilePath added
+        'isUnitTest suppresses the UI-only warning dialog when loading from a
+        'headless test runner (where My.Application.Info.DirectoryPath returns
+        'Nothing and MessageBox.Show therefore NREs).
+        Public Function GetAircrafts(factory As IFaarFieldModelFactory, xmlPath As String, includeBellyAndDeprecated As Boolean, Optional isUnitTest As Boolean = False) As List(Of IAirplaneInfo)
 
             Dim aircraftLibrary As SignedAircraftLibrary
 
@@ -77,17 +81,21 @@ Namespace Libs
                 'Validate only on initial load for UI
                 Dim isSignedLibrary As Boolean = ValidateSignedAircraftLibrary(aircraftLibrary)
                 If Not isSignedLibrary Then
-                    MessageBox.Show(
-                        "The aircraft library located at:" & vbCrLf & vbCrLf &
-                        My.Application.Info.DirectoryPath & "\Defaults\Aircraft\aircraft.xml" & vbCrLf & vbCrLf &
-                        "is not digitally signed by the application. This means the library file " &
-                        "has been modified or replaced outside of an official FAARFIELD update, " &
-                        "and its contents cannot be verified as FAA-approved." & vbCrLf & vbCrLf &
-                        "The program will continue to function normally with this library, " &
-                        "but design results produced using an unsigned library are not FAA-approved.",
-                        "Aircraft Library Signature",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning)
+                    If isUnitTest Then
+                        Debug.WriteLine("AircraftLibrary.GetAircrafts: signature validation failed (unit-test context — dialog suppressed).")
+                    Else
+                        MessageBox.Show(
+                            "The aircraft library located at:" & vbCrLf & vbCrLf &
+                            My.Application.Info.DirectoryPath & "\Defaults\Aircraft\aircraft.xml" & vbCrLf & vbCrLf &
+                            "is not digitally signed by the application. This means the library file " &
+                            "has been modified or replaced outside of an official FAARFIELD update, " &
+                            "and its contents cannot be verified as FAA-approved." & vbCrLf & vbCrLf &
+                            "The program will continue to function normally with this library, " &
+                            "but design results produced using an unsigned library are not FAA-approved.",
+                            "Aircraft Library Signature",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning)
+                    End If
                 End If
 
                 'Initial load removes belly and deprecated aircraft from view
