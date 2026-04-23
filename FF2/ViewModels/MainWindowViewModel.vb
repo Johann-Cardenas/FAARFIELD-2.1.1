@@ -9257,9 +9257,12 @@ Namespace ViewModels
                     End If
                 Next
                 Dim diamondSize As Integer = 7
-                ' Right side diamond
+                ' Right side diamond. Clamp maxYPx so the 7 px diamond never
+                ' dips below the plot area into the x-axis tick labels (which
+                ' sit at marginTop + plotHeight + 4) or pokes above the plot top.
                 Dim maxXPxR As Single = toXPx((maxCDFIdx - 1) * CDF.OFFSETINC)
                 Dim maxYPx As Single = CSng(marginTop + plotHeight - (maxCDFVal / yMax) * plotHeight)
+                maxYPx = Math.Max(CSng(marginTop + diamondSize + 1), Math.Min(CSng(marginTop + plotHeight - diamondSize - 1), maxYPx))
                 Dim diamondPtsR() As PointF = {
                     New PointF(maxXPxR, maxYPx - diamondSize),
                     New PointF(maxXPxR + diamondSize, maxYPx),
@@ -9466,8 +9469,12 @@ Namespace ViewModels
                     acPen.Dispose()
                 Next
 
-                ' Draw cumulative CDF curve (thick black line)
-                Dim cumPen As New Pen(Color.Black, 3.0F)
+                ' Draw cumulative CDF curve. Use a dashed 2.0 F line (was solid
+                ' 3.0 F) so per-aircraft curves beneath remain visible where they
+                ' cross the cumulative trace; the semi-transparent fill beneath
+                ' preserves the visual weight of the "total" line.
+                Dim cumPen As New Pen(Color.Black, 2.0F)
+                cumPen.DashStyle = Drawing2D.DashStyle.Dash
                 Dim cumPoints(CDF.NOFF - 1) As PointF
                 For ioff As Integer = 1 To CDF.NOFF
                     Dim xVal As Double = (ioff - 1) * CDF.OFFSETINC
@@ -9481,12 +9488,13 @@ Namespace ViewModels
                     cumFillPts.Add(New PointF(cumPoints(0).X, CSng(marginTop + plotHeight)))
                     cumFillPts.AddRange(cumPoints)
                     cumFillPts.Add(New PointF(cumPoints(cumPoints.Length - 1).X, CSng(marginTop + plotHeight)))
-                    Dim cumFillBrush As New SolidBrush(Color.FromArgb(18, 0, 0, 0))
-                    g.FillPolygon(cumFillBrush, cumFillPts.ToArray())
-                    cumFillBrush.Dispose()
+                    Using cumFillBrush As New SolidBrush(Color.FromArgb(18, 0, 0, 0))
+                        g.FillPolygon(cumFillBrush, cumFillPts.ToArray())
+                    End Using
                 End If
 
                 If cumPoints.Length > 1 Then g.DrawLines(cumPen, cumPoints)
+                cumPen.Dispose()
                 legendEntries.Add(New Tuple(Of String, Color)("Cumulative CDF", Color.Black))
 
                 ' Draw critical offset vertical line (red dashed)
@@ -9678,12 +9686,30 @@ Namespace ViewModels
             Dim titleFont As New Font("Segoe UI", titleFontSize, FontStyle.Bold)
             Dim eqFont As New Font(eqFontFamily, eqFontSize, FontStyle.Regular)
 
-            ' Calculate height using measurement
+            ' Available line width for equation body (accent stripe + left/right padding)
+            Dim availLineW As Integer = intW - 2 * leftPad - 10 * scale
+
+            ' Pre-measure longest equation line. If anything exceeds the available
+            ' width, shrink the equation font uniformly so lines don't overflow the
+            ' canvas. Floor at 75 % so the text stays legible.
             Dim titleH As Integer
             Using tmpBmp As New Bitmap(1, 1)
                 Using tmpG As Graphics = Graphics.FromImage(tmpBmp)
                     Dim titleMeasured = tmpG.MeasureString(title, titleFont)
                     titleH = CInt(titleMeasured.Height)
+
+                    Dim maxLineW As Single = 0
+                    For Each line In equationLines
+                        Dim w = MeasureFormattedString(tmpG, line, eqFont)
+                        If w > maxLineW Then maxLineW = w
+                    Next
+                    If maxLineW > availLineW Then
+                        Dim shrink As Double = Math.Max(0.75, availLineW / CDbl(maxLineW))
+                        Dim newSize As Single = CSng(eqFontSize * shrink)
+                        eqFont.Dispose()
+                        eqFont = New Font(eqFontFamily, newSize, FontStyle.Regular)
+                        lineSpacing = CInt(newSize * 1.65)
+                    End If
                 End Using
             End Using
             Dim underGap As Integer = CInt(4 * scale)
@@ -9828,7 +9854,10 @@ Namespace ViewModels
                     g.FillRectangle(lBrush, layerRect)
                     g.DrawRectangle(Pens.DarkGray, layerX, CInt(yAccum), layerW, CInt(lH))
 
-                    ' Label
+                    ' Label — truncate with an ellipsis when the assembled text
+                    ' (long material names + thickness + modulus) exceeds the
+                    ' layer column width, so it doesn't bleed into the tire
+                    ' stress projection on the right.
                     Dim lbl As String
                     If isSubgrade Then
                         lbl = "Layer " & (layerIdx + 1) & ": Subgrade, E=" & Format(layer.Modulus, "#,##0") & " " & thicknessUnit
@@ -9838,7 +9867,17 @@ Namespace ViewModels
                     Dim lblSize = g.MeasureString(lbl, labelFont)
                     Dim lblY As Single = yAccum + (lH - lblSize.Height) / 2
                     If lH > lblSize.Height Then
-                        g.DrawString(lbl, labelFont, Brushes.White, layerX + 8, lblY)
+                        Dim availW As Integer = layerW - 16
+                        If lblSize.Width <= availW Then
+                            g.DrawString(lbl, labelFont, Brushes.White, layerX + 8, lblY)
+                        Else
+                            Using fmt As New StringFormat()
+                                fmt.Trimming = StringTrimming.EllipsisCharacter
+                                fmt.FormatFlags = fmt.FormatFlags Or StringFormatFlags.NoWrap
+                                Dim rc As New RectangleF(layerX + 8, lblY, availW, lblSize.Height + 2)
+                                g.DrawString(lbl, labelFont, Brushes.White, rc, fmt)
+                            End Using
+                        End If
                     End If
 
                     ' Thickness dimension on right side
@@ -10210,8 +10249,12 @@ Namespace ViewModels
                 Dim minorPen As New Pen(Color.FromArgb(240, 240, 240), 1)
                 minorPen.DashStyle = Drawing2D.DashStyle.Dot
 
-                ' X-axis ticks: major at 10^n, minor at 2×,3×,5×
+                ' X-axis ticks: major at 10^n, minor at 2×,3×,5×.
+                ' Only show minor LABELS when the decade span is wide enough that
+                ' 8pt text won't collide (< 1.5 decades = crowded). Grid lines still
+                ' draw at every minor so the visual rhythm is preserved.
                 Dim minorMults() As Double = {2, 3, 5}
+                Dim showMinorLabels As Boolean = (logMaxS - logMinS) >= 1.5
                 For logV As Integer = CInt(Math.Floor(logMinS)) - 1 To CInt(Math.Ceiling(logMaxS)) + 1
                     Dim xPx As Single = xScale(logV)
                     If xPx > marginLeft AndAlso xPx < marginLeft + plotWidth Then
@@ -10226,10 +10269,14 @@ Namespace ViewModels
                         Dim mPx As Single = xScale(mLog)
                         If mPx > marginLeft + 3 AndAlso mPx < marginLeft + plotWidth - 3 Then
                             g.DrawLine(minorPen, mPx, marginTop, mPx, marginTop + plotHeight)
-                            Dim mVal As Double = 10.0 ^ logV * m
-                            Dim mLabel As String = If(mVal >= 1000, Format(mVal, "#,##0"), Format(mVal, "0"))
-                            Dim mSz = g.MeasureString(mLabel, minorFont)
-                            g.DrawString(mLabel, minorFont, New SolidBrush(Color.FromArgb(130, 130, 130)), mPx - mSz.Width / 2, marginTop + plotHeight + 6)
+                            If showMinorLabels Then
+                                Dim mVal As Double = 10.0 ^ logV * m
+                                Dim mLabel As String = If(mVal >= 1000, Format(mVal, "#,##0"), Format(mVal, "0"))
+                                Dim mSz = g.MeasureString(mLabel, minorFont)
+                                Using mBrush As New SolidBrush(Color.FromArgb(130, 130, 130))
+                                    g.DrawString(mLabel, minorFont, mBrush, mPx - mSz.Width / 2, marginTop + plotHeight + 6)
+                                End Using
+                            End If
                         End If
                     Next
                 Next
@@ -10570,28 +10617,23 @@ Namespace ViewModels
                         End If
                     End If
 
-                    ' Label with strain value
+                    ' Label with strain value. Try right side (up to 10 attempts,
+                    ' shifting down), then left side (up to 8 attempts), then above
+                    ' the point — all with plot-bound and collision checks. Labels
+                    ' that truly can't fit are skipped rather than dumped off-plot.
                     Dim lblText As String = acName & " (" & Format(strainMicro, "0.0") & " " & ChrW(&H03BC) & ChrW(&H03B5) & ")"
                     Dim lblSize = g.MeasureString(lblText, ptFont)
+                    Dim plotBottom As Single = marginTop + plotHeight
+                    Dim plotRight As Single = marginLeft + plotWidth
                     Dim lblX As Single = xPx + 10
                     Dim lblY As Single = yPx - lblSize.Height / 2
                     Dim lblRect As New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
 
                     Dim placed As Boolean = False
-                    For attempt As Integer = 0 To 5
-                        Dim overlaps As Boolean = False
-                        For Each existing In labelPositions
-                            If lblRect.IntersectsWith(existing) Then overlaps = True : Exit For
-                        Next
-                        If Not overlaps Then placed = True : Exit For
-                        lblY += lblSize.Height + 2
-                        lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
-                    Next
-                    If Not placed Then
-                        lblX = xPx - lblSize.Width - 10
-                        lblY = yPx - lblSize.Height / 2
-                        lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
-                        For attempt As Integer = 0 To 4
+                    ' Right side — up to 10 attempts
+                    If lblX + lblSize.Width <= plotRight Then
+                        For attempt As Integer = 0 To 9
+                            If lblY + lblSize.Height > plotBottom Then Exit For
                             Dim overlaps As Boolean = False
                             For Each existing In labelPositions
                                 If lblRect.IntersectsWith(existing) Then overlaps = True : Exit For
@@ -10601,20 +10643,53 @@ Namespace ViewModels
                             lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
                         Next
                     End If
+                    ' Left side — up to 8 attempts
+                    If Not placed Then
+                        lblX = xPx - lblSize.Width - 10
+                        lblY = yPx - lblSize.Height / 2
+                        lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
+                        If lblX >= marginLeft Then
+                            For attempt As Integer = 0 To 7
+                                If lblY + lblSize.Height > plotBottom Then Exit For
+                                Dim overlaps As Boolean = False
+                                For Each existing In labelPositions
+                                    If lblRect.IntersectsWith(existing) Then overlaps = True : Exit For
+                                Next
+                                If Not overlaps Then placed = True : Exit For
+                                lblY += lblSize.Height + 2
+                                lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
+                            Next
+                        End If
+                    End If
+                    ' Final fallback — above the point, with collision + bounds check
                     If Not placed Then
                         lblX = xPx - lblSize.Width / 2
                         lblY = yPx - lblSize.Height - 14
-                        lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
+                        If lblY >= marginTop Then
+                            lblRect = New RectangleF(lblX, lblY, lblSize.Width, lblSize.Height)
+                            Dim overlaps As Boolean = False
+                            For Each existing In labelPositions
+                                If lblRect.IntersectsWith(existing) Then overlaps = True : Exit For
+                            Next
+                            If Not overlaps Then placed = True
+                        End If
                     End If
-                    labelPositions.Add(lblRect)
 
-                    Dim leaderPen As New Pen(Color.FromArgb(120, acColor.R, acColor.G, acColor.B), 0.8F)
-                    g.DrawLine(leaderPen, xPx, yPx, lblX + If(lblX > xPx, 0, lblSize.Width), lblY + lblSize.Height / 2)
-                    leaderPen.Dispose()
+                    If placed Then
+                        labelPositions.Add(lblRect)
 
-                    Dim haloRect As New RectangleF(lblX - 2, lblY - 1, lblSize.Width + 4, lblSize.Height + 2)
-                    g.FillRectangle(New SolidBrush(Color.FromArgb(220, 255, 255, 255)), haloRect)
-                    g.DrawString(lblText, ptFont, New SolidBrush(acColor), lblX, lblY)
+                        Using leaderPen As New Pen(Color.FromArgb(120, acColor.R, acColor.G, acColor.B), 0.8F)
+                            g.DrawLine(leaderPen, xPx, yPx, lblX + If(lblX > xPx, 0, lblSize.Width), lblY + lblSize.Height / 2)
+                        End Using
+
+                        Dim haloRect As New RectangleF(lblX - 2, lblY - 1, lblSize.Width + 4, lblSize.Height + 2)
+                        Using haloBrush As New SolidBrush(Color.FromArgb(220, 255, 255, 255))
+                            g.FillRectangle(haloBrush, haloRect)
+                        End Using
+                        Using txtBrush As New SolidBrush(acColor)
+                            g.DrawString(lblText, ptFont, txtBrush, lblX, lblY)
+                        End Using
+                    End If
                 Next
                 ptFont.Dispose()
 
@@ -10840,13 +10915,25 @@ Namespace ViewModels
                 If errPoints.Count > 1 Then g.DrawLines(bluePen, errPoints.ToArray())
                 If thkPoints.Count > 1 Then g.DrawLines(redPen, thkPoints.ToArray())
 
-                ' Draw dots
-                For Each pt In errPoints
-                    g.FillEllipse(New SolidBrush(blueColor), pt.X - 3, pt.Y - 3, 6, 6)
-                Next
-                For Each pt In thkPoints
-                    g.FillEllipse(New SolidBrush(redColor), pt.X - 3, pt.Y - 3, 6, 6)
-                Next
+                ' Draw dots. For long runs (nIter > 20) thin the markers to every
+                ' Nth point so the curve isn't blurred by dense overlapping dots;
+                ' always keep the first and last markers for reference.
+                Dim markerStride As Integer = 1
+                If errPoints.Count > 20 Then markerStride = CInt(Math.Ceiling(errPoints.Count / 20.0))
+                Using errDot As New SolidBrush(blueColor), thkDot As New SolidBrush(redColor)
+                    For idx As Integer = 0 To errPoints.Count - 1
+                        If idx Mod markerStride = 0 OrElse idx = errPoints.Count - 1 Then
+                            Dim pt = errPoints(idx)
+                            g.FillEllipse(errDot, pt.X - 3, pt.Y - 3, 6, 6)
+                        End If
+                    Next
+                    For idx As Integer = 0 To thkPoints.Count - 1
+                        If idx Mod markerStride = 0 OrElse idx = thkPoints.Count - 1 Then
+                            Dim pt = thkPoints(idx)
+                            g.FillEllipse(thkDot, pt.X - 3, pt.Y - 3, 6, 6)
+                        End If
+                    Next
+                End Using
 
                 ' Sublayer activation marker
                 If firstSublayer >= 0 Then
@@ -11546,25 +11633,9 @@ Namespace ViewModels
                 Next
                 If sumPts.Count > 1 Then g.DrawLines(sumPen, sumPts.ToArray())
 
-                ' Gear diagram at top (simple schematic)
-                Dim gearY As Integer = 34
-                Dim gearCenterX As Integer = marginLeft + 80
-                g.DrawString("Gear layout (approx.):", smallFont, Brushes.DarkGray, marginLeft, gearY)
-                For wIdx As Integer = 0 To wheelPositions.Count - 1
-                    Dim wPos As Double = wheelPositions(wIdx)
-                    Dim wMult As Integer = wheelMultipliers(wIdx)
-                    Dim wColor As Color = wheelColors(wIdx Mod wheelColors.Length)
-                    Dim tireDrawX As Single = CSng(gearCenterX + wPos * 1.5)
-                    Dim tireDrawW As Single = CSng(tw * 1.5)
-                    g.FillRectangle(New SolidBrush(Color.FromArgb(180, wColor.R, wColor.G, wColor.B)), tireDrawX - tireDrawW / 2, gearY + 14, tireDrawW, 16)
-                    g.DrawRectangle(New Pen(wColor), tireDrawX - tireDrawW / 2, gearY + 14, tireDrawW, 16)
-                    If wMult > 1 Then
-                        g.FillRectangle(New SolidBrush(Color.FromArgb(120, wColor.R, wColor.G, wColor.B)), tireDrawX - tireDrawW / 2, gearY + 32, tireDrawW, 16)
-                        g.DrawRectangle(New Pen(wColor), tireDrawX - tireDrawW / 2, gearY + 32, tireDrawW, 16)
-                    End If
-                Next
-
-                ' Legend — compact box in upper-right (curves peak near offset=0 on the left, so upper-right is clear)
+                ' Legend geometry computed up front so the gear schematic can
+                ' adaptively scale to avoid overlapping the legend box on very
+                ' wide gears (A380, B777).
                 Dim legendFont As New Font("Segoe UI", 8.5F)
                 Dim legendLineH As Integer = 16
                 Dim legendCount As Integer = wheelPositions.Count + 2 ' wheels + actual + reconstructed
@@ -11572,6 +11643,40 @@ Namespace ViewModels
                 Dim lgW As Integer = 200
                 Dim lgX As Integer = marginLeft + plotWidth - lgW - 10
                 Dim lgY2 As Integer = marginTop + 10
+
+                ' Gear diagram at top (simple schematic). Scale defaults to 1.5 px/in,
+                ' but shrinks if the gear would otherwise extend past the legend's left
+                ' edge; floor at 0.6 so even very wide gears stay visible.
+                Dim gearY As Integer = 34
+                Dim gearCenterX As Integer = marginLeft + 80
+                Dim halfSpan As Double = 0
+                For Each p In wheelPositions
+                    If Math.Abs(p) > halfSpan Then halfSpan = Math.Abs(p)
+                Next
+                Dim gearScale As Single = 1.5F
+                Dim maxGearRight As Integer = lgX - 10
+                If halfSpan > 0 AndAlso gearCenterX + halfSpan * gearScale > maxGearRight Then
+                    gearScale = CSng(Math.Max(0.6, (maxGearRight - gearCenterX) / halfSpan))
+                End If
+                g.DrawString("Gear layout (approx.):", smallFont, Brushes.DarkGray, marginLeft, gearY)
+                For wIdx As Integer = 0 To wheelPositions.Count - 1
+                    Dim wPos As Double = wheelPositions(wIdx)
+                    Dim wMult As Integer = wheelMultipliers(wIdx)
+                    Dim wColor As Color = wheelColors(wIdx Mod wheelColors.Length)
+                    Dim tireDrawX As Single = CSng(gearCenterX + wPos * gearScale)
+                    Dim tireDrawW As Single = CSng(tw * gearScale)
+                    Using gFill As New SolidBrush(Color.FromArgb(180, wColor.R, wColor.G, wColor.B)),
+                          gStroke As New Pen(wColor)
+                        g.FillRectangle(gFill, tireDrawX - tireDrawW / 2, gearY + 14, tireDrawW, 16)
+                        g.DrawRectangle(gStroke, tireDrawX - tireDrawW / 2, gearY + 14, tireDrawW, 16)
+                        If wMult > 1 Then
+                            Using gFill2 As New SolidBrush(Color.FromArgb(120, wColor.R, wColor.G, wColor.B))
+                                g.FillRectangle(gFill2, tireDrawX - tireDrawW / 2, gearY + 32, tireDrawW, 16)
+                            End Using
+                            g.DrawRectangle(gStroke, tireDrawX - tireDrawW / 2, gearY + 32, tireDrawW, 16)
+                        End If
+                    End Using
+                Next
                 g.FillRectangle(New SolidBrush(Color.FromArgb(240, 245, 245, 245)), lgX, lgY2, lgW, lgH)
                 g.DrawRectangle(New Pen(Color.FromArgb(200, 204, 210), 1), lgX, lgY2, lgW, lgH)
 
@@ -11757,10 +11862,16 @@ Namespace ViewModels
                 g.DrawString("0", annotFont, Brushes.Black, zeroPx - 3, CSng(marginTop + plotHeight + 2))
                 zeroPen.Dispose()
 
-                ' Per-tire Gaussian wander overlays (sigma = 30.435 in., one per physical tire)
+                ' Per-tire Gaussian wander overlays (sigma = 30.435 in., one per physical tire).
+                ' For dense gears (A380=22, B747=18, B777=14), reduce the per-curve
+                ' fill and stroke alpha so 14+ overlapping bells don't composite
+                ' into an opaque blob hiding the wheel circles beneath.
                 Dim sigma As Double = 30.435
                 Dim gaussMax As Double = 1.0 / (sigma * Math.Sqrt(2 * Math.PI))
                 Dim gaussHeight As Single = 40  ' max pixel height for the bell curve
+                Dim denseGear As Boolean = allTiresX.Count >= 12
+                Dim gFillAlpha As Integer = If(denseGear, 8, 20)
+                Dim gStrokeAlpha As Integer = If(denseGear, 60, 100)
                 Dim tireGaussColors() As Color = {
                     Color.FromArgb(46, 94, 168),    ' blue
                     Color.FromArgb(214, 39, 40),     ' red
@@ -11783,8 +11894,11 @@ Namespace ViewModels
                         fillPts.Add(New PointF(gaussPts(0).X, CSng(marginTop + plotHeight)))
                         fillPts.AddRange(gaussPts)
                         fillPts.Add(New PointF(gaussPts(gaussPts.Count - 1).X, CSng(marginTop + plotHeight)))
-                        g.FillPolygon(New SolidBrush(Color.FromArgb(20, gColor.R, gColor.G, gColor.B)), fillPts.ToArray())
-                        g.DrawLines(New Pen(Color.FromArgb(100, gColor.R, gColor.G, gColor.B), 1.0F), gaussPts.ToArray())
+                        Using gFill As New SolidBrush(Color.FromArgb(gFillAlpha, gColor.R, gColor.G, gColor.B)),
+                              gStroke As New Pen(Color.FromArgb(gStrokeAlpha, gColor.R, gColor.G, gColor.B), 1.0F)
+                            g.FillPolygon(gFill, fillPts.ToArray())
+                            g.DrawLines(gStroke, gaussPts.ToArray())
+                        End Using
                     End If
                 Next
 
