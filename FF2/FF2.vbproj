@@ -509,6 +509,7 @@
     </Content>
     <Resource Include="Resources\BackC.ico" />
     <Resource Include="Resources\FAA-Icon.ico" />
+    <Resource Include="Resources\ICT-Image.jpg" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ACClassLib\ACClassLib.vbproj">

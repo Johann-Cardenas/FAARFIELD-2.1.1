@@ -344,6 +344,27 @@ Replaced the application icon with a proper multi-resolution file. The previous 
 
 ---
 
+#### Change 14: About Window — Version String and Photographic Header
+
+**Date:** 2026-04-22 | **Category:** UI (enhancement)
+
+Updated the version pill from `v2.1.1-CM` to `v.2.1.1.10` to match the formal release numbering. Replaced the purely-gradient header with a layered background: the ICT research-group photograph (`FF2/Resources/ICT-Image.jpg`) sits as the outer `Border.Background`, clipped by the rounded top corners; a second inner `Border` provides a horizontal gradient overlay going from fully opaque dark teal (`#FF004D40`) on the left to fully transparent teal (`#0026A69A`) on the right. The left two-thirds stay readable behind the FAARFIELD title, version pill, subtitle, and build date, while the right portion smoothly reveals the photograph. Source image was downsampled from 2695×1200 to 1280×570 and saved as progressive JPEG at quality 85 (~114 KB) to keep the assembly footprint reasonable.
+
+**Files added:**
+| File | Purpose |
+|------|---------|
+| `FF2/Resources/ICT-Image.jpg` | 1280×570 progressive JPEG used as the About window header background |
+
+**Files modified:**
+| File | Change summary |
+|------|---------------|
+| `FF2/Views/AboutWindow.xaml` | Version pill text; header now uses `ImageBrush` background plus nested gradient overlay Border with alpha fading to transparent |
+| `FF2/FF2.vbproj` | Added `ICT-Image.jpg` as a WPF `<Resource>` so it is packed into the FF2 assembly |
+
+**Computation impact:** None.
+
+---
+
 ## Summary: Files Changed vs. Original FAA Source
 
 **42 files changed** | **11,480 lines added** | **753 lines deleted**

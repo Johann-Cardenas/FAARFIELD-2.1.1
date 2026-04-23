@@ -23,18 +23,29 @@
             </Grid.RowDefinitions>
 
             <!-- ═══════════════════════════════════════════════ -->
-            <!-- HEADER — teal gradient with version badge      -->
+            <!-- HEADER — ICT image with teal gradient overlay  -->
             <!-- ═══════════════════════════════════════════════ -->
-            <Border Grid.Row="0" CornerRadius="8,8,0,0" Padding="28,22,28,20">
+            <Border Grid.Row="0" CornerRadius="8,8,0,0">
+                <!-- Outer Background: the photograph, clipped by CornerRadius -->
                 <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#004D40" Offset="0"/>
-                        <GradientStop Color="#00695C" Offset="0.35"/>
-                        <GradientStop Color="#00897B" Offset="0.7"/>
-                        <GradientStop Color="#26A69A" Offset="1"/>
-                    </LinearGradientBrush>
+                    <ImageBrush ImageSource="/FF2;component/Resources/ICT-Image.jpg"
+                                Stretch="UniformToFill"
+                                AlignmentX="Center" AlignmentY="Center"/>
                 </Border.Background>
-                <Grid>
+
+                <!-- Inner Border: horizontal gradient overlay, fades to transparent
+                     on the right so the image shows through behind the title text -->
+                <Border CornerRadius="8,8,0,0" Padding="28,22,28,20">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#FF004D40" Offset="0.00"/>
+                            <GradientStop Color="#F200695C" Offset="0.35"/>
+                            <GradientStop Color="#8800897B" Offset="0.70"/>
+                            <GradientStop Color="#0026A69A" Offset="1.00"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+
+                    <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -48,7 +59,7 @@
                             <!-- Version pill -->
                             <Border Background="#004D40" CornerRadius="10" Padding="10,3"
                                     Margin="12,6,0,0" VerticalAlignment="Top">
-                                <TextBlock Text="v2.1.1-CM" FontSize="11" FontWeight="SemiBold"
+                                <TextBlock Text="v.2.1.1.10" FontSize="11" FontWeight="SemiBold"
                                            Foreground="#80CBC4" FontFamily="Consolas"/>
                             </Border>
                         </StackPanel>
@@ -87,7 +98,8 @@
                             </Style>
                         </Button.Style>
                     </Button>
-                </Grid>
+                    </Grid>
+                </Border>
             </Border>
 
             <!-- ═══════════════════════════════════════════════ -->
