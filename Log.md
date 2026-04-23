@@ -365,6 +365,28 @@ Updated the version pill from `v2.1.1-CM` to `v.2.1.1.10` to match the formal re
 
 ---
 
+#### Change 15: Responsive Layout — Adapt to Small-Screen Laptops
+
+**Date:** 2026-04-22 | **Category:** UI (enhancement)
+
+Made MainWindow adaptive so the app is usable on 17.3" laptops (and anything down to ~1366×768) while preserving the exact appearance on the 27" 4K reference monitor. Three layers of work:
+
+1. **Adaptive window sizing.** Declared `Width=1280 Height=768 MinWidth=1000 MinHeight=640` on the `Window` element. The existing `WindowState` two-way binding (already wired via `Window_Loaded_Command`) is now driven by a new check at the top of `Window_Loaded`: if `SystemParameters.WorkArea.Width < 1400` or `Height < 820`, the window launches maximized so no UI is clipped by screen chrome.
+2. **Selective Viewbox wrapping.** Wrapped the three large fixed-width Canvas regions — Job Information pane (Width=1000), Analysis tab content (Width=1200), and PAVEAIR download pane (Width=1200) — each in a `<Viewbox Stretch="Uniform" StretchDirection="DownOnly">`. On 4K the Viewbox is transparent (no upscale); on smaller screens the Canvas shrinks uniformly to fit the available pane width. The ~30 smaller `<Canvas Width="240">` blocks are already narrow enough and were left alone.
+3. **No global transform.** A `LayoutTransform` on the root Grid was explicitly rejected because Telerik `RadDocking`'s drag-drop compass, autohide strips, and floating panes position themselves in screen coordinates and do not participate in parent visual transforms — a global scale would break those behaviours.
+
+**Why these specific changes.** DPI awareness was already correct (`PerMonitorV2,PerMonitor` in `app.manifest`), so WPF already scales text and chrome to correct physical size on any monitor. The actual failure mode on small screens was spatial: the 1265-wide window exceeded the available work area, and Canvas regions at 1000–1200 DIPs overflowed their panes. Addressing both issues directly, with Telerik-safe techniques, was preferred over a disruptive Canvas→Grid rewrite.
+
+**Files modified:**
+| File | Change summary |
+|------|---------------|
+| `FF2/Views/MainWindow.xaml` | Window tag: bumped `Width` 1265→1280, added `MinWidth=1000 MinHeight=640`; wrapped three Canvas regions in `<Viewbox StretchDirection="DownOnly">` |
+| `FF2/ViewModels/MainWindowViewModel.vb` | `Window_Loaded`: auto-maximize when `SystemParameters.WorkArea` is smaller than 1400×820 |
+
+**Computation impact:** None. Pure presentation-layer change.
+
+---
+
 ## Summary: Files Changed vs. Original FAA Source
 
 **42 files changed** | **11,480 lines added** | **753 lines deleted**

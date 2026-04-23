@@ -3803,6 +3803,15 @@ Namespace ViewModels
 
         Private Sub Window_Loaded(obj As Object)
 
+            'Auto-maximize on laptops whose work area is smaller than the
+            '1280x760 design size so the UI never gets clipped by screen chrome.
+            Const designW As Double = 1400
+            Const designH As Double = 820
+            Dim wa = System.Windows.SystemParameters.WorkArea
+            If wa.Width < designW OrElse wa.Height < designH Then
+                Me.WindowState = System.Windows.WindowState.Maximized
+            End If
+
             'Check for outdated saved layout preferences and delete if exists
             Dim SavedLayoutText As String = ""
             Using storage As IsolatedStorageFile = IsolatedStorageFile.GetUserStoreForAssembly()

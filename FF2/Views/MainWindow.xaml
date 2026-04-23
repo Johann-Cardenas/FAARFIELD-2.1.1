@@ -9,8 +9,10 @@
         xmlns:validation="clr-namespace:FF2.ValidationRules"
         xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
         mc:Ignorable="d"
+        Width="1280"
         Height="768"
-        Width="1265"
+        MinWidth="1000"
+        MinHeight="640"
         WindowStartupLocation="CenterScreen"
         Icon="/FF2;component/Resources/FAA-Icon.ico"
         Title="{Binding MainWindowTitle}"
@@ -127,6 +129,8 @@
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="JobInformation">
                             <ScrollViewer>
+                                <Viewbox Stretch="Uniform" StretchDirection="DownOnly"
+                                         HorizontalAlignment="Left" VerticalAlignment="Top">
                                 <Canvas Width="1000"
                                     Height="600"
                                     HorizontalAlignment="Left"
@@ -300,6 +304,7 @@
                                     </GroupBox>
 
                                 </Canvas>
+                                </Viewbox>
                             </ScrollViewer>
 
                         </telerik:RadPane>
@@ -325,6 +330,8 @@
                                                          IsHidden="{Binding InnerSectionIsHidden,  Mode=TwoWay}" >
                                             
                                             <ScrollViewer>
+                                                <Viewbox Stretch="Uniform" StretchDirection="DownOnly"
+                                                         HorizontalAlignment="Left" VerticalAlignment="Top">
                                                 <Canvas Width="1200"
                                                         Height="640"
                                                         HorizontalAlignment="Left"
@@ -1078,6 +1085,7 @@
                                                     </TabControl>
 
                                                 </Canvas>
+                                                </Viewbox>
                                             </ScrollViewer>
 
                                         </telerik:RadPane>
@@ -1587,6 +1595,8 @@
                                         telerik:RadDocking.SerializationTag="DOMAccess"
                                         telerik:RadDocking.FloatingSize="900 500">
                             <ScrollViewer>
+                                <Viewbox Stretch="Uniform" StretchDirection="DownOnly"
+                                         HorizontalAlignment="Left" VerticalAlignment="Top">
                                 <Canvas Width="1200"
                                     Height="640"
                                     HorizontalAlignment="Left"
@@ -1676,6 +1686,7 @@
                                         </Canvas>
                                     </StackPanel>
                                 </Canvas>
+                                </Viewbox>
                             </ScrollViewer>
                         </telerik:RadPane>
 
