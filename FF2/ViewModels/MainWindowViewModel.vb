@@ -4286,13 +4286,23 @@ Namespace ViewModels
             ' MainWindow New()
             '==================================================================
 
-            ' Add Build Date to MainWindowTitle from EmbeddedResource File
-            Dim app = Assembly.GetExecutingAssembly()
-            Using reader As New StreamReader(app.GetManifestResourceStream("FF2.BuildDate.txt"))
-                BuildDate = reader.ReadToEnd()
-                BuildDate = Split(BuildDate, " ")(1)
-            End Using
-            MainWindowTitle = MainWindowTitle + " (Build " + BuildDate + ")"
+            ' Read the build timestamp from the copied Resources\BuildDate.txt
+            ' in the output directory (written by the FF2 PreBuildEvent). When
+            ' running under a unit-test host the file may not be present, in
+            ' which case the title simply omits the build suffix.
+            Try
+                Dim buildDatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "BuildDate.txt")
+                If File.Exists(buildDatePath) Then
+                    Dim raw = File.ReadAllText(buildDatePath)
+                    Dim parts = Split(raw, " ")
+                    If parts.Length >= 2 Then
+                        BuildDate = parts(1)
+                        MainWindowTitle = MainWindowTitle + " (Build " + BuildDate + ")"
+                    End If
+                End If
+            Catch ex As Exception
+                Debug.WriteLine("MainWindowViewModel: unable to read BuildDate.txt — " & ex.Message)
+            End Try
 
             '==================================================================
             ' FaarFieldViewModel New()
