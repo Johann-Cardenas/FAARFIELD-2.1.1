@@ -199,30 +199,30 @@ Namespace Libs
 
 
         Public Sub HtmltoPdf(html As String, filepath As String)
+            Dim doc As PdfDocument = Nothing
             Try
                 Dim pageSize As PdfPageSize = DirectCast([Enum].Parse(GetType(PdfPageSize), "Letter", True), PdfPageSize)
                 Dim pdfOrientation As PdfPageOrientation = DirectCast([Enum].Parse(GetType(PdfPageOrientation), "Portrait", True), PdfPageOrientation)
 
-                Using converter As New HtmlToPdf()
-                    converter.Options.PdfPageSize = pageSize
-                    converter.Options.PdfPageOrientation = pdfOrientation
-                    converter.Options.WebPageWidth = 1100
-                    converter.Options.WebPageHeight = 0
-                    converter.Options.CssMediaType = HtmlToPdfCssMediaType.Screen
-                    converter.Options.KeepImagesTogether = True
-                    converter.Options.MarginTop = 36
-                    converter.Options.MarginBottom = 18
-                    converter.Options.MarginLeft = 18
-                    converter.Options.MarginRight = 18
+                Dim converter As New HtmlToPdf()
+                converter.Options.PdfPageSize = pageSize
+                converter.Options.PdfPageOrientation = pdfOrientation
+                converter.Options.WebPageWidth = 1100
+                converter.Options.WebPageHeight = 0
+                converter.Options.CssMediaType = HtmlToPdfCssMediaType.Screen
+                converter.Options.KeepImagesTogether = True
+                converter.Options.MarginTop = 36
+                converter.Options.MarginBottom = 18
+                converter.Options.MarginLeft = 18
+                converter.Options.MarginRight = 18
 
-                    Using doc As PdfDocument = converter.ConvertHtmlString(html, filepath)
-                        doc.Save(filepath)
-                        doc.Close()
-                    End Using
-                End Using
+                doc = converter.ConvertHtmlString(html, filepath)
+                doc.Save(filepath)
 
             Catch ex As Exception
                 MessageBox.Show("PDF not created, file is open or in use.", "File Not Saved", MessageBoxButton.OK, MessageBoxImage.Warning)
+            Finally
+                If doc IsNot Nothing Then doc.Close()
             End Try
         End Sub
 
