@@ -387,6 +387,41 @@ Made MainWindow adaptive so the app is usable on 17.3" laptops (and anything dow
 
 ---
 
+#### Change 16: Defensive-Programming Audit — GDI+ Leak and Dead-Code Fixes
+
+**Date:** 2026-04-22 | **Category:** Quality (bug fix)
+
+Completed a full audit pass of the customized UI / report code for bugs that could crash the app or degrade the experience. Confirmed nine real issues (after discounting several hallucinated agent findings) and applied surgical fixes. All changes are in the presentation layer; no computation touched.
+
+**GDI+ handle leaks fixed.** In WPF/GDI+ these accumulate silently until the OS runs out of handles and the app crashes. Each fix below was verified to be leaking on every invocation:
+
+- `FF2/ViewModels/MainWindowViewModel.vb` `DrawUserDefinedGear()` (gear diagram on the Structure pane) and `DrawProfile()` (pavement cross-section): `Graphics.FromImage(image)`, the `System.Windows.Forms.PictureBox` scratch control, and the `MemoryStream` backing the returned `BitmapImage` were all leaked on every redraw. Each now lives inside a multi-resource `Using` block. The `BitmapImage` is initialised with `CacheOption = OnLoad` and `Freeze()`ed so the backing stream can be disposed safely right after load.
+- `FF2/ViewModels/MainWindowViewModel.vb` `DrawEquationImage()`: the inline `g.FillRectangle(New SolidBrush(...), ...)` for the left accent stripe leaked on every equation rendered in the CM Report. Now wrapped in `Using`, with the other pens/brushes reorganised into a single multi-resource `Using` block.
+- `FF2/Libs/ModuleDrawProfile.vb` `Paint(...)`: the three structurally-similar layer-drawing branches each allocated a `Pen` (for designed-layer outline) and a `Font` + `SolidBrush` + `Pen` + `SolidBrush` set (for the three on-layer labels) without disposing any of them. Over a typical 4-6 layer design, that's up to 18 GDI+ handles leaked **per redraw**. All three branches now use `Using` blocks with scoped `labelFont` locals, and the empty-structure placeholder path also disposes its font.
+- `FF2/Libs/HtmlUtils.vb` `encodeTobase64`: `MemoryStream` now in `Using`.
+- `FF2/Libs/HtmlUtils.vb` `HtmltoPdf`: the SelectPdf `HtmlToPdf` converter and resulting `PdfDocument` now in nested `Using` blocks so the native resources are released after each PDF export.
+
+**Silent-failure and dead-code cleanup:**
+
+- `FF2/ViewModels/MainWindowViewModel.vb` lines ~92 and ~143: the `Try/Catch` blocks around `CurrentSectionView.Section.*Tracker = True` assignments had empty `Catch` bodies. They now log via `Debug.WriteLine` so future diagnostics are possible.
+- `FF2/ViewModels/MainWindowViewModel.vb` `CommonReportPdf` (near line 14173): an always-true `If System.Windows.Forms.DialogResult.Cancel Then` guard inside the SaveFileDialog-cancel branch was removed; the cancellation message now shows unconditionally when the user cancels, which is the correct behavior.
+- `FF2/ViewModels/MainWindowViewModel.vb` (after `DrawProfile`): deleted a ~20-line commented-out `DrawProfile(section, job)` overload that had been dead since the current method was introduced.
+- `FF2/Views/MainWindow.xaml.vb`: removed the unused `Login_Click` handler. The XAML login button uses `Command="{Binding OnLogin_Command}"`, so the code-behind handler was never wired up.
+
+**False positives dismissed.** The audit agents also flagged (a) a duplicate `RadDocking.SerializationTag="ProgressWindow"` — verified to be inside a `<!-- ... -->` comment block at lines 3513–3531 of MainWindow.xaml and therefore inert; (b) `Process.Start(New ProcessStartInfo(filepath) With {.UseShellExecute = True})` in `HtmlUtils.HtmlToFile` — this is the correct Win32 pattern for "open file with default handler" and does not have a quoting bug; (c) `Image.FromFile(...)` in `ModuleDrawProfile.LoadBrushes` / `LoadBrushes2` — the file lock is a well-known `Image.FromFile` behaviour but the brushes live for the lifetime of the app and the files are shipped assets, so no functional defect.
+
+**Files modified:**
+| File | Change summary |
+|------|---------------|
+| `FF2/ViewModels/MainWindowViewModel.vb` | GDI+ leak fixes in `DrawUserDefinedGear`, `DrawProfile`, `DrawEquationImage`; silent `Catch` blocks now log; removed always-true `DialogResult.Cancel` check; deleted commented-out `DrawProfile` overload |
+| `FF2/Libs/ModuleDrawProfile.vb` | All three layer-drawing branches in `Paint(...)` refactored to dispose `Pen`/`SolidBrush`/`Font` via `Using`; empty-structure placeholder path fixed the same way |
+| `FF2/Libs/HtmlUtils.vb` | `encodeTobase64` wraps `MemoryStream` in `Using`; `HtmltoPdf` wraps `HtmlToPdf` and `PdfDocument` in `Using` |
+| `FF2/Views/MainWindow.xaml.vb` | Removed dead `Login_Click` handler |
+
+**Computation impact:** None. The audit explicitly excluded `LEAFClassLib`, `FEMClassLib`, and the original `FaarFieldAnalysis/modPCN_*` / `modDesign*` / `modFAILURE_*` modules per standing rule.
+
+---
+
 ## Summary: Files Changed vs. Original FAA Source
 
 **42 files changed** | **11,480 lines added** | **753 lines deleted**

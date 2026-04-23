@@ -137,11 +137,10 @@ Namespace Libs
         End Function
 
         Public Function encodeTobase64(image As Bitmap) As String
-            Dim ms As System.IO.MemoryStream = New System.IO.MemoryStream()
-            image.Save(ms, System.Drawing.Imaging.ImageFormat.Png)
-            Dim byteImage As Byte() = ms.ToArray()
-            Dim imageEncoded = Convert.ToBase64String(byteImage)
-            Return imageEncoded
+            Using ms As New System.IO.MemoryStream()
+                image.Save(ms, System.Drawing.Imaging.ImageFormat.Png)
+                Return Convert.ToBase64String(ms.ToArray())
+            End Using
         End Function
 
 
@@ -201,45 +200,26 @@ Namespace Libs
 
         Public Sub HtmltoPdf(html As String, filepath As String)
             Try
-                Dim htmlString As String = html
-                Dim baseUrl As String = filepath
+                Dim pageSize As PdfPageSize = DirectCast([Enum].Parse(GetType(PdfPageSize), "Letter", True), PdfPageSize)
+                Dim pdfOrientation As PdfPageOrientation = DirectCast([Enum].Parse(GetType(PdfPageOrientation), "Portrait", True), PdfPageOrientation)
 
-                Dim pdf_page_size As String = "Letter"
-                Dim pageSize As PdfPageSize = DirectCast([Enum].Parse(GetType(PdfPageSize),
-                        pdf_page_size, True), PdfPageSize)
+                Using converter As New HtmlToPdf()
+                    converter.Options.PdfPageSize = pageSize
+                    converter.Options.PdfPageOrientation = pdfOrientation
+                    converter.Options.WebPageWidth = 1100
+                    converter.Options.WebPageHeight = 0
+                    converter.Options.CssMediaType = HtmlToPdfCssMediaType.Screen
+                    converter.Options.KeepImagesTogether = True
+                    converter.Options.MarginTop = 36
+                    converter.Options.MarginBottom = 18
+                    converter.Options.MarginLeft = 18
+                    converter.Options.MarginRight = 18
 
-                Dim pdf_orientation As String = "Portrait"
-                Dim pdfOrientation As PdfPageOrientation = DirectCast(
-                        [Enum].Parse(GetType(PdfPageOrientation),
-                        pdf_orientation, True), PdfPageOrientation)
-
-                Dim webPageWidth As Integer = 1100
-
-                Dim webPageHeight As Integer = 0
-
-                ' instantiate a html to pdf converter object
-                Dim converter As New HtmlToPdf()
-
-                ' set converter options
-                converter.Options.PdfPageSize = pageSize
-                converter.Options.PdfPageOrientation = pdfOrientation
-                converter.Options.WebPageWidth = webPageWidth
-                converter.Options.WebPageHeight = webPageHeight
-                converter.Options.CssMediaType = HtmlToPdfCssMediaType.Screen
-                converter.Options.KeepImagesTogether = True
-                converter.Options.MarginTop = 36
-                converter.Options.MarginBottom = 18
-                converter.Options.MarginLeft = 18
-                converter.Options.MarginRight = 18
-
-                ' create a new pdf document converting an url
-                Dim doc As PdfDocument = converter.ConvertHtmlString(htmlString, baseUrl)
-
-                ' save pdf document
-                doc.Save(baseUrl)
-
-                ' close pdf document
-                doc.Close()
+                    Using doc As PdfDocument = converter.ConvertHtmlString(html, filepath)
+                        doc.Save(filepath)
+                        doc.Close()
+                    End Using
+                End Using
 
             Catch ex As Exception
                 MessageBox.Show("PDF not created, file is open or in use.", "File Not Saved", MessageBoxButton.OK, MessageBoxImage.Warning)

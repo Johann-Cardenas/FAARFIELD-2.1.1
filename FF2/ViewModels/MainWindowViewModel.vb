@@ -90,7 +90,7 @@ Namespace ViewModels
                         End If
 
                     Catch ex As Exception
-
+                        Debug.WriteLine("PCAConversionFormula setter: " & ex.Message)
                     End Try
                 Else
 
@@ -141,7 +141,7 @@ Namespace ViewModels
                         End If
 
                     Catch ex As Exception
-
+                        Debug.WriteLine("NCHRPFormula setter: " & ex.Message)
                     End Try
 
                 Else
@@ -9674,41 +9674,38 @@ Namespace ViewModels
                 End Using
 
                 ' Left accent stripe
-                g.FillRectangle(New SolidBrush(Color.FromArgb(46, 94, 168)), 0, 0, 4 * scale, intH)
+                Using accentBrush As New SolidBrush(Color.FromArgb(46, 94, 168))
+                    g.FillRectangle(accentBrush, 0, 0, 4 * scale, intH)
+                End Using
 
                 ' Border
-                Dim borderPen As New Pen(Color.FromArgb(200, 206, 214), scale)
-                g.DrawRectangle(borderPen, 0, 0, intW - 1, intH - 1)
+                Using borderPen As New Pen(Color.FromArgb(200, 206, 214), scale),
+                      titleBrush As New SolidBrush(Color.FromArgb(26, 58, 110)),
+                      underPen As New Pen(Color.FromArgb(46, 94, 168), CInt(scale * 1.0)),
+                      eqBrush As New SolidBrush(Color.FromArgb(31, 41, 55)),
+                      computedBrush As New SolidBrush(Color.FromArgb(80, 100, 130))
 
-                ' Title
-                Dim titleBrush As New SolidBrush(Color.FromArgb(26, 58, 110))
-                g.DrawString(title, titleFont, titleBrush, leftPad, topPad)
+                    g.DrawRectangle(borderPen, 0, 0, intW - 1, intH - 1)
 
-                ' Underline — positioned using measured title height
-                Dim underY As Integer = topPad + titleH + underGap
-                Dim underPen As New Pen(Color.FromArgb(46, 94, 168), CInt(scale * 1.0))
-                g.DrawLine(underPen, leftPad, underY, intW - leftPad, underY)
+                    ' Title
+                    g.DrawString(title, titleFont, titleBrush, leftPad, topPad)
 
-                Dim eqBrush As New SolidBrush(Color.FromArgb(31, 41, 55))
-                Dim computedBrush As New SolidBrush(Color.FromArgb(80, 100, 130))
-                Dim yPos As Integer = underY + bodyTopGap
+                    ' Underline — positioned using measured title height
+                    Dim underY As Integer = topPad + titleH + underGap
+                    g.DrawLine(underPen, leftPad, underY, intW - leftPad, underY)
 
-                For Each line In equationLines
-                    ' Use dimmer color for "For this structure" computed values
-                    Dim brush As SolidBrush = eqBrush
-                    If line.StartsWith("For this") OrElse line.StartsWith("   ") Then
-                        brush = computedBrush
-                    End If
-                    DrawFormattedString(g, line, eqFont, brush, leftPad + 10 * scale, yPos)
-                    yPos += lineSpacing
-                Next
+                    Dim yPos As Integer = underY + bodyTopGap
 
-                ' Cleanup
-                borderPen.Dispose()
-                titleBrush.Dispose()
-                underPen.Dispose()
-                eqBrush.Dispose()
-                computedBrush.Dispose()
+                    For Each line In equationLines
+                        ' Use dimmer color for "For this structure" computed values
+                        Dim brush As SolidBrush = eqBrush
+                        If line.StartsWith("For this") OrElse line.StartsWith("   ") Then
+                            brush = computedBrush
+                        End If
+                        DrawFormattedString(g, line, eqFont, brush, leftPad + 10 * scale, yPos)
+                        yPos += lineSpacing
+                    Next
+                End Using
             End Using
 
             titleFont.Dispose()
@@ -14170,10 +14167,8 @@ FoundTandemPair:
                 justExtension = Path.GetExtension(myFile)   'include only ext
 
             Else
-                If System.Windows.Forms.DialogResult.Cancel Then
-                    MessageBox.Show("PDF generation was canceled by user.")
-                    Return
-                End If
+                MessageBox.Show("PDF generation was canceled by user.")
+                Return
             End If
 
             Dim ACnum As Integer = 0
@@ -18732,31 +18727,29 @@ FoundTandemPair:
 
         Public Function DrawUserDefinedGear() As BitmapImage
 
-            Dim ms As New MemoryStream
             Dim bi As New BitmapImage
 
-            Using image As New Bitmap(640, 640)
-                Dim g = Graphics.FromImage(image)
-                Dim tempPictureBox As New System.Windows.Forms.PictureBox With {
-                    .Height = 640,
-                    .Width = 640
-                }
+            Using image As New Bitmap(640, 640),
+                  g As Graphics = Graphics.FromImage(image),
+                  tempPictureBox As New System.Windows.Forms.PictureBox() With {
+                      .Height = 640,
+                      .Width = 640
+                  },
+                  ms As New MemoryStream()
 
-                If Not CurrentSectionView Is Nothing AndAlso CurrentWheel IsNot Nothing Then
+                If CurrentSectionView IsNot Nothing AndAlso CurrentWheel IsNot Nothing Then
                     Using fontProfile As New System.Drawing.Font("Segoe UI", 10, FontStyle.Italic)
                         PaintUserDefinedGear(g, CurrentWheel, CurrentEval, tempPictureBox, fontProfile, CurrentJob.DesignOptions.MeasurementSystem, _UDTs)
                     End Using
                 End If
 
                 image.Save(ms, Imaging.ImageFormat.Png)
-                'If image IsNot Nothing Then
-                '    My.Computer.Clipboard.Clear()
-                '    My.Computer.Clipboard.SetImage(image)
-                'End If
+                ms.Position = 0
                 bi.BeginInit()
+                bi.CacheOption = BitmapCacheOption.OnLoad
                 bi.StreamSource = ms
                 bi.EndInit()
-
+                bi.Freeze()
             End Using
 
             Return bi
@@ -18765,15 +18758,15 @@ FoundTandemPair:
 
         Public Function DrawProfile() As BitmapImage
 
-            Dim ms As New MemoryStream
             Dim bi As New BitmapImage
 
-            Using image As New Bitmap(640, 640)
-                Dim g = Graphics.FromImage(image)
-                Dim tempPictureBox As New System.Windows.Forms.PictureBox With {
-                    .Height = 640,
-                    .Width = 640
-                }
+            Using image As New Bitmap(640, 640),
+                  g As Graphics = Graphics.FromImage(image),
+                  tempPictureBox As New System.Windows.Forms.PictureBox() With {
+                      .Height = 640,
+                      .Width = 640
+                  },
+                  ms As New MemoryStream()
 
                 If CurrentSectionView IsNot Nothing Then
                     Using fontProfile As New System.Drawing.Font("Segoe UI", 11, FontStyle.Italic)
@@ -18793,40 +18786,16 @@ FoundTandemPair:
                 StructureListView_Margin = New System.Windows.Thickness(0, line, 0, 0)
 
                 image.Save(ms, Imaging.ImageFormat.Png)
-                'If image IsNot Nothing Then
-                '    My.Computer.Clipboard.Clear()
-                '    My.Computer.Clipboard.SetImage(image)
-                'End If
+                ms.Position = 0
                 bi.BeginInit()
+                bi.CacheOption = BitmapCacheOption.OnLoad
                 bi.StreamSource = ms
                 bi.EndInit()
-
+                bi.Freeze()
             End Using
 
             Return bi
         End Function
-
-
-        'Public Function DrawProfile(section As ISection, job As IFaarFieldJob) As BitmapImage
-        '    Dim fontProfile = New System.Drawing.Font("Segoe UI", 11, FontStyle.Italic)
-        '    Dim image As New Bitmap(640, 640)
-        '    Dim g = Graphics.FromImage(image)
-        '    Dim tempPictureBox As New System.Windows.Forms.PictureBox()
-        '    tempPictureBox.Height = 640
-        '    tempPictureBox.Width = 640
-
-        '    If Not section Is Nothing Then
-        '        Paint(g, section.Layers, tempPictureBox, fontProfile, _brushes, job.DesignOptions.MeasurementSystem)
-        '    End If
-        '    Dim ms As New MemoryStream
-        '    Dim bi As New BitmapImage
-        '    image.Save(ms, Imaging.ImageFormat.Png)
-
-        '    bi.BeginInit()
-        '    bi.StreamSource = ms
-        '    bi.EndInit()
-        '    Return bi
-        'End Function
 
 
         Private Sub InsertVersionInfo(path As String)

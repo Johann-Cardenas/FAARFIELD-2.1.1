@@ -1196,8 +1196,9 @@ goto10:         arr(i + 1, 1) = a
             ' Dim fontsize As Single
             ' fontsize = 18
             If layers.Count = 0 Then
-                font = New Font(font.Name, 14, FontStyle.Bold)
-                g.DrawString("To begin select a Pavement Type", font, Brushes.Black, New PointF(10, pictureBox.Height / 4))
+                Using placeholderFont As New Font(font.Name, 14, FontStyle.Bold)
+                    g.DrawString("To begin select a Pavement Type", placeholderFont, Brushes.Black, New PointF(10, pictureBox.Height / 4))
+                End Using
                 Return
             End If
             Dim factory As New FaarFieldModelFactory
@@ -1238,37 +1239,39 @@ goto10:         arr(i + 1, 1) = a
                     End If
                     g.FillRectangle(pavementBrushes(layer.Name), CType(0, Single), line, CType(pictureBox.Width, Single), CType(ratio * layer.Thickness.UsCustomary, Single))
                     If layer.DesignedLayer IsNot "" And layer.DesignedLayer IsNot Nothing Then
-                        'font = New Font(font.Name, 100)
-                        Dim pen = New Pen(Color.FromArgb(200, 46, 94, 168), 6)
-                        g.DrawRectangle(pen, CType(0, Single), line, CType(pictureBox.Width, Single), CType(ratio * layer.Thickness.UsCustomary, Single))
+                        Using pen As New Pen(Color.FromArgb(200, 46, 94, 168), 6)
+                            g.DrawRectangle(pen, CType(0, Single), line, CType(pictureBox.Width, Single), CType(ratio * layer.Thickness.UsCustomary, Single))
+                        End Using
                     End If
 
-                    font = New Font(font.Name, 12)
-                    Dim semiWhiteBrush As New SolidBrush(Color.FromArgb(220, 255, 255, 255))
-                    Dim labelBorderPen As New Pen(Color.FromArgb(160, 160, 160), 0.5F)
-                    Dim textBrush As New SolidBrush(Color.FromArgb(31, 41, 55))
-                    Dim labelH = CInt(g.MeasureString(layer.Name, font).Height) + 2
+                    Using labelFont As New Font(font.Name, 12),
+                          semiWhiteBrush As New SolidBrush(Color.FromArgb(220, 255, 255, 255)),
+                          labelBorderPen As New Pen(Color.FromArgb(160, 160, 160), 0.5F),
+                          textBrush As New SolidBrush(Color.FromArgb(31, 41, 55))
 
-                    ' Label 1: Material Name — size to text
-                    Dim sz1 = g.MeasureString(outputLabel1, font)
-                    Dim rect1 = New Rectangle(4, line + 3, CInt(sz1.Width) + 8, labelH)
-                    g.FillRectangle(semiWhiteBrush, rect1)
-                    g.DrawRectangle(labelBorderPen, rect1)
-                    g.DrawString(outputLabel1, font, textBrush, New PointF(6, line + 1))
+                        Dim labelH = CInt(g.MeasureString(layer.Name, labelFont).Height) + 2
 
-                    ' Label 2: Thickness — size to text
-                    Dim sz2 = g.MeasureString(outputLabel2, font)
-                    Dim rect2 = New Rectangle(324, line + 3, CInt(sz2.Width) + 8, labelH)
-                    g.FillRectangle(semiWhiteBrush, rect2)
-                    g.DrawRectangle(labelBorderPen, rect2)
-                    g.DrawString(outputLabel2, font, textBrush, New PointF(326, line + 1))
+                        ' Label 1: Material Name — size to text
+                        Dim sz1 = g.MeasureString(outputLabel1, labelFont)
+                        Dim rect1 = New Rectangle(4, line + 3, CInt(sz1.Width) + 8, labelH)
+                        g.FillRectangle(semiWhiteBrush, rect1)
+                        g.DrawRectangle(labelBorderPen, rect1)
+                        g.DrawString(outputLabel1, labelFont, textBrush, New PointF(6, line + 1))
 
-                    ' Label 3: Modulus — size to text
-                    Dim sz3 = g.MeasureString(outputLabel3, font)
-                    Dim rect3 = New Rectangle(494, line + 3, CInt(sz3.Width) + 8, labelH)
-                    g.FillRectangle(semiWhiteBrush, rect3)
-                    g.DrawRectangle(labelBorderPen, rect3)
-                    g.DrawString(outputLabel3, font, textBrush, New PointF(496, line + 1))
+                        ' Label 2: Thickness — size to text
+                        Dim sz2 = g.MeasureString(outputLabel2, labelFont)
+                        Dim rect2 = New Rectangle(324, line + 3, CInt(sz2.Width) + 8, labelH)
+                        g.FillRectangle(semiWhiteBrush, rect2)
+                        g.DrawRectangle(labelBorderPen, rect2)
+                        g.DrawString(outputLabel2, labelFont, textBrush, New PointF(326, line + 1))
+
+                        ' Label 3: Modulus — size to text
+                        Dim sz3 = g.MeasureString(outputLabel3, labelFont)
+                        Dim rect3 = New Rectangle(494, line + 3, CInt(sz3.Width) + 8, labelH)
+                        g.FillRectangle(semiWhiteBrush, rect3)
+                        g.DrawRectangle(labelBorderPen, rect3)
+                        g.DrawString(outputLabel3, labelFont, textBrush, New PointF(496, line + 1))
+                    End Using
                 Else
                     outputLabel1 = layer.Name
                     outputLabel2 = "T=" + Format(layer.Thickness.GetValue(measurementSystem), "0").ToString() + units
@@ -1279,33 +1282,36 @@ goto10:         arr(i + 1, 1) = a
                     End If
                     g.FillRectangle(pavementBrushes(layer.Name), CType(0, Single), line, CType(pictureBox.Width, Single), CType(ratio * layer.Thickness.UsCustomary, Single))
                     If layer.DesignedLayer IsNot "" And layer.DesignedLayer IsNot Nothing Then
-                        'font = New Font(font.Name, 100)
-                        Dim pen = New Pen(Color.FromArgb(200, 46, 94, 168), 6)
-                        g.DrawRectangle(pen, CType(0, Single), line, CType(pictureBox.Width, Single), CType(ratio * layer.Thickness.UsCustomary, Single))
+                        Using pen As New Pen(Color.FromArgb(200, 46, 94, 168), 6)
+                            g.DrawRectangle(pen, CType(0, Single), line, CType(pictureBox.Width, Single), CType(ratio * layer.Thickness.UsCustomary, Single))
+                        End Using
                     End If
-                    font = New Font(font.Name, 12)
-                    Dim semiWhite As New SolidBrush(Color.FromArgb(220, 255, 255, 255))
-                    Dim lblBorder As New Pen(Color.FromArgb(160, 160, 160), 0.5F)
-                    Dim txtBrush As New SolidBrush(Color.FromArgb(31, 41, 55))
-                    Dim lblH = CInt(g.MeasureString(layer.Name, font).Height) + 2
 
-                    Dim s1 = g.MeasureString(outputLabel1, font)
-                    Dim rect1 = New Rectangle(4, line + 3, CInt(s1.Width) + 8, lblH)
-                    g.FillRectangle(semiWhite, rect1)
-                    g.DrawRectangle(lblBorder, rect1)
-                    g.DrawString(outputLabel1, font, txtBrush, New PointF(6, line + 1))
+                    Using labelFont As New Font(font.Name, 12),
+                          semiWhite As New SolidBrush(Color.FromArgb(220, 255, 255, 255)),
+                          lblBorder As New Pen(Color.FromArgb(160, 160, 160), 0.5F),
+                          txtBrush As New SolidBrush(Color.FromArgb(31, 41, 55))
 
-                    Dim s2 = g.MeasureString(outputLabel2, font)
-                    Dim rect2 = New Rectangle(324, line + 3, CInt(s2.Width) + 8, lblH)
-                    g.FillRectangle(semiWhite, rect2)
-                    g.DrawRectangle(lblBorder, rect2)
-                    g.DrawString(outputLabel2, font, txtBrush, New PointF(326, line + 1))
+                        Dim lblH = CInt(g.MeasureString(layer.Name, labelFont).Height) + 2
 
-                    Dim s3 = g.MeasureString(outputLabel3, font)
-                    Dim rect3 = New Rectangle(494, line + 3, CInt(s3.Width) + 8, lblH)
-                    g.FillRectangle(semiWhite, rect3)
-                    g.DrawRectangle(lblBorder, rect3)
-                    g.DrawString(outputLabel3, font, txtBrush, New PointF(496, line + 1))
+                        Dim s1 = g.MeasureString(outputLabel1, labelFont)
+                        Dim rect1 = New Rectangle(4, line + 3, CInt(s1.Width) + 8, lblH)
+                        g.FillRectangle(semiWhite, rect1)
+                        g.DrawRectangle(lblBorder, rect1)
+                        g.DrawString(outputLabel1, labelFont, txtBrush, New PointF(6, line + 1))
+
+                        Dim s2 = g.MeasureString(outputLabel2, labelFont)
+                        Dim rect2 = New Rectangle(324, line + 3, CInt(s2.Width) + 8, lblH)
+                        g.FillRectangle(semiWhite, rect2)
+                        g.DrawRectangle(lblBorder, rect2)
+                        g.DrawString(outputLabel2, labelFont, txtBrush, New PointF(326, line + 1))
+
+                        Dim s3 = g.MeasureString(outputLabel3, labelFont)
+                        Dim rect3 = New Rectangle(494, line + 3, CInt(s3.Width) + 8, lblH)
+                        g.FillRectangle(semiWhite, rect3)
+                        g.DrawRectangle(lblBorder, rect3)
+                        g.DrawString(outputLabel3, labelFont, txtBrush, New PointF(496, line + 1))
+                    End Using
                 End If
                 Dim Int As Integer
                 Int = 0
@@ -1336,29 +1342,32 @@ goto10:         arr(i + 1, 1) = a
                         outputLabel3 = "E=" + layer.Modulus.GetValue(measurementSystem).ToString("N") + modulus
                     End If
                     g.FillRectangle(pavementBrushes(layer.Name), CType(0, Single), line, CType(pictureBox.Width, Single), CType(ratio * layer.Thickness.UsCustomary, Single))
-                    font = New Font(font.Name, 12)
-                    Dim semiWhite As New SolidBrush(Color.FromArgb(220, 255, 255, 255))
-                    Dim lblBorder As New Pen(Color.FromArgb(160, 160, 160), 0.5F)
-                    Dim txtBrush As New SolidBrush(Color.FromArgb(31, 41, 55))
-                    Dim lblH = CInt(g.MeasureString(layer.Name, font).Height) + 2
 
-                    Dim s1 = g.MeasureString(outputLabel1, font)
-                    Dim rect1 = New Rectangle(4, line + 3, CInt(s1.Width) + 8, lblH)
-                    g.FillRectangle(semiWhite, rect1)
-                    g.DrawRectangle(lblBorder, rect1)
-                    g.DrawString(outputLabel1, font, txtBrush, New PointF(6, line + 1))
+                    Using labelFont As New Font(font.Name, 12),
+                          semiWhite As New SolidBrush(Color.FromArgb(220, 255, 255, 255)),
+                          lblBorder As New Pen(Color.FromArgb(160, 160, 160), 0.5F),
+                          txtBrush As New SolidBrush(Color.FromArgb(31, 41, 55))
 
-                    Dim s2 = g.MeasureString(outputLabel2, font)
-                    Dim rect2 = New Rectangle(324, line + 3, CInt(s2.Width) + 8, lblH)
-                    g.FillRectangle(semiWhite, rect2)
-                    g.DrawRectangle(lblBorder, rect2)
-                    g.DrawString(outputLabel2, font, txtBrush, New PointF(326, line + 1))
+                        Dim lblH = CInt(g.MeasureString(layer.Name, labelFont).Height) + 2
 
-                    Dim s3 = g.MeasureString(outputLabel3, font)
-                    Dim rect3 = New Rectangle(494, line + 3, CInt(s3.Width) + 8, lblH)
-                    g.FillRectangle(semiWhite, rect3)
-                    g.DrawRectangle(lblBorder, rect3)
-                    g.DrawString(outputLabel3, font, txtBrush, New PointF(496, line + 1))
+                        Dim s1 = g.MeasureString(outputLabel1, labelFont)
+                        Dim rect1 = New Rectangle(4, line + 3, CInt(s1.Width) + 8, lblH)
+                        g.FillRectangle(semiWhite, rect1)
+                        g.DrawRectangle(lblBorder, rect1)
+                        g.DrawString(outputLabel1, labelFont, txtBrush, New PointF(6, line + 1))
+
+                        Dim s2 = g.MeasureString(outputLabel2, labelFont)
+                        Dim rect2 = New Rectangle(324, line + 3, CInt(s2.Width) + 8, lblH)
+                        g.FillRectangle(semiWhite, rect2)
+                        g.DrawRectangle(lblBorder, rect2)
+                        g.DrawString(outputLabel2, labelFont, txtBrush, New PointF(326, line + 1))
+
+                        Dim s3 = g.MeasureString(outputLabel3, labelFont)
+                        Dim rect3 = New Rectangle(494, line + 3, CInt(s3.Width) + 8, lblH)
+                        g.FillRectangle(semiWhite, rect3)
+                        g.DrawRectangle(lblBorder, rect3)
+                        g.DrawString(outputLabel3, labelFont, txtBrush, New PointF(496, line + 1))
+                    End Using
                 End If
 
                 line += ratio * layer.Thickness.UsCustomary
