@@ -9501,31 +9501,51 @@ Namespace ViewModels
                 Dim maxCumYPx As Single = CSng(marginTop + plotHeight - (maxCumCDFVal / yMax) * plotHeight)
                 g.FillEllipse(Brushes.Red, critXPx - 6, maxCumYPx - 6, 12, 12)
 
-                ' Draw legend — measure content width dynamically
+                ' Draw legend — measure content width dynamically, and switch to
+                ' compact multi-column layout when the single-column legend would
+                ' occupy more than 40% of the plot height (15+ aircraft).
                 Dim legendFont As New Font("Segoe UI", 8.0F)
                 Dim legendLineH As Integer = 14
-                Dim legendH As Integer = legendEntries.Count * legendLineH + 8
+                Dim n As Integer = legendEntries.Count
+                Dim maxLegendH As Integer = CInt(plotHeight * 0.4)
+                Dim nCols As Integer = 1
+                If n * legendLineH + 8 > maxLegendH Then
+                    legendFont.Dispose()
+                    legendFont = New Font("Segoe UI", 7.0F)
+                    legendLineH = 11
+                    Dim rowsPerCol As Integer = Math.Max(1, CInt(Math.Floor((maxLegendH - 8) / CDbl(legendLineH))))
+                    nCols = Math.Min(3, CInt(Math.Ceiling(n / CDbl(rowsPerCol))))
+                End If
+                Dim rowsFinal As Integer = CInt(Math.Ceiling(n / CDbl(nCols)))
+                Dim legendH As Integer = rowsFinal * legendLineH + 8
 
-                ' Measure widest legend entry
+                ' Measure widest legend entry (at final font)
                 Dim maxEntryW As Single = 0
                 For Each entry In legendEntries
                     Dim entrySize = g.MeasureString(entry.Item1, legendFont)
                     If entrySize.Width > maxEntryW Then maxEntryW = entrySize.Width
                 Next
-                Dim legendW As Integer = CInt(maxEntryW) + 40
-                Dim legendX As Integer = marginLeft + plotWidth - legendW - 8
+                Dim colW As Integer = CInt(maxEntryW) + 30
+                Dim legendW As Integer = colW * nCols + 6
+                Dim legendX As Integer = Math.Max(marginLeft + 8, marginLeft + plotWidth - legendW - 8)
                 Dim legendY As Integer = marginTop + plotHeight - legendH - 8
                 Dim legendBg As New Rectangle(legendX, legendY, legendW, legendH)
-                g.FillRectangle(New SolidBrush(Color.FromArgb(240, 245, 245, 245)), legendBg)
-                g.DrawRectangle(New Pen(Color.FromArgb(200, 204, 210), 1), legendBg)
+                Using bgBrush As New SolidBrush(Color.FromArgb(240, 245, 245, 245)),
+                      bgPen As New Pen(Color.FromArgb(200, 204, 210), 1)
+                    g.FillRectangle(bgBrush, legendBg)
+                    g.DrawRectangle(bgPen, legendBg)
+                End Using
 
                 For idx As Integer = 0 To legendEntries.Count - 1
                     Dim entry = legendEntries(idx)
-                    Dim ly As Integer = legendY + 4 + idx * legendLineH
-                    Dim lPen As New Pen(entry.Item2, If(entry.Item2 = Color.Black, 2.5F, 1.5F))
-                    g.DrawLine(lPen, legendX + 6, ly + 5, legendX + 22, ly + 5)
-                    g.DrawString(entry.Item1, legendFont, Brushes.Black, legendX + 26, ly)
-                    lPen.Dispose()
+                    Dim col As Integer = idx \ rowsFinal
+                    Dim row As Integer = idx Mod rowsFinal
+                    Dim ly As Integer = legendY + 4 + row * legendLineH
+                    Dim lx As Integer = legendX + 3 + col * colW
+                    Using lPen As New Pen(entry.Item2, If(entry.Item2 = Color.Black, 2.5F, 1.5F))
+                        g.DrawLine(lPen, lx + 3, ly + 5, lx + 17, ly + 5)
+                    End Using
+                    g.DrawString(entry.Item1, legendFont, Brushes.Black, lx + 21, ly)
                 Next
 
                 ' Add critical strip label
@@ -10966,30 +10986,50 @@ Namespace ViewModels
                     acPen.Dispose()
                 Next
 
-                ' Legend — dynamic width, positioned at bottom-right
+                ' Legend — dynamic width, positioned at bottom-right. Switches to a
+                ' compact multi-column layout when there are enough aircraft that a
+                ' single-column legend would occupy more than 40% of the plot height.
                 Dim legendFont As New Font("Segoe UI", 8.0F)
                 Dim legendLineH As Integer = 14
-                Dim legendH As Integer = legendEntries.Count * legendLineH + 8
+                Dim n As Integer = legendEntries.Count
+                Dim maxLegendH As Integer = CInt(plotHeight * 0.4)
+                Dim nCols As Integer = 1
+                If n * legendLineH + 8 > maxLegendH Then
+                    legendFont.Dispose()
+                    legendFont = New Font("Segoe UI", 7.0F)
+                    legendLineH = 11
+                    Dim rowsPerCol As Integer = Math.Max(1, CInt(Math.Floor((maxLegendH - 8) / CDbl(legendLineH))))
+                    nCols = Math.Min(3, CInt(Math.Ceiling(n / CDbl(rowsPerCol))))
+                End If
+                Dim rowsFinal As Integer = CInt(Math.Ceiling(n / CDbl(nCols)))
+                Dim legendH As Integer = rowsFinal * legendLineH + 8
 
-                ' Measure widest legend entry
+                ' Measure widest legend entry (at final font)
                 Dim maxLegW As Single = 0
                 For Each entry In legendEntries
                     Dim eSize = g.MeasureString(entry.Item1, legendFont)
                     If eSize.Width > maxLegW Then maxLegW = eSize.Width
                 Next
-                Dim legendW As Integer = CInt(maxLegW) + 36
-                Dim legendX As Integer = marginLeft + plotWidth - legendW - 8
+                Dim colW As Integer = CInt(maxLegW) + 30
+                Dim legendW As Integer = colW * nCols + 6
+                Dim legendX As Integer = Math.Max(marginLeft + 8, marginLeft + plotWidth - legendW - 8)
                 Dim legendY As Integer = marginTop + plotHeight - legendH - 8
-                g.FillRectangle(New SolidBrush(Color.FromArgb(240, 245, 245, 245)), legendX, legendY, legendW, legendH)
-                g.DrawRectangle(New Pen(Color.FromArgb(200, 204, 210), 1), legendX, legendY, legendW, legendH)
+                Using bgBrush As New SolidBrush(Color.FromArgb(240, 245, 245, 245)),
+                      bgPen As New Pen(Color.FromArgb(200, 204, 210), 1)
+                    g.FillRectangle(bgBrush, legendX, legendY, legendW, legendH)
+                    g.DrawRectangle(bgPen, legendX, legendY, legendW, legendH)
+                End Using
 
                 For idx As Integer = 0 To legendEntries.Count - 1
                     Dim entry = legendEntries(idx)
-                    Dim ly As Integer = legendY + 4 + idx * legendLineH
-                    Dim lPen As New Pen(entry.Item2, 1.5F)
-                    g.DrawLine(lPen, legendX + 6, ly + 5, legendX + 22, ly + 5)
-                    g.DrawString(entry.Item1, legendFont, Brushes.Black, legendX + 26, ly)
-                    lPen.Dispose()
+                    Dim col As Integer = idx \ rowsFinal
+                    Dim row As Integer = idx Mod rowsFinal
+                    Dim ly As Integer = legendY + 4 + row * legendLineH
+                    Dim lx As Integer = legendX + 3 + col * colW
+                    Using lPen As New Pen(entry.Item2, 1.5F)
+                        g.DrawLine(lPen, lx + 3, ly + 5, lx + 17, ly + 5)
+                    End Using
+                    g.DrawString(entry.Item1, legendFont, Brushes.Black, lx + 21, ly)
                 Next
 
                 ' Critical offset line
