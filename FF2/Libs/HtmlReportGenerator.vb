@@ -1545,28 +1545,42 @@ Namespace Libs
             sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='CDF vs offset chart for " & WebEncode(det.ACName) & "'>")
             sb.AppendLine("<title>CDF vs offset chart for " & WebEncode(det.ACName) & "</title>")
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#bcc3cc'/>")
-            sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>" & WebEncode(det.ACName) & " &mdash; Per-Aircraft CDF vs Offset</text>")
-            sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='34' text-anchor='middle' style='font-size:11px;fill:#5a6270;font-style:italic'>Per-airplane CDF = &Sigma; tire contributions at each 10-in strip (FAA Appendix B). Y values match FAARFIELD's built-in CDF Graph view (CDFdata2 for thickness/life runs, CDFdata3 for PCR). For multi-aircraft Miner's-Rule total, see Section H.</text>")
+            sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='22' text-anchor='middle' class='chart-title'>" & WebEncode(det.ACName) & " &mdash; Per-Aircraft CDF vs Offset</text>")
 
-            ' Y axis grid + tick labels (drawn first so the curve renders on top)
-            Dim nYTicks As Integer = 5
-            For i As Integer = 0 To nYTicks
-                Dim val As Double = yMax * i / nYTicks
-                Dim y As Double = mt + ph - (i / CDbl(nYTicks)) * ph
-                sb.AppendLine("<text x='" & (ml - 5) & "' y='" & Fmt(y + 4) & "' text-anchor='end' class='tick'>" & FmtCDFSvg(val) & "</text>")
+            ' Y-axis tick step picked from a {1, 2, 2.5, 5} × 10^k ladder so labels are clean
+            ' integers / one-decimal values rather than auto-divided fractions of yMax.
+            Dim rawStep As Double = yMax / 6.0
+            Dim mag As Double = Math.Pow(10, Math.Floor(Math.Log10(rawStep)))
+            Dim normStep As Double = rawStep / mag
+            Dim niceN As Double = If(normStep < 1.5, 1.0, If(normStep < 2.25, 2.0, If(normStep < 3.5, 2.5, If(normStep < 7.5, 5.0, 10.0))))
+            Dim yStep As Double = niceN * mag
+            ' Round yMax up to the next yStep so the top tick lands on a clean number.
+            Dim yMaxNice As Double = Math.Ceiling(yMax / yStep) * yStep
+            yMax = yMaxNice
+            ' Decimals: enough to express yStep without trailing junk (e.g., 0.2 -> 1 decimal).
+            Dim yDecimals As Integer = Math.Max(0, CInt(-Math.Floor(Math.Log10(yStep))))
+            Dim yFmt As String = If(yDecimals = 0, "0", "0." & New String("0"c, yDecimals))
+
+            ' Y-axis grid + tick labels (drawn first so the curve renders on top)
+            Dim yTickVal As Double = 0
+            Do While yTickVal <= yMax + yStep * 0.0001
+                Dim y As Double = mt + ph - (yTickVal / yMax) * ph
+                sb.AppendLine("<text x='" & (ml - 5) & "' y='" & Fmt(y + 4) & "' text-anchor='end' class='tick'>" & Format(yTickVal, yFmt) & "</text>")
                 sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#d0d4da' stroke-width='0.9'/>")
-            Next
+                yTickVal += yStep
+            Loop
             For xTick As Integer = CInt(xMinVal) To CInt(xMaxVal) Step 100
                 Dim xp As Double = toX(xTick)
                 sb.AppendLine("<text x='" & Fmt(xp) & "' y='" & (mt + ph + 18) & "' text-anchor='middle' class='tick'>" & xTick.ToString() & "</text>")
             Next
 
-            ' CDF = 1.0 horizontal reference line (design-failure threshold) when within range
+            ' CDF = 1.0 horizontal reference line (design-failure threshold) when within range.
+            ' Drawn with an inline caption on the line itself; intentionally NOT in the legend.
             Dim showDesignLine As Boolean = (1.0 <= yMax)
             If showDesignLine Then
                 Dim yDesign As Double = mt + ph - (1.0 / yMax) * ph
-                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(yDesign) & "' x2='" & (ml + pw) & "' y2='" & Fmt(yDesign) & "' stroke='#888' stroke-width='1' stroke-dasharray='6,3' opacity='0.7'/>")
-                sb.AppendLine("<text x='" & (ml + pw - 5) & "' y='" & Fmt(yDesign - 4) & "' text-anchor='end' style='font-size:11px;fill:#666'>CDF = 1.0 (design)</text>")
+                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(yDesign) & "' x2='" & (ml + pw) & "' y2='" & Fmt(yDesign) & "' stroke='#7a8595' stroke-width='1.1' stroke-dasharray='6,4' opacity='0.85'/>")
+                sb.AppendLine("<text x='" & (ml + 8) & "' y='" & Fmt(yDesign - 4) & "' style='font-size:11px;fill:#5a6270;font-weight:600'>CDF = 1.0 (design failure)</text>")
             End If
 
             ' Bilateral mirror: absIdx = |ib - (NOFF-1)| + 1 maps bilateral index ib in
@@ -1577,7 +1591,9 @@ Namespace Libs
             '      tire summation visually obvious.
             '   2) Otherwise (older saved jobs), fall back to the previous single-curve fill+stroke.
             Dim nBilPts As Integer = 2 * (CDF.NOFF - 1) + 1
-            Dim tireColors() As String = {"#1F77B4", "#FF7F0E", "#2CA02C", "#D6272B", "#9467BD", "#8C564B", "#E377C2", "#7F7F7F"}
+            ' Tableau-10 inspired palette — softer, more harmonious than D3 categorical.
+            ' Holds up well under the more transparent fill (opacity 0.32) used for the stack.
+            Dim tireColors() As String = {"#4E79A7", "#F28E2B", "#59A14F", "#E15759", "#76B7B2", "#EDC948", "#B07AA1", "#9C755F"}
 
             Dim haveStack As Boolean = det.HasTireCDFContrib AndAlso det.NWheels >= 1 _
                                        AndAlso det.CDFContribByTireByOffset IsNot Nothing
@@ -1614,7 +1630,9 @@ Namespace Libs
                         layerPath.Append(" L" & Fmt(xp) & " " & Fmt(yp))
                     Next
                     layerPath.Append(" Z")
-                    sb.AppendLine("<path d='" & layerPath.ToString() & "' fill='" & tireColors(cIdx) & "' opacity='0.55' stroke='" & tireColors(cIdx) & "' stroke-width='0.5' stroke-opacity='0.35'/>")
+                    ' More transparent fill (0.32) so the cumulative top line reads cleanly through
+                    ' the stack; dashed contour at 0.85 opacity to delineate each tire's band.
+                    sb.AppendLine("<path d='" & layerPath.ToString() & "' fill='" & tireColors(cIdx) & "' fill-opacity='0.32' stroke='" & tireColors(cIdx) & "' stroke-width='1.0' stroke-dasharray='4,2' stroke-opacity='0.85'/>")
                     ' Promote upper to next layer's lower
                     For ib As Integer = 0 To nBilPts - 1
                         cumLower(ib) = cumUpper(ib)
@@ -1623,6 +1641,8 @@ Namespace Libs
 
                 ' Top stroke: trace det.CDFByOffset directly so the visible top equals the
                 ' analysis-side cumulative regardless of any rounding in the per-tire stack.
+                ' Slightly thicker solid line so the per-aircraft cumulative reads as the
+                ' primary curve over the dashed tire-band contours.
                 Dim topPath As New StringBuilder()
                 For ib As Integer = 0 To nBilPts - 1
                     Dim offVal As Double = xMinVal + ib * CDF.OFFSETINC
@@ -1632,7 +1652,7 @@ Namespace Libs
                     Dim yp As Double = mt + ph - (Math.Min(cdfVal, yMax) / yMax) * ph
                     If ib = 0 Then topPath.Append("M" & Fmt(xp) & " " & Fmt(yp)) Else topPath.Append(" L" & Fmt(xp) & " " & Fmt(yp))
                 Next
-                sb.AppendLine("<path d='" & topPath.ToString() & "' fill='none' stroke='" & acColor & "' stroke-width='1.6'/>")
+                sb.AppendLine("<path d='" & topPath.ToString() & "' fill='none' stroke='" & acColor & "' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'/>")
             Else
                 ' Fallback: single-curve fill+stroke (older saved jobs without per-tire capture).
                 Dim cdfPath As New StringBuilder()
@@ -1655,7 +1675,7 @@ Namespace Libs
                 Next
                 cdfFill.Append(" L" & Fmt(cdfLastX) & " " & Fmt(mt + ph) & " Z")
                 sb.AppendLine("<path d='" & cdfFill.ToString() & "' fill='" & acColor & "' opacity='0.10'/>")
-                sb.AppendLine("<path d='" & cdfPath.ToString() & "' fill='none' stroke='" & acColor & "' stroke-width='2.2'/>")
+                sb.AppendLine("<path d='" & cdfPath.ToString() & "' fill='none' stroke='" & acColor & "' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'/>")
             End If
 
             ' Centerline (offset = 0)
@@ -1675,16 +1695,15 @@ Namespace Libs
             sb.AppendLine("<text x='" & Fmt(ml + pw / 2) & "' y='" & (svgH - 5) & "' text-anchor='middle' class='axis-label'>Offset (" & lengthUnit & ")</text>")
             sb.AppendLine("<text x='12' y='" & Fmt(mt + ph / 2) & "' text-anchor='middle' class='axis-label' transform='rotate(-90,12," & Fmt(mt + ph / 2) & ")'>CDF</text>")
 
-            ' Legend
+            ' Legend (CDF=1.0 reference is intentionally NOT included — it is captioned in-place on the line)
             Dim lgX As Integer = svgW - mr - 230
             Dim lgY As Integer = mt + 8
-            ' Per-aircraft cumulative CDF (top stroke)
-            sb.AppendLine("<line x1='" & lgX & "' y1='" & (lgY + 5) & "' x2='" & (lgX + 16) & "' y2='" & (lgY + 5) & "' stroke='" & acColor & "' stroke-width='1.6'/>")
+            ' Per-aircraft cumulative CDF — primary thick solid line, matches the top stroke
+            sb.AppendLine("<line x1='" & lgX & "' y1='" & (lgY + 5) & "' x2='" & (lgX + 16) & "' y2='" & (lgY + 5) & "' stroke='" & acColor & "' stroke-width='2.6' stroke-linecap='round'/>")
             sb.AppendLine("<text x='" & (lgX + 20) & "' y='" & (lgY + 9) & "' style='font-size:13px'>Per-aircraft CDF (&Sigma; tires per strip)</text>")
-            ' Tire-contributions stacked swatch (only when stack rendered)
+            ' Tire-contributions stacked swatch with dashed contour (matches the layer style)
             If haveStack Then
                 lgY += 16
-                ' Build a 4-band swatch using the first 4 palette colors
                 Dim swatchY As Integer = lgY + 1
                 Dim swatchH As Integer = 9
                 Dim swatchBandH As Integer = swatchH \ 4
@@ -1692,7 +1711,7 @@ Namespace Libs
                 Dim sw1 As Integer = lgX + 16
                 For sb_i As Integer = 0 To 3
                     Dim cIdx As Integer = sb_i Mod tireColors.Length
-                    sb.AppendLine("<rect x='" & sw0 & "' y='" & (swatchY + sb_i * swatchBandH) & "' width='" & (sw1 - sw0) & "' height='" & swatchBandH & "' fill='" & tireColors(cIdx) & "' opacity='0.55'/>")
+                    sb.AppendLine("<rect x='" & sw0 & "' y='" & (swatchY + sb_i * swatchBandH) & "' width='" & (sw1 - sw0) & "' height='" & swatchBandH & "' fill='" & tireColors(cIdx) & "' fill-opacity='0.32' stroke='" & tireColors(cIdx) & "' stroke-width='0.6' stroke-dasharray='2,1' stroke-opacity='0.85'/>")
                 Next
                 sb.AppendLine("<text x='" & (lgX + 20) & "' y='" & (lgY + 9) & "' style='font-size:13px'>Tire contributions (stacked)</text>")
             End If
@@ -1702,11 +1721,6 @@ Namespace Libs
             lgY += 16
             sb.AppendLine("<line x1='" & lgX & "' y1='" & (lgY + 5) & "' x2='" & (lgX + 16) & "' y2='" & (lgY + 5) & "' stroke='#D62728' stroke-width='1' stroke-dasharray='5,3'/>")
             sb.AppendLine("<text x='" & (lgX + 20) & "' y='" & (lgY + 9) & "' fill='#D62728' style='font-size:13px'>Critical offset</text>")
-            If showDesignLine Then
-                lgY += 16
-                sb.AppendLine("<line x1='" & lgX & "' y1='" & (lgY + 5) & "' x2='" & (lgX + 16) & "' y2='" & (lgY + 5) & "' stroke='#888' stroke-width='1' stroke-dasharray='6,3'/>")
-                sb.AppendLine("<text x='" & (lgX + 20) & "' y='" & (lgY + 9) & "' fill='#666' style='font-size:13px'>CDF = 1.0</text>")
-            End If
 
             sb.AppendLine("</svg></div>")
         End Sub
