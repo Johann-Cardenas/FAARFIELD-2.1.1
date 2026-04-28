@@ -506,6 +506,9 @@ Public Class RunAnalysis
 
     Private Sub NewFlexibleAnalysis(ByRef ct As CancellationToken)
 
+        ct.ThrowIfCancellationRequested()
+        If gUserInterrupted Then Exit Sub
+
         StraightLineModel = -1
         If Not NoACCDF Then : HMA_CDF_Calc = True : End If
         If DesignType = NewFlex Then
@@ -688,6 +691,9 @@ Public Class RunAnalysis
 
 
     Private Sub FlexibleOnFlexibleAnalysis(ByRef ct As CancellationToken)
+        ct.ThrowIfCancellationRequested()
+        If gUserInterrupted Then Exit Sub
+
         IterLayerChosen = 1
         If Not NoACCDF Then
             HMA_CDF_Calc = True
@@ -705,6 +711,9 @@ Public Class RunAnalysis
 
 
     Private Sub NewRigidAnalysis(ByRef ct As CancellationToken)
+
+        ct.ThrowIfCancellationRequested()
+        If gUserInterrupted Then Exit Sub
 
         IterLayerChosen = 1
         MinimumThickness = False
@@ -766,6 +775,9 @@ Public Class RunAnalysis
     End Function
 
     Private Sub FlexibleOnRigid(ByRef ct As CancellationToken) 'ik2020.03
+        ct.ThrowIfCancellationRequested()
+        If gUserInterrupted Then Exit Sub
+
         StraightLineModel = -1
         HMAonRigidCase = 0
         gHMAonRigid_Mod = Job.DesignOptions.ThickPccOverlay
@@ -911,6 +923,9 @@ Public Class RunAnalysis
 
 
     Private Sub PccOnFlexible(ByRef ct As CancellationToken)
+        ct.ThrowIfCancellationRequested()
+        If gUserInterrupted Then Exit Sub
+
         IterLayerChosen = 1
         If Not LifeComputation Then ILayer = 1
 
@@ -932,6 +947,9 @@ Public Class RunAnalysis
 
     End Sub
     Private Sub UnbondOnRigid(ByRef ct As CancellationToken)
+
+        ct.ThrowIfCancellationRequested()
+        If gUserInterrupted Then Exit Sub
 
         gOnly_LEAF = False
         If Not LifeComputation Then ILayer = 1
