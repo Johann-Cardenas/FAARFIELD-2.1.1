@@ -376,7 +376,8 @@
                                                             Canvas.Top="5"
                                                             Canvas.Left="520"
                                                             Content="{Binding RunButtonText}"
-                                                            Command="{Binding RunButton_Command}" >
+                                                            Command="{Binding RunButton_Command}"
+                                                            ToolTip="Click to start the selected analysis. While a run is in progress, this button changes to a red 'Cancel' button — click it again to abort the run.">
                                                     </Button>
                                                     <Label  Canvas.Top="40">Structure Name:</Label>
                                                     <TextBox Name="SectionName"

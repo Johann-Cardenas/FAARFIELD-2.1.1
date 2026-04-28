@@ -409,6 +409,12 @@
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PrimaryBd" Property="Opacity" Value="0.5"/>
                         </Trigger>
+                        <!-- Cancel-mode visual: when the Run button toggles to "Cancel" the
+                             ViewModel sets RunButtonText to "Cancel". Switch to red so the user
+                             can see at a glance that clicking the button will abort the run. -->
+                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Content}" Value="Cancel">
+                            <Setter TargetName="PrimaryBd" Property="Background" Value="#C62828"/>
+                        </DataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
