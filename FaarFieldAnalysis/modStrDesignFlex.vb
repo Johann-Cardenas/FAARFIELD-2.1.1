@@ -161,7 +161,76 @@ StartFlexLoop:
             Else
                 Call RunLEAF.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.VerticalStrain, CShort(NAC), CallAC, LEAStrActiveX, VertStrainReponse, AllResp)
             End If
+            ' CM Report instrumentation: extract per-aircraft vertical stress at top of subgrade
+            ' (S22) by re-running LEAF at the same EvalDepth with AllResponses option, then
+            ' reading AllResp(IA, IEval).StressZ. The strain pipeline above is unchanged.
+            ' IMPORTANT: pass a SEPARATE temp Response array — LEAF writes into the Response
+            ' parameter (clsLEAF.vb line 1080) and zeroes IEval > 1 slots (line 1087), which
+            ' would corrupt VertStrainReponse and break LeafCDFFlex downstream.
+            Try
+                Dim tempStressResponse(,) As Double
+                ReDim tempStressResponse(VertStrainReponse.GetUpperBound(0), VertStrainReponse.GetUpperBound(1))
+                Call RunLEAF.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.AllResponses, CShort(NAC), CallAC, LEAStrActiveX, tempStressResponse, AllResp)
+                For iaCap As Integer = 1 To NAC
+                    Dim liCap As Integer = LibIndex(iaCap)
+                    Dim maxAbsStress As Double = 0
+                    For iEvCap As Integer = 1 To AC(liCap).libNEVPTS
+                        If iEvCap <= AllResp.GetUpperBound(1) AndAlso iaCap <= AllResp.GetUpperBound(0) Then
+                            Dim sz As Double = AllResp(iaCap, iEvCap).StressZ
+                            If Math.Abs(sz) > Math.Abs(maxAbsStress) Then maxAbsStress = sz
+                        End If
+                    Next
+                    gSubgradeStress(iaCap) = Math.Abs(maxAbsStress)
+                Next
+            Catch ex As Exception
+                ' Non-critical instrumentation; do not block the design.
+            End Try
             RunLEAF = Nothing
+
+            ' CM Report instrumentation: extract per-aircraft principal horizontal tensile strain
+            ' at the bottom of the AC layer (E11). Mirrors the asphalt-fatigue LEAF call pattern
+            ' at modStrDesignFlex.vb line 743+ but runs unconditionally so PCR / life runs that
+            ' don't enter the asphalt-CDF block still capture E11. Save/restore EvalDepth(1) so
+            ' the rest of the design loop (LeafCDFFlex on line ~202+) still uses subgrade depth.
+            ' Pass a SEPARATE temp Response array — LEAF writes into Response (clsLEAF.vb 1080).
+            Try
+                Dim savedEvalDepth As Double = EvalDepth(1)
+                EvalDepth(1) = -julThick(1)            ' AC bottom (negative depth below surface)
+                Call WriteFile()                        ' push EvalDepth into LEAStructure.EvalDepth
+                Call LEDFAA_to_LEAF(DesignType)
+                RunLEAF = New LEAFClassLib.clsLEAF()
+                Dim tempE11Response(,) As Double
+                ReDim tempE11Response(VertStrainReponse.GetUpperBound(0), VertStrainReponse.GetUpperBound(1))
+                Call RunLEAF.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.AllResponses, CShort(NAC), CallAC, LEAStrActiveX, tempE11Response, AllResp)
+                RunLEAF = Nothing
+
+                ' Mohr's-circle principal-tensile-strain extraction (mirrors lines ~755-765 used
+                ' by the existing asphalt-fatigue path). Track the max |eps11| across eval points.
+                For iaE11 As Integer = 1 To NAC
+                    Dim liE11 As Integer = LibIndex(iaE11)
+                    Dim maxAbsE11 As Double = 0
+                    For iEvE11 As Integer = 1 To AC(liE11).libNEVPTS
+                        If iEvE11 <= AllResp.GetUpperBound(1) AndAlso iaE11 <= AllResp.GetUpperBound(0) Then
+                            Dim sMC As Double = (AllResp(iaE11, iEvE11).StrainX + AllResp(iaE11, iEvE11).StrainY) / 2
+                            Dim sMR As Double = (AllResp(iaE11, iEvE11).StrainX - AllResp(iaE11, iEvE11).StrainY) / 2
+                            Dim tD As Double = Math.Sqrt(sMR * sMR + AllResp(iaE11, iEvE11).StrainXY * AllResp(iaE11, iEvE11).StrainXY)
+                            Dim e11 As Double
+                            If Math.Abs(sMC + tD) > Math.Abs(sMC - tD) Then e11 = sMC + tD Else e11 = sMC - tD
+                            If Math.Abs(e11) > maxAbsE11 Then maxAbsE11 = Math.Abs(e11)
+                        End If
+                    Next
+                    gAcBottomStrain(iaE11) = maxAbsE11
+                Next
+
+                ' Restore EvalDepth(1) for the subgrade pipeline. WriteFile() + LEDFAA_to_LEAF()
+                ' so LEAStructure.EvalDepth (consumed by any subsequent LEAF call) is back to
+                ' the subgrade depth before LeafCDFFlex runs.
+                EvalDepth(1) = savedEvalDepth
+                Call WriteFile()
+                Call LEDFAA_to_LEAF(DesignType)
+            Catch ex As Exception
+                ' Non-critical instrumentation; do not block the design.
+            End Try
 
             RunTimeSelected = RunTimeSelected + (timeGetTime - TimeSave1)
             If DesigningStr = False Then Exit Do ' Also set by JULEA error.
@@ -582,10 +651,15 @@ StartFlexLoop:
                     If nsb = 0 Then nsb = CInt(publicNS_P209)
                     gDetailedReportData.SublayerData.BaseSublayerCount = nsb
                     For I = 1 To CShort(nsb)
-                        Dim sl As New clsLayerInfo()
+                        Dim sl As New clsAggregateSublayer()
                         sl.Thickness = TSS_P209(I)
                         sl.Modulus = BaseMod(I)
                         sl.LCode = LCode(baseLIdx)
+                        sl.ThicknessUsed = TSU_P209(I)
+                        sl.ModBelow = MUnder_P209(I)
+                        sl.F1 = F1_P209(I)
+                        sl.F2 = F2_P209(I)
+                        sl.IsBoundaryInterpolated = BoundaryInterp_P209(I)
                         gDetailedReportData.SublayerData.BaseSublayers.Add(sl)
                     Next
                 End If
@@ -602,10 +676,15 @@ StartFlexLoop:
                     If nss = 0 Then nss = CInt(publicNS_P154)
                     gDetailedReportData.SublayerData.SubbaseSublayerCount = nss
                     For I = 1 To CShort(nss)
-                        Dim sl As New clsLayerInfo()
+                        Dim sl As New clsAggregateSublayer()
                         sl.Thickness = TSS_P154(I)
                         sl.Modulus = SubbaseMod(I)
                         sl.LCode = LCode(sbaseLIdx)
+                        sl.ThicknessUsed = TSU_P154(I)
+                        sl.ModBelow = MUnder_P154(I)
+                        sl.F1 = F1_P154(I)
+                        sl.F2 = F2_P154(I)
+                        sl.IsBoundaryInterpolated = BoundaryInterp_P154(I)
                         gDetailedReportData.SublayerData.SubbaseSublayers.Add(sl)
                     Next
                 End If

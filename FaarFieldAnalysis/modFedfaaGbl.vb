@@ -1783,6 +1783,20 @@ skipACR:
             Call PCNLifeCalc()
             gPCR_Life = False
 
+            ' Snapshot the original-mix AircraftDetails for the CM Report. Subsequent PCR rounds
+            ' will overwrite gDetailedReportData.AircraftDetails with the shrinking aircraft list,
+            ' but Section D needs every aircraft and its evaluation-pavement vertical strain.
+            Try
+                If gDetailedReportData.AircraftDetails IsNot Nothing Then
+                    Dim n As Integer = gDetailedReportData.AircraftDetails.Length
+                    ReDim gDetailedReportData.EvaluationAircraftDetails(n - 1)
+                    For i As Integer = 0 To n - 1
+                        gDetailedReportData.EvaluationAircraftDetails(i) = gDetailedReportData.AircraftDetails(i)
+                    Next
+                End If
+            Catch ex As Exception
+                ' Reporting capture is non-critical
+            End Try
 
             Call SaveACdata1()
             'Call After_cmdLife_Click_2(Me)

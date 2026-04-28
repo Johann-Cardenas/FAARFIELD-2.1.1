@@ -281,22 +281,26 @@ Analysis Engine (FaarFieldAnalysis/)
 
 | Class | Purpose |
 |-------|---------|
-| `clsDetailedReportData` | Top-level container: AircraftDetails(), Iterations, CDFSweep, SublayerData, ACRDetails, PCRRounds |
-| `clsAircraftDetail` | Per-aircraft: strain, NtoFail, CDF, C/P, gear params, CDFByOffset(NOFF), CtoPByOffset(NOFF), WheelX/Y, NWheels, DualSpacing, GearSpacing |
+| `clsDetailedReportData` | Top-level container: AircraftDetails(), EvaluationAircraftDetails(), Iterations, CDFSweep, SublayerData, ACRDetails, PCRRounds |
+| `clsAircraftDetail` | Per-aircraft: strain, stress, NtoFail, CDF, C/P, gear params, CDFByOffset(NOFF), CtoPByOffset(NOFF), CDFContribByTireByOffset(NWheels,NOFF), WheelX/Y, NWheels, DualSpacing, GearSpacing. Strain/stress fields: `VerticalStrain` (ε₂₂ at top of subgrade), `SubgradeVertStress` (σ₂₂ at top of subgrade, in psi internally; rendered in kPa), `AsphaltStrain` (ε₁₁ principal tensile strain at AC bottom). |
 | `clsIterationRecord` | Per-iteration: Thickness, CDFMAX, CDFErr, DELT, Factor, SubLayered |
 | `clsCDFSweepData` | Full sweep: CDFPerAircraftPerOffset(nac,noff), CDFTotalPerOffset(noff), CtoPPerAircraftPerOffset(nac,noff) |
-| `clsSublayerData` | DesignLayers, ExpandedSublayers (List of clsLayerInfo), EvalDepthSubgrade |
+| `clsSublayerData` | DesignLayers, ExpandedSublayers (List of clsLayerInfo), BaseSublayers/SubbaseSublayers (List of clsAggregateSublayer), C/D/ModUnder/SublayerCount per material, EvalDepthSubgrade |
 | `clsLayerInfo` | Thickness, Modulus, LCode |
+| `clsAggregateSublayer` | P-209 / P-154 sublayer with verification fields: Thickness, Modulus, LCode, ThicknessUsed, ModBelow (E_{i-1}), F1, F2, IsBoundaryInterpolated. Sum reconstructs the WES recursion modulus exactly. |
 | `clsACRDetail` | ACName, SubgradeCategory, ReferenceStructure, DSWLIterations, FinalDSWL, FinalACR |
 | `clsPCRRound` | RoundNumber, CriticalAircraftName, CriticalAircraftCDF, MGWIterations, FinalMGW, RoundPCR |
 
-### Report HTML generation — `refreshDetailedReport()` (line ~8336)
+**`AircraftDetails` vs `EvaluationAircraftDetails`**: PCR runs invoke `PCNLifeCalc` once per round, overwriting `AircraftDetails` with the shrinking aircraft list. `EvaluationAircraftDetails` is a shallow snapshot taken right after Step-1 PCNLifeCalc (`modFedfaaGbl.vb` ~line 1786) so the report can show every original-mix aircraft with its evaluation-pavement strain. The CM Report's per-aircraft section (`HtmlReportGenerator.AppendSection D/E`) prefers `EvaluationAircraftDetails` when populated.
 
-This function builds the full HTML string. It reads from `FEDFAA1.gDetailedReportData` (the global report data object populated during analysis). Structure:
+### Report HTML generation — `refreshDetailedReport()` (line ~8842)
+
+`MainWindowViewModel.refreshDetailedReport` now **delegates the full report to `Libs.HtmlReportGenerator.Generate(...)`** (the SVG-based renderer). The GDI+ `DrawXxxChart` functions in `MainWindowViewModel.vb` are dead in the report path (kept for reference / potential reuse). New report features land in `HtmlReportGenerator.vb`. The function reads from `FEDFAA1.gDetailedReportData` (global report data object). Structure:
 
 1. **Header** — report title, job name, section name, timestamp
 2. **Summary Dashboard** — 6 cards (Max CDF, Design Thickness, Aircraft Count, Critical Offset, Subgrade Modulus, Converged/Iterations). Uses CSS classes `.dashboard`, `.dash-card`, `.dash-card-value`.
-3. **Table of Contents** — styled list (`.toc`, `.toc-list`, `.toc-section-num`). Sections J/K/L conditional on ACR/PCR data availability.
+3. **Pavement Response Summary** — per-aircraft critical responses table (between dashboard and TOC): ε₂₂ vertical strain at top of subgrade (με), σ₂₂ vertical stress at top of subgrade (kPa, converted from internal psi by × 6.89475729), ε₁₁ principal horizontal tensile strain at bottom of AC (με). Sourced from instrumented LEAF AllResponses calls (see "LEAF instrumentation" below). Missing values show "—".
+4. **Table of Contents** — styled list (`.toc`, `.toc-list`, `.toc-section-num`). Sections J/K/L conditional on ACR/PCR data availability.
 4. **Section A** — Design layers table + expanded sublayers table + evaluation depth summary box.
 5. **Section B** — 4 equation images rendered via `DrawEquationImage()`: subgrade failure model, CDF formula, C/P Gaussian integral, convergence criterion. Each embedded as base64 PNG in a `.math-block` div.
 6. **Section C** — `DrawCoverageConceptDiagram()` — educational 4-panel diagram (Gaussian wander, C/P curve, 41-strip visualization, multi-wheel superposition).
@@ -408,3 +412,25 @@ HtmlReportGenerator.Generate()  (FF2/Libs/HtmlReportGenerator.vb)
 - **Legend positioning:** Legends use dynamic width (measured via `MeasureString`) and are positioned to avoid overlapping data — typically bottom-right or bottom-left of plot area.
 - **Label collision avoidance:** `DrawFatigueCurve` implements a simple vertical shift algorithm for aircraft labels (6 attempts, shifting down by label height).
 - **Concept diagram pxPerInch:** 2.8 px/inch for the Gaussian wander visualization. Controls how wide sigma annotations spread horizontally.
+
+### LEAF instrumentation (capturing extra responses for the report)
+
+The CM Report needs per-aircraft responses (σ₂₂ at subgrade, ε₁₁ at AC bottom, per-tire C/P shares) that the analysis pipeline doesn't natively store. These are captured by **adding extra LEAF calls** in `modStrDesignFlex.vb` right after the existing `VerticalStrain` call — no engine changes.
+
+**Pattern (critical):**
+
+1. **Always pass a separate temp `Response(,)` array** to `ComputeResponse(AllResponses, …)`. `clsLEAF.vb:1080–1087` writes into and zeroes slots in the `Response` parameter, so reusing `VertStrainReponse` corrupts the strain pipeline and breaks `LeafCDFFlex` downstream (manifests as "subgrade strains too low to accurately compute life" — symptom from a previous regression).
+2. For S22 capture: same `EvalDepth` as the subgrade strain call, read `AllResp(IA, IEv).StressZ`, store in `gSubgradeStress(IA)`. Captured into `det.SubgradeVertStress`.
+3. For E11 capture: save current `EvalDepth(1)`, set to `-julThick(1)` (AC bottom), call `WriteFile()` + `LEDFAA_to_LEAF()` to push, run the LEAF AllResponses call, do Mohr's-circle principal-tensile-strain extraction (mirror of `modStrDesignFlex.vb:755–765`), **restore `EvalDepth(1)` and re-call `WriteFile()` + `LEDFAA_to_LEAF()`** before the design loop continues. Stored in `gAcBottomStrain(IA)`, captured into `det.AsphaltStrain` when `> 0` (preserves any value the existing asphalt-fatigue path may set later).
+4. For per-tire C/P shares: `gTireAreaCapture(wheel, offset)` accumulates inside `CoverageToPassFlexible` / `CoverageToPassFlexGeneral13B` (per-wheel `+=` of the Gaussian-area contribution), scaled to per-tire CDF in `LeafCDFFlex` (`gTirePerOffsetCDF`), copied to `det.CDFContribByTireByOffset`. A drift-correction normalization ensures the per-tire stack sums to `det.CDFByOffset(IOFF)`.
+
+**Don't reuse output arrays.** `VertStrainReponse` and `HorizStrainResponse` are consumed by downstream code; instrumentation calls must use freshly-allocated temps so the original outputs survive.
+
+### CDF vs Offset alignment with FAARFIELD's legacy "CDF Graph"
+
+The legacy "CDF Graph" tree-view item (rendered by `MainWindowViewModel.DrawCDFGraph`, fed by `airplane.CDFGraphData(N)`) is the user-facing ground truth. Its data flow:
+
+- **Non-PCR** (`SelectedRun ≠ 3`): `airplane.CDFGraphData(N) = CDFdata2(1, i, N)` (`RunAnalysis.vb:1491`).
+- **PCR** (`SelectedRun = 3`): `airplane.CDFGraphData(N) = CDFdata3(1, i, N)` (`RunAnalysis.vb:1496`). `CDFdata3` is the original-mix Step-1 snapshot frozen in `modFAILURE_MODEL_NP.vb:1771/3008`.
+
+The CM Report's per-aircraft "CDF vs Offset" chart aligns with this ground truth by mirroring `airplane.CDFGraphData(N)` into `det.CDFByOffset(N)` (and `EvaluationAircraftDetails(i).CDFByOffset(N)`) at the same `RunAnalysis.vb` loop. This **overrides** the per-iteration capture in `modCDF.vb:757` so the CM Report chart shows identical Y values to the legacy graph — including for PCR runs.

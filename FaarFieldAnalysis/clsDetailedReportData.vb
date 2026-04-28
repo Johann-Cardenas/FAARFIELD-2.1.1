@@ -8,6 +8,11 @@ Option Explicit On
 Public Class clsDetailedReportData
 
     Public AircraftDetails() As clsAircraftDetail
+    ' PCR runs invoke PCNLifeCalc once per round, overwriting AircraftDetails with the shrinking
+    ' aircraft mix. EvaluationAircraftDetails is a snapshot taken right after the Step-1 call
+    ' (original mix on the evaluation pavement) so Section D can show every aircraft with the
+    ' correct vertical strain at the top of the subgrade and its allowable repetitions.
+    Public EvaluationAircraftDetails() As clsAircraftDetail
     Public Iterations As New List(Of clsIterationRecord)
     Public CDFSweep As New clsCDFSweepData
     Public SublayerData As New clsSublayerData
@@ -30,6 +35,7 @@ Public Class clsDetailedReportData
 
     Public Sub Clear()
         AircraftDetails = Nothing
+        EvaluationAircraftDetails = Nothing
         Iterations.Clear()
         CDFSweep = New clsCDFSweepData
         SublayerData = New clsSublayerData
@@ -53,8 +59,9 @@ Public Class clsAircraftDetail
     Public AnnualDepartures As Single
     Public TotalRepetitions As Double
     Public ProjectedTireWidthAtSubgrade As Double
-    Public VerticalStrain As Double
+    Public VerticalStrain As Double            ' E22: vertical compressive strain at top of subgrade (LEAF VerticalStrain @ subgrade depth)
     Public HorizontalStrain As Double
+    Public SubgradeVertStress As Double        ' S22: vertical compressive stress at top of subgrade (LEAF AllResponses StressZ @ subgrade depth)
     Public NtoFail As Double
     Public MaxCDF As Double
     Public CDFAtCriticalOffset As Double
@@ -70,6 +77,12 @@ Public Class clsAircraftDetail
     Public CtoPAfterGearAdj As Single
     Public CDFByOffset(CDF.NOFF) As Double
     Public CtoPByOffset(CDF.NOFF) As Single
+
+    ' Per-tire CDF contribution at each offset (1-indexed: tire 1..NWheels, offset 1..NOFF).
+    ' Sum over tires equals CDFByOffset(IOFF) — this is the strip-by-strip decomposition of
+    ' the gear-level Coverage-to-Pass × Reps / Nfail into per-wheel Gaussian-area shares.
+    Public CDFContribByTireByOffset(,) As Double
+    Public HasTireCDFContrib As Boolean = False
 
     ' Gear geometry for visualization (1-indexed arrays)
     Public WheelX() As Single       ' libTX — lateral X position of each wheel (inches)
@@ -153,8 +166,8 @@ Public Class clsSublayerData
     Public SubbaseModUnder As Single    ' Modulus of layer below aggregate subbase (psi)
     Public BaseSublayerCount As Integer ' Number of sublayers in base
     Public SubbaseSublayerCount As Integer ' Number of sublayers in subbase
-    Public BaseSublayers As New List(Of clsLayerInfo)    ' Individual base sublayers (bottom-up computed)
-    Public SubbaseSublayers As New List(Of clsLayerInfo)  ' Individual subbase sublayers (bottom-up computed)
+    Public BaseSublayers As New List(Of clsAggregateSublayer)    ' Individual base sublayers (bottom-up computed)
+    Public SubbaseSublayers As New List(Of clsAggregateSublayer)  ' Individual subbase sublayers (bottom-up computed)
 
 End Class
 
@@ -164,6 +177,20 @@ Public Class clsLayerInfo
     Public Thickness As Single
     Public Modulus As Single
     Public LCode As Short
+
+End Class
+
+
+Public Class clsAggregateSublayer
+
+    Public Thickness As Single                ' Physical sublayer thickness (TSS_P209/P154)
+    Public Modulus As Single                  ' Final BaseMod(I) / SubbaseMod(I)
+    Public LCode As Short
+    Public ThicknessUsed As Single            ' Thickness fed into the f1/f2 formula (may differ from Thickness for boundary sublayers in modified procedure)
+    Public ModBelow As Single                 ' E_{i-1}: BaseMod(I+1) / SubbaseMod(I+1)
+    Public F1 As Single                       ' 1 + C * log10(ThicknessUsed)
+    Public F2 As Single                       ' D * log10(ModBelow) * log10(ThicknessUsed)
+    Public IsBoundaryInterpolated As Boolean  ' True when modified-procedure linear blend was applied (i=1 top sublayer with TS1 < MaxThick)
 
 End Class
 

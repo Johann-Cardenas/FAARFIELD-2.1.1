@@ -10141,7 +10141,7 @@ Namespace ViewModels
 
                 ' Title — includes model name
                 Dim titleFont As New Font("Segoe UI", 11, FontStyle.Bold)
-                Dim titleText = "Subgrade Fatigue Model (" & activeModel & If(isBleasdale, " — Piecewise", "") & ")"
+                Dim titleText = "Subgrade Damage Model (" & activeModel & If(isBleasdale, " — Piecewise", "") & ")"
                 Dim titleSize = g.MeasureString(titleText, titleFont)
                 g.DrawString(titleText, titleFont, Brushes.Black, CSng((chartWidth - titleSize.Width) / 2), 10)
 

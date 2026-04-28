@@ -1498,6 +1498,35 @@ Public Class RunAnalysis
 
             End If
 
+            ' CM Report alignment: mirror the legacy CDF Graph data source into det.CDFByOffset
+            ' so the per-aircraft "CDF vs Offset" chart in the Detailed Computation Report shows
+            ' the SAME Y values as FAARFIELD's built-in "CDF Graph" tree-view item. This overrides
+            ' the per-iteration capture in modCDF.vb LeafCDFFlex so the snapshot timing matches
+            ' the legacy graph (CDFdata2 for thickness/life, CDFdata3 for PCR).
+            Try
+                If gDetailedReportData IsNot Nothing AndAlso gDetailedReportData.AircraftDetails IsNot Nothing Then
+                    If i >= 0 AndAlso i <= UBound(gDetailedReportData.AircraftDetails) Then
+                        Dim detSync = gDetailedReportData.AircraftDetails(i)
+                        If detSync IsNot Nothing AndAlso detSync.CDFByOffset IsNot Nothing Then
+                            For N = 1 To 41
+                                If N <= UBound(detSync.CDFByOffset) Then detSync.CDFByOffset(N) = airplane.CDFGraphData(N)
+                            Next
+                        End If
+                    End If
+                End If
+                If gDetailedReportData IsNot Nothing AndAlso gDetailedReportData.EvaluationAircraftDetails IsNot Nothing Then
+                    If i >= 0 AndAlso i <= UBound(gDetailedReportData.EvaluationAircraftDetails) Then
+                        Dim detEval = gDetailedReportData.EvaluationAircraftDetails(i)
+                        If detEval IsNot Nothing AndAlso detEval.CDFByOffset IsNot Nothing Then
+                            For N = 1 To 41
+                                If N <= UBound(detEval.CDFByOffset) Then detEval.CDFByOffset(N) = airplane.CDFGraphData(N)
+                            Next
+                        End If
+                    End If
+                End If
+            Catch ex As Exception
+                ' Non-critical alignment; do not block the run.
+            End Try
 
             i = i + 1
         Next

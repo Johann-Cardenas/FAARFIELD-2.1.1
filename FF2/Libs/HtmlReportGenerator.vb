@@ -106,6 +106,58 @@ Namespace Libs
             End If
             sb.AppendLine("</section>")
 
+            ' ===== Pavement Response Summary (per-aircraft critical responses) =====
+            ' Quick-reference table at the top of the report listing the LEAF responses that
+            ' drive every downstream section: epsilon_22 (vertical strain at top of subgrade,
+            ' from the subgrade VerticalStrain LEAF call), sigma_22 (vertical stress at top of
+            ' subgrade, from an additional AllResponses LEAF call at the same EvalDepth), and
+            ' epsilon_11 (tensile strain at the bottom of the AC layer, from the asphalt
+            ' AllResponses LEAF call at the AC-bottom depth). For PCR runs prefer the
+            ' Step-1 evaluation snapshot so the original mix is shown.
+            Dim acDetailsForResponse() As clsAircraftDetail = rpt.AircraftDetails
+            If rpt.EvaluationAircraftDetails IsNot Nothing AndAlso rpt.EvaluationAircraftDetails.Length > 1 Then
+                acDetailsForResponse = rpt.EvaluationAircraftDetails
+            End If
+            If acDetailsForResponse IsNot Nothing Then
+                sb.AppendLine("<section class='response-summary'>")
+                sb.AppendLine("<h2>Pavement Response Summary</h2>")
+                sb.AppendLine("<div class='callout info'><p>Per-aircraft critical responses computed by LEAF on the converged structure. " &
+                    "These are the inputs used by every downstream section: " &
+                    "&epsilon;<sub>22</sub> drives the Subgrade Damage Model (Section D); " &
+                    "&epsilon;<sub>11</sub> drives the asphalt fatigue check (Section D.2); " &
+                    "&sigma;<sub>22</sub> is included for full transparency of the subgrade stress state. " &
+                    "Strain values reported in microstrain (1 &mu;&epsilon; = 10<sup>&minus;6</sup> in./in.); magnitudes (absolute values).</p></div>")
+                sb.AppendLine("<table class='data-table centered'>")
+                sb.AppendLine("<thead><tr>")
+                sb.AppendLine("<th>Aircraft</th>")
+                sb.AppendLine("<th>&epsilon;<sub>22</sub><br/><span style='font-weight:normal;font-size:11px'>Vertical Strain @ Top of Subgrade<br/>(&mu;&epsilon;)</span></th>")
+                sb.AppendLine("<th>&sigma;<sub>22</sub><br/><span style='font-weight:normal;font-size:11px'>Vertical Stress @ Top of Subgrade<br/>(kPa)</span></th>")
+                sb.AppendLine("<th>&epsilon;<sub>11</sub><br/><span style='font-weight:normal;font-size:11px'>Tensile Strain @ Bottom of AC<br/>(&mu;&epsilon;)</span></th>")
+                sb.AppendLine("</tr></thead><tbody>")
+                For ia As Integer = 1 To UBound(acDetailsForResponse)
+                    If acDetailsForResponse(ia) Is Nothing Then Continue For
+                    Dim det = acDetailsForResponse(ia)
+                    Dim e22Str As String = If(det.VerticalStrain > 0, Format(det.VerticalStrain * 1000000, "0.00"), "&mdash;")
+                    ' FAARFIELD internal stress unit is psi (US Customary). Convert to kPa for display
+                    ' regardless of the UI's measurement system (1 psi = 6.89475729 kPa).
+                    Dim s22Kpa As Double = det.SubgradeVertStress * 6.89475729
+                    Dim s22Str As String = If(det.SubgradeVertStress > 0, Format(s22Kpa, "0.00"), "&mdash;")
+                    Dim e11Str As String = If(det.AsphaltStrain > 0, Format(det.AsphaltStrain * 1000000, "0.00"), "&mdash;")
+                    sb.AppendLine("<tr>")
+                    sb.Append("<td>" & WebEncode(det.ACName) & "</td>")
+                    sb.Append("<td>" & e22Str & "</td>")
+                    sb.Append("<td>" & s22Str & "</td>")
+                    sb.Append("<td>" & e11Str & "</td>")
+                    sb.AppendLine("</tr>")
+                Next
+                sb.AppendLine("</tbody></table>")
+                sb.AppendLine("<p class='fig-caption'>&epsilon;<sub>22</sub> is taken at the top of the subgrade (LEAF VerticalStrain). " &
+                    "&sigma;<sub>22</sub> is the LEAF AllResponses StressZ at the same evaluation depth, converted from psi to kPa (&times; 6.89475729). " &
+                    "&epsilon;<sub>11</sub> is the principal horizontal tensile strain at the bottom of the asphalt concrete layer " &
+                    "(from the LEAF AllResponses call used for asphalt fatigue). A &mdash; means the response was not computed for this aircraft (e.g., asphalt CDF disabled).</p>")
+                sb.AppendLine("</section>")
+            End If
+
             ' ===== Table of Contents =====
             sb.AppendLine("<nav class='toc' id='toc'>")
             sb.AppendLine("<h2>Table of Contents</h2>")
@@ -113,7 +165,7 @@ Namespace Libs
             sb.AppendLine("<li><a href='#section-a'>Pavement Structure Summary</a></li>")
             sb.AppendLine("<li><a href='#section-b'>Design Equations</a></li>")
             sb.AppendLine("<li><a href='#section-c'>Understanding Coverage-to-Pass (C/P)</a></li>")
-            sb.AppendLine("<li><a href='#section-d'>Fatigue Characterization</a></li>")
+            sb.AppendLine("<li><a href='#section-d'>Subgrade Damage Model</a></li>")
             sb.AppendLine("<li><a href='#section-e'>Per-Aircraft Detailed Breakdown</a></li>")
             sb.AppendLine("<li><a href='#section-f'>Coverage-to-Pass (C/P) Distribution</a></li>")
             sb.AppendLine("<li><a href='#section-g'>CDF Sweep Table (" & (2 * (CDF.NOFF - 1) + 1).ToString() & " offsets, bilateral)</a></li>")
@@ -214,35 +266,43 @@ Namespace Libs
 
             sb.AppendLine("</section>")
 
-            ' ===== Section D: Fatigue Characterization =====
-            If rpt.AircraftDetails IsNot Nothing Then
+            ' ===== Section D: Subgrade Damage Model =====
+            ' For PCR runs, AircraftDetails gets overwritten by each round's shrinking mix.
+            ' EvaluationAircraftDetails snapshots the original-mix Step-1 results so this
+            ' section reflects every aircraft and its evaluation-pavement subgrade strain.
+            Dim acDetailsForFatigue() As clsAircraftDetail = rpt.AircraftDetails
+            If rpt.EvaluationAircraftDetails IsNot Nothing AndAlso rpt.EvaluationAircraftDetails.Length > 1 Then
+                acDetailsForFatigue = rpt.EvaluationAircraftDetails
+            End If
+            If acDetailsForFatigue IsNot Nothing Then
                 sb.AppendLine("<section id='section-d'>")
-                sb.AppendLine("<h2><span class='sec-num'>D</span> Fatigue Characterization</h2>")
-                sb.AppendLine("<div class='callout info'><p>The following chart shows the subgrade fatigue model curve (allowable repetitions vs. vertical strain) " &
+                sb.AppendLine("<h2><span class='sec-num'>D</span> Subgrade Damage Model</h2>")
+                sb.AppendLine("<div class='callout info'><p>The chart below shows the subgrade damage model curve (allowable repetitions vs. vertical compressive strain at the top of the subgrade) " &
                     "with each aircraft's computed strain and N<sub>fail</sub> plotted as scatter points.</p></div>")
 
-                ' SVG Fatigue Curve
+                ' SVG Damage Curve
                 figNum += 1
                 sb.AppendLine("<figure>")
-                AppendFatigueCurveSVG(sb, rpt, subgradeMod)
-                sb.AppendLine("<figcaption>Figure " & figNum & ": Subgrade fatigue model with aircraft scatter points</figcaption>")
+                AppendFatigueCurveSVG(sb, rpt, subgradeMod, acDetailsForFatigue)
+                sb.AppendLine("<figcaption>Figure " & figNum & ": Subgrade damage model with aircraft scatter points</figcaption>")
                 sb.AppendLine("</figure>")
 
-                ' Fatigue parameters table
-                sb.AppendLine("<h3>Aircraft Fatigue Parameters</h3>")
-                sb.AppendLine("<table class='data-table'><thead><tr>")
-                sb.AppendLine("<th>Aircraft</th><th>Vert. Strain (&mu;&epsilon;)</th><th>AA</th><th>BB</th><th>N<sub>fail</sub></th><th>Repetitions</th><th>N<sub>fail</sub>/Reps</th><th>Model</th>")
+                ' Aircraft loading-response parameters table
+                sb.AppendLine("<h3>Aircraft Loading Response Parameters</h3>")
+                sb.AppendLine("<table class='data-table centered'><thead><tr>")
+                sb.AppendLine("<th>Aircraft</th><th>Vert. Strain &epsilon;<sub>22</sub> (&mu;&epsilon;)</th><th>AA</th><th>BB</th><th>N<sub>fail</sub></th><th>Repetitions</th><th>N<sub>fail</sub>/Reps</th><th>Model</th>")
                 sb.AppendLine("</tr></thead><tbody>")
-                For ia As Integer = 1 To UBound(rpt.AircraftDetails)
-                    If rpt.AircraftDetails(ia) Is Nothing Then Continue For
-                    Dim det = rpt.AircraftDetails(ia)
-                    Dim ratio As Double = If(det.TotalRepetitions > 0, det.NtoFail / det.TotalRepetitions, 0)
+                For ia As Integer = 1 To UBound(acDetailsForFatigue)
+                    If acDetailsForFatigue(ia) Is Nothing Then Continue For
+                    Dim det = acDetailsForFatigue(ia)
+                    Dim displayedN As Double = NtoFailForDisplay(det)
+                    Dim ratio As Double = If(det.TotalRepetitions > 0, displayedN / det.TotalRepetitions, 0)
                     sb.AppendLine("<tr>")
                     sb.Append("<td>" & WebEncode(det.ACName) & "</td>")
                     sb.Append("<td>" & Format(det.VerticalStrain * 1000000, "0.00") & "</td>")
                     sb.Append("<td>" & Format(det.NtoFailAA, "0.000000") & "</td>")
                     sb.Append("<td>" & Format(det.NtoFailBB, "0.000") & "</td>")
-                    sb.Append("<td>" & Format(det.NtoFail, "0.000E+00") & "</td>")
+                    sb.Append("<td>" & Format(displayedN, "0.000E+00") & "</td>")
                     sb.Append("<td>" & Format(det.TotalRepetitions, "#,##0") & "</td>")
                     sb.Append("<td>" & Format(ratio, "0.00E+00") & "</td>")
                     sb.Append("<td>" & WebEncode(det.SubgradeModelUsed) & "</td>")
@@ -253,7 +313,7 @@ Namespace Libs
                 ' SVG Life Ratio Chart
                 figNum += 1
                 sb.AppendLine("<figure>")
-                AppendLifeRatioSVG(sb, rpt)
+                AppendLifeRatioSVG(sb, rpt, acDetailsForFatigue)
                 sb.AppendLine("<figcaption>Figure " & figNum & ": Fatigue life reserve ratio per aircraft</figcaption>")
                 sb.AppendLine("</figure>")
 
@@ -407,7 +467,7 @@ Namespace Libs
                     If det.HorizontalStrain <> 0 Then
                         AppendParamRow(sb, "Horizontal Strain", Format(det.HorizontalStrain * 1000000, "0.00") & " &mu;&epsilon;", "LEAF-computed horizontal strain")
                     End If
-                    AppendParamRow(sb, "N<sub>fail</sub>", Format(det.NtoFail, "0.000E+00"), "Allowable repetitions (" & WebEncode(det.SubgradeModelUsed) & ")")
+                    AppendParamRow(sb, "N<sub>fail</sub>", Format(NtoFailForDisplay(det), "0.000E+00"), "Allowable repetitions (" & WebEncode(det.SubgradeModelUsed) & ")")
                     AppendParamRow(sb, "Max C/P Ratio", Format(det.MaxCtoP, "0.00000"), "Peak coverage-to-pass ratio")
                     If det.GearAdjusted Then
                         AppendParamRow(sb, "C/P Before Gear Adj.", Format(det.CtoPBeforeGearAdj, "0.00000"), "Before multi-gear adjustment")
@@ -470,7 +530,7 @@ Namespace Libs
                         Format(rpt.SublayerData.EvalDepthSubgrade, "0.00") & " " & thicknessUnit & ".</li>")
                     sb.AppendLine("<li>Compute N<sub>fail</sub> using " & WebEncode(det.SubgradeModelUsed) &
                         " model: AA=" & Format(det.NtoFailAA, "0.000000") & ", BB=" & Format(det.NtoFailBB, "0.000") &
-                        ". N<sub>fail</sub> = " & Format(det.NtoFail, "0.000E+00") & ".</li>")
+                        ". N<sub>fail</sub> = " & Format(NtoFailForDisplay(det), "0.000E+00") & ".</li>")
                     sb.AppendLine("<li>Compute C/P at " & CDF.NOFF.ToString() & " strips. Peak C/P = " &
                         Format(det.MaxCtoP, "0.00000") & ".</li>")
                     sb.AppendLine("<li>Project tire width to subgrade (45&deg; spread): TW<sub>proj</sub> = " &
@@ -762,6 +822,56 @@ Namespace Libs
             sb.AppendLine("</tbody></table>")
         End Sub
 
+        ''' <summary>
+        ''' Computes N_fail (allowable repetitions) from the captured vertical strain and model
+        ''' name. Mirrors the formulas in modCDF.LeafCDFFlex so the Aircraft Loading Response
+        ''' Parameters table and the Bleasdale scatter overlay can show a value even when the
+        ''' analysis-side gNtoFail() global was not populated (the non-tandem subgrade branch in
+        ''' modCDF.vb does not assign gNtoFail, so capturing det.NtoFail = gNtoFail(IA) yields 0
+        ''' for those aircraft). When det.NtoFail is already a positive value (tandem path) it
+        ''' should be used directly; this helper is the report-side fallback.
+        ''' </summary>
+        Private Shared Function ComputeNtoFailForReport(verticalStrain As Double, model As String, aa As Double, bb As Double) As Double
+            If verticalStrain <= 0 Then Return 0
+            Dim eps As Double = verticalStrain
+            If String.Equals(model, "Bleasdale", StringComparison.OrdinalIgnoreCase) Then
+                ' Match modCDF.vb: floor strain at 0.001 (1,000 με) before applying the formula.
+                If eps < 0.001 Then eps = 0.001
+                Const a11 As Double = -0.163768916705
+                Const b11 As Double = 185.192806802
+                Const c11 As Double = 1.65054449461
+                If eps <= 0.001765093 Then
+                    Dim inner As Double = a11 + b11 * eps
+                    If inner <= 0 Then Return 1.0E+15
+                    Dim expn As Double = inner ^ (-1.0 / c11)
+                    If expn > 15 Then Return 1.0E+15
+                    Return 10.0 ^ expn
+                Else
+                    Return (0.00414131183 / eps) ^ 8.1
+                End If
+            ElseIf String.Equals(model, "Straight-Line", StringComparison.OrdinalIgnoreCase) Then
+                ' Captured AA/BB are the active branch's parameters; the original-criterion AAorig
+                ' is pre-multiplied by 10000^(1/BBorig) at capture time so a single (AA/ε)^BB
+                ' formula reproduces both branches.
+                If aa > 0 AndAlso bb > 0 Then Return (aa / eps) ^ bb
+                Return 0
+            Else
+                ' Standard subgrade criterion: N = 10000 * (AA/ε)^BB
+                If aa > 0 AndAlso bb > 0 Then Return 10000.0 * (aa / eps) ^ bb
+                Return 0
+            End If
+        End Function
+
+        ''' <summary>
+        ''' Returns det.NtoFail when it is a positive value (analysis populated it via the tandem
+        ''' branch). Otherwise computes the value from captured strain and model.
+        ''' </summary>
+        Private Shared Function NtoFailForDisplay(det As clsAircraftDetail) As Double
+            If det Is Nothing Then Return 0
+            If det.NtoFail > 0 Then Return det.NtoFail
+            Return ComputeNtoFailForReport(det.VerticalStrain, det.SubgradeModelUsed, det.NtoFailAA, det.NtoFailBB)
+        End Function
+
         Private Shared Function WebEncode(s As String) As String
             If s Is Nothing Then Return ""
             Return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("""", "&quot;")
@@ -796,75 +906,98 @@ Namespace Libs
                 "Applied iteratively from the bottom sublayer upward.</div>")
             sb.AppendLine("</div>")
 
-            ' Parameters comparison table
-            If sld.BaseSublayerCount > 0 OrElse sld.SubbaseSublayerCount > 0 Then
-                sb.AppendLine("<table class='data-table param-compare'>")
-                sb.AppendLine("<thead><tr><th>Parameter</th>")
-                If sld.BaseSublayerCount > 0 Then sb.AppendLine("<th>P-209 Crushed Base</th>")
-                If sld.SubbaseSublayerCount > 0 Then sb.AppendLine("<th>P-154 Uncrushed Subbase</th>")
-                sb.AppendLine("</tr></thead><tbody>")
-
-                ' C
-                sb.Append("<tr><td>C (thickness factor)</td>")
-                If sld.BaseSublayerCount > 0 Then sb.Append("<td>" & Format(sld.BaseCoeffC, "0.00") & "</td>")
-                If sld.SubbaseSublayerCount > 0 Then sb.Append("<td>" & Format(sld.SubbaseCoeffC, "0.00") & "</td>")
-                sb.AppendLine("</tr>")
-
-                ' D
-                sb.Append("<tr><td>D (modulus interaction)</td>")
-                If sld.BaseSublayerCount > 0 Then sb.Append("<td>" & Format(sld.BaseCoeffD, "0.00") & "</td>")
-                If sld.SubbaseSublayerCount > 0 Then sb.Append("<td>" & Format(sld.SubbaseCoeffD, "0.00") & "</td>")
-                sb.AppendLine("</tr>")
-
-                ' E below
-                sb.Append("<tr><td>E<sub>below</sub> (" & presUnit & ")</td>")
-                If sld.BaseSublayerCount > 0 Then sb.Append("<td>" & Format(sld.BaseModUnder, "#,##0") & "</td>")
-                If sld.SubbaseSublayerCount > 0 Then sb.Append("<td>" & Format(sld.SubbaseModUnder, "#,##0") & "</td>")
-                sb.AppendLine("</tr>")
-
-                ' Sublayer count
-                sb.Append("<tr><td>Number of sublayers</td>")
-                If sld.BaseSublayerCount > 0 Then sb.Append("<td>" & sld.BaseSublayerCount.ToString() & "</td>")
-                If sld.SubbaseSublayerCount > 0 Then sb.Append("<td>" & sld.SubbaseSublayerCount.ToString() & "</td>")
-                sb.AppendLine("</tr>")
-
-                sb.AppendLine("</tbody></table>")
-            End If
-
-            ' Base sublayer detail table
+            ' Base sublayer detail table — full input trace per row
             If sld.BaseSublayers.Count > 0 Then
-                sb.AppendLine("<h4>P-209 Crushed Aggregate Base &mdash; Sublayer Moduli</h4>")
+                Dim baseTotalThk As Single = 0
+                For Each x In sld.BaseSublayers : baseTotalThk += x.Thickness : Next
+                sb.AppendLine("<h4>P-209 Crushed Aggregate Base &mdash; Sublayer Moduli " &
+                    "(" & sld.BaseSublayerCount.ToString() & " sublayers, total " &
+                    Format(baseTotalThk, "0.00") & " " & thkUnit & ")</h4>")
                 sb.AppendLine("<table class='data-table sublayer-detail'><thead><tr>" &
-                    "<th>Sublayer</th><th>Thickness (" & thkUnit & ")</th><th>Modulus (" & presUnit & ")</th>" &
+                    "<th>Sublayer</th>" &
+                    "<th>Thickness (" & thkUnit & ")</th>" &
+                    "<th>C</th><th>D</th>" &
+                    "<th>f<sub>1</sub></th><th>f<sub>2</sub></th>" &
+                    "<th>E<sub>i&minus;1</sub> (" & presUnit & ")</th>" &
+                    "<th>Modulus (" & presUnit & ")</th>" &
                     "</tr></thead><tbody>")
+                Dim anyBaseInterp As Boolean = False
                 For si As Integer = 0 To sld.BaseSublayers.Count - 1
                     Dim bsl = sld.BaseSublayers(si)
                     Dim posLabel As String = If(si = 0, " (top)", If(si = sld.BaseSublayers.Count - 1, " (bottom)", ""))
-                    sb.AppendLine("<tr><td>" & (si + 1).ToString() & posLabel & "</td>" &
+                    Dim flag As String = If(bsl.IsBoundaryInterpolated, " *", "")
+                    If bsl.IsBoundaryInterpolated Then anyBaseInterp = True
+                    sb.AppendLine("<tr><td>" & (si + 1).ToString() & posLabel & flag & "</td>" &
                         "<td>" & Format(bsl.Thickness, "0.00") & "</td>" &
+                        "<td>" & Format(sld.BaseCoeffC, "0.00") & "</td>" &
+                        "<td>" & Format(sld.BaseCoeffD, "0.00") & "</td>" &
+                        "<td>" & Format(bsl.F1, "0.0000") & "</td>" &
+                        "<td>" & Format(bsl.F2, "0.0000") & "</td>" &
+                        "<td>" & Format(bsl.ModBelow, "#,##0") & "</td>" &
                         "<td>" & Format(bsl.Modulus, "#,##0") & "</td></tr>")
                 Next
                 sb.AppendLine("<tr class='ref-row'><td>&darr; Layer below</td><td>&mdash;</td>" &
+                    "<td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td>" &
                     "<td>" & Format(sld.BaseModUnder, "#,##0") & "</td></tr>")
                 sb.AppendLine("</tbody></table>")
+                If anyBaseInterp Then
+                    sb.AppendLine("<p class='fig-caption'>* Top sublayer modulus is produced by linear " &
+                        "interpolation between E<sub>below</sub> (the modulus of the underlying P-209 layer) " &
+                        "and the formula value E<sub>i&minus;1</sub> &times; (f<sub>1</sub> &minus; f<sub>2</sub>) " &
+                        "evaluated at the reference thickness (10 in. for P-209). The displayed f<sub>1</sub>, " &
+                        "f<sub>2</sub>, and E<sub>i&minus;1</sub> are the values used in that reference-thickness " &
+                        "evaluation (against the modulus of sublayer 2 prior to its own boundary correction). " &
+                        "Modulus = E<sub>below</sub> + ((TS<sub>1</sub> &minus; 5)/5) &times; " &
+                        "(E<sub>i&minus;1</sub>&times;(f<sub>1</sub>&minus;f<sub>2</sub>) &minus; E<sub>below</sub>). " &
+                        "This refinement applies automatically when the top sublayer is thinner than the reference thickness.</p>")
+                End If
             End If
 
-            ' Subbase sublayer detail table
+            ' Subbase sublayer detail table — full input trace per row
             If sld.SubbaseSublayers.Count > 0 Then
-                sb.AppendLine("<h4>P-154 Uncrushed Aggregate Subbase &mdash; Sublayer Moduli</h4>")
+                Dim sbTotalThk As Single = 0
+                For Each x In sld.SubbaseSublayers : sbTotalThk += x.Thickness : Next
+                sb.AppendLine("<h4>P-154 Uncrushed Aggregate Subbase &mdash; Sublayer Moduli " &
+                    "(" & sld.SubbaseSublayerCount.ToString() & " sublayers, total " &
+                    Format(sbTotalThk, "0.00") & " " & thkUnit & ")</h4>")
                 sb.AppendLine("<table class='data-table sublayer-detail'><thead><tr>" &
-                    "<th>Sublayer</th><th>Thickness (" & thkUnit & ")</th><th>Modulus (" & presUnit & ")</th>" &
+                    "<th>Sublayer</th>" &
+                    "<th>Thickness (" & thkUnit & ")</th>" &
+                    "<th>C</th><th>D</th>" &
+                    "<th>f<sub>1</sub></th><th>f<sub>2</sub></th>" &
+                    "<th>E<sub>i&minus;1</sub> (" & presUnit & ")</th>" &
+                    "<th>Modulus (" & presUnit & ")</th>" &
                     "</tr></thead><tbody>")
+                Dim anySbInterp As Boolean = False
                 For si As Integer = 0 To sld.SubbaseSublayers.Count - 1
                     Dim ssl = sld.SubbaseSublayers(si)
                     Dim posLabel As String = If(si = 0, " (top)", If(si = sld.SubbaseSublayers.Count - 1, " (bottom)", ""))
-                    sb.AppendLine("<tr><td>" & (si + 1).ToString() & posLabel & "</td>" &
+                    Dim flag As String = If(ssl.IsBoundaryInterpolated, " *", "")
+                    If ssl.IsBoundaryInterpolated Then anySbInterp = True
+                    sb.AppendLine("<tr><td>" & (si + 1).ToString() & posLabel & flag & "</td>" &
                         "<td>" & Format(ssl.Thickness, "0.00") & "</td>" &
+                        "<td>" & Format(sld.SubbaseCoeffC, "0.00") & "</td>" &
+                        "<td>" & Format(sld.SubbaseCoeffD, "0.00") & "</td>" &
+                        "<td>" & Format(ssl.F1, "0.0000") & "</td>" &
+                        "<td>" & Format(ssl.F2, "0.0000") & "</td>" &
+                        "<td>" & Format(ssl.ModBelow, "#,##0") & "</td>" &
                         "<td>" & Format(ssl.Modulus, "#,##0") & "</td></tr>")
                 Next
                 sb.AppendLine("<tr class='ref-row'><td>&darr; Layer below</td><td>&mdash;</td>" &
+                    "<td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td>" &
                     "<td>" & Format(sld.SubbaseModUnder, "#,##0") & "</td></tr>")
                 sb.AppendLine("</tbody></table>")
+                If anySbInterp Then
+                    sb.AppendLine("<p class='fig-caption'>* Top sublayer modulus is produced by linear " &
+                        "interpolation between E<sub>below</sub> (the modulus of the underlying P-154 layer) " &
+                        "and the formula value E<sub>i&minus;1</sub> &times; (f<sub>1</sub> &minus; f<sub>2</sub>) " &
+                        "evaluated at the reference thickness (8 in. for P-154). The displayed f<sub>1</sub>, " &
+                        "f<sub>2</sub>, and E<sub>i&minus;1</sub> are the values used in that reference-thickness " &
+                        "evaluation (against the modulus of sublayer 2 prior to its own boundary correction). " &
+                        "Modulus = E<sub>below</sub> + ((TS<sub>1</sub> &minus; 4)/4) &times; " &
+                        "(E<sub>i&minus;1</sub>&times;(f<sub>1</sub>&minus;f<sub>2</sub>) &minus; E<sub>below</sub>). " &
+                        "This refinement applies automatically when the top sublayer is thinner than the reference thickness.</p>")
+                End If
             End If
 
             ' SVG modulus-depth profile
@@ -1064,7 +1197,11 @@ Namespace Libs
 
 #Region "SVG Chart: Fatigue Curve"
 
-        Private Shared Sub AppendFatigueCurveSVG(sb As StringBuilder, rpt As clsDetailedReportData, subgradeMod As Double)
+        Private Shared Sub AppendFatigueCurveSVG(sb As StringBuilder, rpt As clsDetailedReportData, subgradeMod As Double, Optional acDetails() As clsAircraftDetail = Nothing)
+            ' acDetails: aircraft array used for scatter overlay and Bleasdale detection. Falls back
+            ' to rpt.AircraftDetails when omitted (thickness-design path).
+            If acDetails Is Nothing Then acDetails = rpt.AircraftDetails
+
             Dim svgW As Integer = 900, svgH As Integer = 550
             Dim ml As Integer = 80, mr As Integer = 40, mt As Integer = 40, mb As Integer = 60
             Dim pw As Integer = svgW - ml - mr, ph As Integer = svgH - mt - mb
@@ -1075,67 +1212,73 @@ Namespace Libs
 
             ' Detect Bleasdale model
             Dim isBleasdale As Boolean = False
-            If rpt.AircraftDetails IsNot Nothing Then
-                For ia As Integer = 1 To UBound(rpt.AircraftDetails)
-                    If rpt.AircraftDetails(ia) IsNot Nothing AndAlso rpt.AircraftDetails(ia).SubgradeModelUsed = "Bleasdale" Then
+            If acDetails IsNot Nothing Then
+                For ia As Integer = 1 To UBound(acDetails)
+                    If acDetails(ia) IsNot Nothing AndAlso acDetails(ia).SubgradeModelUsed = "Bleasdale" Then
                         isBleasdale = True : Exit For
                     End If
                 Next
             End If
 
-            ' Bleasdale parameters
+            ' Bleasdale parameters (mirror modCDF.FAAModulusThick / Bleasdale block in modCDF.vb).
             Dim a11 As Double = -0.163768916705
             Dim b11 As Double = 185.192806802
             Dim c11 As Double = 1.65054449461
-            Dim microAsymptote As Double = 884.3  ' strainAsymptote in microstrain
-            Dim microTransition As Double = 1765.1 ' power-law crossover
+            Dim microAsymptote As Double = 884.3  ' strain at which (a + b·ε) = 0 (formula divergence)
+            Dim microClamp As Double = 1000.0     ' StrainMax floor enforced in modCDF.vb (FAA endurance limit)
+            Dim microTransition As Double = 1765.1 ' Bleasdale → power-law crossover (N ≈ 1,000 cov)
 
-            ' Axis ranges
+            ' Axis ranges. For Bleasdale, the Y axis must fit N_fail at the strain clamp:
+            '   N(ε=1,000με) = 10^((a + b·0.001)^(-1/c)) ≈ 10^10.27 ≈ 1.86×10^10
+            ' so logNMax = 11 keeps the curve visible from the clamp downward without clipping.
+            ' X axis starts just to the left of the clamp so the clamp marker is visible while
+            ' avoiding the formula-divergence region (asymptote at 884 με) entirely.
             Dim logStrainMin As Double, logStrainMax As Double
             Dim logNMin As Double, logNMax As Double
             If isBleasdale Then
-                logStrainMin = Math.Log10(microAsymptote) - 0.08
+                logStrainMin = Math.Log10(microClamp) - 0.04
                 logStrainMax = Math.Log10(microTransition) + 0.5
-                logNMin = 0 : logNMax = 8
+                logNMin = 0 : logNMax = 11
             Else
                 logStrainMin = 2 : logStrainMax = 4
                 logNMin = 0 : logNMax = 10
             End If
 
             sb.AppendLine("<div class='chart-wrap'>")
-            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Subgrade fatigue model chart'>")
-            sb.AppendLine("<title>Subgrade fatigue model chart</title>")
+            sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Subgrade damage model chart'>")
+            sb.AppendLine("<title>Subgrade damage model chart</title>")
 
             ' Plot background
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#bcc3cc'/>")
 
             ' Bleasdale zone backgrounds
             If isBleasdale Then
-                Dim xAsymptote = ml + ((Math.Log10(microAsymptote) - logStrainMin) / (logStrainMax - logStrainMin)) * pw
+                Dim xClamp = ml + ((Math.Log10(microClamp) - logStrainMin) / (logStrainMax - logStrainMin)) * pw
                 Dim xTransition = ml + ((Math.Log10(microTransition) - logStrainMin) / (logStrainMax - logStrainMin)) * pw
-                xAsymptote = Math.Max(ml, Math.Min(ml + pw, xAsymptote))
+                xClamp = Math.Max(ml, Math.Min(ml + pw, xClamp))
                 xTransition = Math.Max(ml, Math.Min(ml + pw, xTransition))
 
-                ' Zone A: Endurance limit (green)
-                sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & Fmt(xAsymptote - ml) & "' height='" & ph & "' fill='#4CAF50' opacity='0.07'/>")
-                ' Zone B: Bleasdale curve (blue)
-                sb.AppendLine("<rect x='" & Fmt(xAsymptote) & "' y='" & mt & "' width='" & Fmt(xTransition - xAsymptote) & "' height='" & ph & "' fill='#2E5EA8' opacity='0.07'/>")
+                ' Zone A: Below clamp — strains floored to 1,000 με so N is constant (endurance limit)
+                sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & Fmt(xClamp - ml) & "' height='" & ph & "' fill='#9E9E9E' opacity='0.10'/>")
+                ' Zone B: Bleasdale curve (blue) — between clamp and transition
+                sb.AppendLine("<rect x='" & Fmt(xClamp) & "' y='" & mt & "' width='" & Fmt(xTransition - xClamp) & "' height='" & ph & "' fill='#2E5EA8' opacity='0.07'/>")
                 ' Zone C: Power law (amber)
                 sb.AppendLine("<rect x='" & Fmt(xTransition) & "' y='" & mt & "' width='" & Fmt(ml + pw - xTransition) & "' height='" & ph & "' fill='#D68228' opacity='0.07'/>")
 
                 ' Zone labels
-                sb.AppendLine("<text x='" & Fmt((ml + xAsymptote) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:13px;fill:#388E3C;font-style:italic'>Endurance Limit</text>")
-                sb.AppendLine("<text x='" & Fmt((xAsymptote + xTransition) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:13px;fill:#2E5EA8;font-style:italic'>Bleasdale Curve (Cov &ge; 1,000)</text>")
+                sb.AppendLine("<text x='" & Fmt((ml + xClamp) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:11px;fill:#5a6270;font-style:italic'>Below clamp</text>")
+                sb.AppendLine("<text x='" & Fmt((xClamp + xTransition) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:13px;fill:#2E5EA8;font-style:italic'>Bleasdale Curve (Cov &ge; 1,000)</text>")
                 sb.AppendLine("<text x='" & Fmt((xTransition + ml + pw) / 2) & "' y='" & (mt + 14) & "' text-anchor='middle' style='font-size:13px;fill:#B4641E;font-style:italic'>Power Law (Cov &lt; 1,000)</text>")
 
-                ' Transition vertical lines
-                sb.AppendLine("<line x1='" & Fmt(xAsymptote) & "' y1='" & mt & "' x2='" & Fmt(xAsymptote) & "' y2='" & (mt + ph) & "' stroke='#388E3C' stroke-width='1.5' stroke-dasharray='6,3' opacity='0.6'/>")
-                sb.AppendLine("<text x='" & Fmt(xAsymptote + 3) & "' y='" & (mt + ph - 5) & "' style='font-size:13px;fill:#388E3C'>" & Format(microAsymptote, "0.0") & " &mu;&epsilon;</text>")
+                ' Strain clamp vertical line at 1,000 με (FAARFIELD subgrade endurance limit; modCDF.vb floors StrainMax at 0.001)
+                sb.AppendLine("<line x1='" & Fmt(xClamp) & "' y1='" & mt & "' x2='" & Fmt(xClamp) & "' y2='" & (mt + ph) & "' stroke='#388E3C' stroke-width='1.8' stroke-dasharray='6,3' opacity='0.85'/>")
+                sb.AppendLine("<text x='" & Fmt(xClamp + 3) & "' y='" & (mt + ph - 5) & "' style='font-size:13px;fill:#388E3C;font-weight:600'>Strain Clamp " & Format(microClamp, "#,##0") & " &mu;&epsilon;</text>")
 
+                ' Transition vertical line (Bleasdale → power law at 1,765.1 με)
                 sb.AppendLine("<line x1='" & Fmt(xTransition) & "' y1='" & mt & "' x2='" & Fmt(xTransition) & "' y2='" & (mt + ph) & "' stroke='#B4641E' stroke-width='1.5' stroke-dasharray='6,3' opacity='0.6'/>")
-                sb.AppendLine("<text x='" & Fmt(xTransition + 3) & "' y='" & (mt + ph - 5) & "' style='font-size:13px;fill:#B4641E'>" & Format(microTransition, "0.0") & " &mu;&epsilon;</text>")
+                sb.AppendLine("<text x='" & Fmt(xTransition + 3) & "' y='" & (mt + ph - 5) & "' style='font-size:13px;fill:#B4641E'>Transition " & Format(microTransition, "0.0") & " &mu;&epsilon;</text>")
 
-                ' N=1000 horizontal line
+                ' N=1000 horizontal reference line
                 Dim logN1000 As Double = 3
                 Dim y1000 = mt + ph - ((logN1000 - logNMin) / (logNMax - logNMin)) * ph
                 sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y1000) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y1000) & "' stroke='#B4641E' stroke-width='1' stroke-dasharray='4,4' opacity='0.5'/>")
@@ -1163,30 +1306,39 @@ Namespace Libs
             ' Fatigue model curve
             Dim nPts As Integer = 400
             If isBleasdale Then
-                ' Bleasdale: two-segment curve
+                ' Bleasdale: two-segment curve. Apply the same strain clamp the analysis applies
+                ' (modCDF.vb floors StrainMax at 0.001) so the curve is horizontal at the
+                ' endurance-limit value of N for ε < 1,000 με instead of running off to the
+                ' formula's asymptote at 884 με. This makes the curve descend exactly from the
+                ' clamp at 1,000 με as the user expects.
                 Dim bleaPath As New StringBuilder("M")
                 Dim powPath As New StringBuilder()
                 Dim bleaStarted As Boolean = False, powStarted As Boolean = False
+                Dim strainClampAbs As Double = microClamp / 1000000.0
                 For i As Integer = 0 To nPts
                     Dim logS = logStrainMin + (logStrainMax - logStrainMin) * i / nPts
                     Dim microS = 10 ^ logS
                     Dim strainAbs As Double = microS / 1000000.0
+                    ' Mirror the analysis-side clamp: any strain below 1,000 με is treated as 1,000 με.
+                    Dim strainEff As Double = If(strainAbs < strainClampAbs, strainClampAbs, strainAbs)
                     Dim nFail As Double
-                    Dim inner As Double = a11 + b11 * strainAbs
+                    Dim inner As Double = a11 + b11 * strainEff
                     If inner <= 0.0001 Then
                         nFail = 1.0E+15
-                    ElseIf strainAbs <= 0.001765093 Then
+                    ElseIf strainEff <= 0.001765093 Then
                         Dim expn As Double = inner ^ (-1.0 / c11)
                         If expn > 15 Then nFail = 1.0E+15 Else nFail = 10.0 ^ expn
                     Else
-                        nFail = (0.00414131183 / strainAbs) ^ 8.1
+                        nFail = (0.00414131183 / strainEff) ^ 8.1
                     End If
                     Dim logN As Double = Math.Log10(Math.Max(nFail, 1))
                     logN = Math.Max(logNMin, Math.Min(logNMax, logN))
                     Dim x = ml + ((logS - logStrainMin) / (logStrainMax - logStrainMin)) * pw
                     Dim y = mt + ph - ((logN - logNMin) / (logNMax - logNMin)) * ph
 
-                    If strainAbs <= 0.001765093 Then
+                    ' Branch by the *effective* (clamped) strain so the curve segments line up
+                    ' with the rendered zones.
+                    If strainEff <= 0.001765093 Then
                         If Not bleaStarted Then bleaPath.Append(Fmt(x) & " " & Fmt(y)) : bleaStarted = True _
                         Else bleaPath.Append(" L" & Fmt(x) & " " & Fmt(y))
                     Else
@@ -1220,23 +1372,33 @@ Namespace Libs
                 sb.AppendLine("<path d='" & pathD.ToString() & "' fill='none' stroke='#1F77B4' stroke-width='2.5'/>")
             End If
 
-            ' Aircraft scatter points with label collision avoidance
+            ' Aircraft scatter points with label collision avoidance.
+            ' Each point's N_fail comes from clsAircraftDetail.NtoFail, which was computed in
+            ' modCDF.vb from the per-aircraft critical vertical compressive strain (ε_22) at the
+            ' top of the subgrade using the Bleasdale piecewise formula (with strain floored to
+            ' 0.001 = 1,000 με). For PCR the scatter set is the original-mix snapshot.
             Dim placedLabels As New List(Of Tuple(Of Double, Double))
-            If rpt.AircraftDetails IsNot Nothing Then
-                For ia As Integer = 1 To UBound(rpt.AircraftDetails)
-                    If rpt.AircraftDetails(ia) Is Nothing Then Continue For
-                    Dim det = rpt.AircraftDetails(ia)
+            If acDetails IsNot Nothing Then
+                For ia As Integer = 1 To UBound(acDetails)
+                    If acDetails(ia) Is Nothing Then Continue For
+                    Dim det = acDetails(ia)
                     Dim micro = det.VerticalStrain * 1000000
                     If micro <= 0 Then Continue For
+                    ' Honor the same strain clamp the analysis applies (1,000 με) so the marker
+                    ' lands on the rendered curve at low-strain aircraft.
+                    If isBleasdale AndAlso micro < microClamp Then micro = microClamp
                     Dim logS = Math.Log10(micro)
-                    Dim logN = Math.Log10(Math.Max(det.NtoFail, 1))
+                    ' Fall back to a recomputed N_fail when the analysis-side gNtoFail global was
+                    ' not populated for this aircraft (non-tandem subgrade path in modCDF.vb).
+                    Dim displayedN As Double = NtoFailForDisplay(det)
+                    Dim logN = Math.Log10(Math.Max(displayedN, 1))
                     Dim x = ml + ((logS - logStrainMin) / (logStrainMax - logStrainMin)) * pw
                     Dim y = mt + ph - ((logN - logNMin) / (logNMax - logNMin)) * ph
                     x = Math.Max(ml, Math.Min(ml + pw, x))
                     y = Math.Max(mt, Math.Min(mt + ph, y))
                     Dim clr = ChartColors((ia - 1) Mod ChartColors.Length)
                     sb.AppendLine("<circle cx='" & Fmt(x) & "' cy='" & Fmt(y) & "' r='5' fill='" & clr & "' stroke='white' stroke-width='1.5'>")
-                    sb.AppendLine("<title>" & WebEncode(det.ACName) & ": strain=" & Format(micro, "0.0") & " microstrain, Nfail=" & Format(det.NtoFail, "0.00E+00") & "</title>")
+                    sb.AppendLine("<title>" & WebEncode(det.ACName) & ": strain=" & Format(micro, "0.0") & " microstrain, Nfail=" & Format(displayedN, "0.00E+00") & "</title>")
                     sb.AppendLine("</circle>")
                     ' Label collision avoidance
                     Dim labelY = y + 4
@@ -1264,17 +1426,18 @@ Namespace Libs
             sb.AppendLine("<text x='15' y='" & Fmt(mt + ph / 2) & "' text-anchor='middle' class='axis-label' transform='rotate(-90,15," & Fmt(mt + ph / 2) & ")'>Allowable Repetitions (N<tspan dy='-4' font-size='8'>fail</tspan><tspan dy='4'>)</tspan></text>")
 
             ' Title
-            Dim titleText = If(isBleasdale, "Subgrade Fatigue Model (Bleasdale Piecewise)", "Subgrade Fatigue Model")
+            Dim titleText = If(isBleasdale, "Subgrade Damage Model (Bleasdale Piecewise)", "Subgrade Damage Model")
             sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>" & titleText & "</text>")
 
             ' Bleasdale equation box
             If isBleasdale Then
-                sb.AppendLine("<rect x='" & (ml + pw - 260) & "' y='" & (mt + ph - 80) & "' width='255' height='75' fill='white' stroke='#ccc' rx='4' opacity='0.9'/>")
-                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 64) & "' style='font-size:13px;fill:#333;font-weight:600'>Bleasdale (Cov &ge; 1,000):</text>")
-                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 52) & "' style='font-size:13px;fill:#555;font-family:Cambria Math,serif'>N = 10^((a + b&middot;&epsilon;)^(-1/c))</text>")
-                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 38) & "' style='font-size:13px;fill:#333;font-weight:600'>Power Law (Cov &lt; 1,000):</text>")
-                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 26) & "' style='font-size:13px;fill:#555;font-family:Cambria Math,serif'>N = (0.00414 / &epsilon;)^8.1</text>")
-                sb.AppendLine("<text x='" & (ml + pw - 252) & "' y='" & (mt + ph - 12) & "' style='font-size:13px;fill:#5a6270'>Asymptote: " & Format(microAsymptote, "0.0") & " &mu;&epsilon;  |  Transition: " & Format(microTransition, "0.0") & " &mu;&epsilon;</text>")
+                sb.AppendLine("<rect x='" & (ml + pw - 270) & "' y='" & (mt + ph - 96) & "' width='265' height='91' fill='white' stroke='#ccc' rx='4' opacity='0.92'/>")
+                sb.AppendLine("<text x='" & (ml + pw - 262) & "' y='" & (mt + ph - 80) & "' style='font-size:13px;fill:#333;font-weight:600'>Bleasdale (Cov &ge; 1,000):</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 262) & "' y='" & (mt + ph - 68) & "' style='font-size:13px;fill:#555;font-family:Cambria Math,serif'>N = 10^((a + b&middot;&epsilon;)^(-1/c))</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 262) & "' y='" & (mt + ph - 54) & "' style='font-size:13px;fill:#333;font-weight:600'>Power Law (Cov &lt; 1,000):</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 262) & "' y='" & (mt + ph - 42) & "' style='font-size:13px;fill:#555;font-family:Cambria Math,serif'>N = (0.00414 / &epsilon;)^8.1</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 262) & "' y='" & (mt + ph - 28) & "' style='font-size:13px;fill:#388E3C;font-weight:600'>Strain clamp: &epsilon; &ge; " & Format(microClamp, "#,##0") & " &mu;&epsilon;</text>")
+                sb.AppendLine("<text x='" & (ml + pw - 262) & "' y='" & (mt + ph - 14) & "' style='font-size:12px;fill:#5a6270'>Asymptote: " & Format(microAsymptote, "0.0") & " &mu;&epsilon;  |  Transition: " & Format(microTransition, "0.0") & " &mu;&epsilon;</text>")
             End If
 
             sb.AppendLine("</svg></div>")
@@ -1284,13 +1447,14 @@ Namespace Libs
 
 #Region "SVG Chart: Life Ratio"
 
-        Private Shared Sub AppendLifeRatioSVG(sb As StringBuilder, rpt As clsDetailedReportData)
-            If rpt.AircraftDetails Is Nothing Then Return
+        Private Shared Sub AppendLifeRatioSVG(sb As StringBuilder, rpt As clsDetailedReportData, Optional acDetails() As clsAircraftDetail = Nothing)
+            If acDetails Is Nothing Then acDetails = rpt.AircraftDetails
+            If acDetails Is Nothing Then Return
             Dim items As New List(Of Tuple(Of String, Double, String))
-            For ia As Integer = 1 To UBound(rpt.AircraftDetails)
-                If rpt.AircraftDetails(ia) Is Nothing Then Continue For
-                Dim det = rpt.AircraftDetails(ia)
-                Dim ratio As Double = If(det.TotalRepetitions > 0, det.NtoFail / det.TotalRepetitions, 0)
+            For ia As Integer = 1 To UBound(acDetails)
+                If acDetails(ia) Is Nothing Then Continue For
+                Dim det = acDetails(ia)
+                Dim ratio As Double = If(det.TotalRepetitions > 0, NtoFailForDisplay(det) / det.TotalRepetitions, 0)
                 items.Add(Tuple.Create(det.ACName, ratio, ChartColors((ia - 1) Mod ChartColors.Length)))
             Next
             If items.Count = 0 Then Return
@@ -1345,268 +1509,160 @@ Namespace Libs
 
 #Region "SVG Chart: Single Aircraft CDF"
 
+        ''' <summary>
+        ''' Per-aircraft CDF vs Offset chart. Plots det.CDFByOffset(IOFF) — the gear-level
+        ''' (multi-tire) CDF that the analysis stores at each of the NOFF=41 evaluation
+        ''' offsets — mirrored across the centerline so the chart spans the full pavement
+        ''' strip width [-400, +400] in. The analysis already sums tire contributions through
+        ''' the C/P calculation; the report just plots what the backend produced (which is
+        ''' the same data the FAARFIELD traffic-table max CDF is computed from). No synthetic
+        ''' per-tire curves, no wheel-mirror reconstruction, no scaling heuristics.
+        ''' </summary>
         Private Shared Sub AppendSingleAircraftCDFSvg(sb As StringBuilder, det As clsAircraftDetail, critOffset As Integer, acColor As String, lengthUnit As String)
             Dim svgW As Integer = 950, svgH As Integer = 450
             Dim ml As Integer = 85, mr As Integer = 25, mt As Integer = 40, mb As Integer = 55
             Dim pw = svgW - ml - mr, ph = svgH - mt - mb
 
+            ' Y-axis range. Auto-scale to peak with 20% headroom; widen to include CDF=1.0 when
+            ' the curve is in the design-failure ballpark so the user can see how close the
+            ' aircraft is to the design target.
             Dim maxCDF As Double = 0
             For ioff As Integer = 1 To CDF.NOFF
                 If det.CDFByOffset(ioff) > maxCDF Then maxCDF = det.CDFByOffset(ioff)
             Next
             If maxCDF <= 0 Then maxCDF = 0.001
-            Dim yMax = maxCDF * 1.2
+            Dim yMax As Double = maxCDF * 1.2
+            If maxCDF >= 0.5 AndAlso yMax < 1.1 Then yMax = 1.1
 
-            ' Bilateral X range: -400 to +400
+            ' Bilateral X range: mirror the unilateral NOFF=41 offsets (0..400 in.) across the
+            ' centerline so the chart spans -400..+400 in.
             Dim xMinVal As Double = -CDbl((CDF.NOFF - 1) * CDF.OFFSETINC)
             Dim xMaxVal As Double = CDbl((CDF.NOFF - 1) * CDF.OFFSETINC)
             Dim xRng As Double = xMaxVal - xMinVal
-
-            ' Pixel mapping
             Dim toX = Function(v As Double) ml + ((v - xMinVal) / xRng) * pw
 
             sb.AppendLine("<div class='chart-wrap'>")
             sb.AppendLine("<svg viewBox='0 0 " & svgW & " " & svgH & "' class='chart-svg' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='CDF vs offset chart for " & WebEncode(det.ACName) & "'>")
             sb.AppendLine("<title>CDF vs offset chart for " & WebEncode(det.ACName) & "</title>")
             sb.AppendLine("<rect x='" & ml & "' y='" & mt & "' width='" & pw & "' height='" & ph & "' fill='#FAFBFC' stroke='#bcc3cc'/>")
-            sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>" & WebEncode(det.ACName) & " &mdash; CDF vs Offset</text>")
+            sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='20' text-anchor='middle' class='chart-title'>" & WebEncode(det.ACName) & " &mdash; Per-Aircraft CDF vs Offset</text>")
+            sb.AppendLine("<text x='" & Fmt(svgW / 2) & "' y='34' text-anchor='middle' style='font-size:11px;fill:#5a6270;font-style:italic'>Per-airplane CDF = &Sigma; tire contributions at each 10-in strip (FAA Appendix B). Y values match FAARFIELD's built-in CDF Graph view (CDFdata2 for thickness/life runs, CDFdata3 for PCR). For multi-aircraft Miner's-Rule total, see Section H.</text>")
 
-            ' Per-tire CDF curves and tire bands
-            Dim hasTireData As Boolean = (det.NWheels > 0 AndAlso det.WheelX IsNot Nothing AndAlso det.XCenter > 0)
-            Dim tireColorsHex() As String = {"#1F77B4", "#FF7F0E", "#2CA02C", "#D6272B", "#9467BD", "#8C564B", "#E377C2", "#7F7F7F"}
-
-            ' Reconstruct full wheel set with symmetric mirror inference.
-            ' The backend may capture only one wheel of a symmetric pair (libNTires truncation).
-            ' This produces bimodal C/P when only one wheel of a dual pair is used.
-            ' Reconstructing the mirror partner restores the correct unimodal shape.
-            Dim allWheelsX As New List(Of Single)
-            Dim reconstructedWheels As Boolean = False
-            If det.NWheels > 0 AndAlso det.WheelX IsNot Nothing Then
-                For iw As Integer = 1 To det.NWheels
-                    allWheelsX.Add(det.WheelX(iw))
-                Next
-                Dim mirrWheels As New List(Of Single)
-                For i As Integer = 0 To allWheelsX.Count - 1
-                    If Math.Abs(allWheelsX(i)) > 1 Then
-                        Dim mirrorX As Single = -allWheelsX(i)
-                        Dim hasMirror As Boolean = False
-                        For j As Integer = 0 To allWheelsX.Count - 1
-                            If Math.Abs(allWheelsX(j) - mirrorX) < 1 Then hasMirror = True : Exit For
-                        Next
-                        If Not hasMirror Then mirrWheels.Add(mirrorX)
-                    End If
-                Next
-                If mirrWheels.Count > 0 Then
-                    allWheelsX.AddRange(mirrWheels)
-                    reconstructedWheels = True
-                End If
-            End If
-
-            ' If mirror inference reconstructed missing wheels, recompute bilateral CDF
-            ' analytically with the full wheel set so the curve has the correct shape.
-            Dim useReconstructedCDF As Boolean = False
-            Dim reconBilateralCDF() As Double = Nothing
-            Dim nBilRecon As Integer = 2 * (CDF.NOFF - 1) + 1
-            If reconstructedWheels AndAlso allWheelsX.Count > 1 AndAlso det.TireWidth > 0 Then
-                Dim sigma As Double = 30.435
-                Dim halfTW As Double = det.TireWidth / 2.0
-
-                ' Compute corrected xCenter from full wheel set
-                ' Mirrors CoverageToPassFlexible formula: avg + TS/2 + |rightmost|
-                Dim avgX As Double = 0
-                For Each wx In allWheelsX : avgX += wx : Next
-                avgX /= allWheelsX.Count
-                Dim rightmostX As Double = Single.MinValue
-                For Each wx In allWheelsX
-                    If wx > rightmostX Then rightmostX = CDbl(wx)
-                Next
-                Dim notBellyGear As Boolean = (InStr(4, det.ACName, "Belly", CompareMethod.Text) = 0 _
-                                              Or InStr(1, det.ACName, "B747", CompareMethod.Text) > 0 _
-                                              Or InStr(1, det.ACName, "A380", CompareMethod.Text) > 0)
-                Dim corrXCenter As Double
-                If notBellyGear AndAlso det.GearType <> "A" Then
-                    corrXCenter = avgX + det.TandemSpacing / 2.0 + Math.Abs(rightmostX)
-                Else
-                    corrXCenter = avgX
-                End If
-
-                ' Recompute bilateral C/P with full wheel set
-                ReDim reconBilateralCDF(nBilRecon - 1)
-                For ib As Integer = 0 To nBilRecon - 1
-                    Dim offVal As Double = xMinVal + ib * CDF.OFFSETINC
-                    reconBilateralCDF(ib) = 0
-                    For Each wx As Single In allWheelsX
-                        Dim wheelOff As Double = corrXCenter + wx
-                        Dim yoffR As Double = Math.Abs(offVal - wheelOff)
-                        Dim cpR As Double = GaussArea(yoffR - halfTW, yoffR + halfTW, sigma)
-                        Dim yoffL As Double = Math.Abs(offVal + wheelOff)
-                        Dim cpL As Double = GaussArea(yoffL - halfTW, yoffL + halfTW, sigma)
-                        reconBilateralCDF(ib) += cpR + cpL
-                    Next
-                Next
-
-                ' Scale to match backend peak CDF
-                Dim storedPk As Double = 0
-                For ioff As Integer = 1 To CDF.NOFF
-                    If det.CDFByOffset(ioff) > storedPk Then storedPk = det.CDFByOffset(ioff)
-                Next
-                Dim reconPk As Double = 0
-                For ib As Integer = 0 To nBilRecon - 1
-                    If reconBilateralCDF(ib) > reconPk Then reconPk = reconBilateralCDF(ib)
-                Next
-                If reconPk > 0.000001 Then
-                    Dim sf As Double = storedPk / reconPk
-                    For ib As Integer = 0 To nBilRecon - 1
-                        reconBilateralCDF(ib) *= sf
-                    Next
-                End If
-
-                useReconstructedCDF = True
-                ' Update hasTireData so per-tire overlays use corrected xCenter
-                hasTireData = True
-            End If
-
-            If hasTireData AndAlso det.TireWidth > 0 Then
-                Dim sigma As Double = 30.435
-                Dim halfTW As Double = det.TireWidth / 2.0
-                Dim nBilateral As Integer = 2 * (CDF.NOFF - 1) + 1
-
-                ' Use corrected xCenter if wheels were reconstructed, otherwise original
-                Dim effectiveXCenter As Double = det.XCenter
-                Dim effectiveNWheels As Integer = det.NWheels
-                Dim effectiveWheelsX As List(Of Single) = Nothing
-                If useReconstructedCDF Then
-                    ' Recompute corrected xCenter (same logic as above)
-                    Dim avgX2 As Double = 0
-                    For Each wx In allWheelsX : avgX2 += wx : Next
-                    avgX2 /= allWheelsX.Count
-                    Dim rmX As Double = Single.MinValue
-                    For Each wx In allWheelsX
-                        If wx > rmX Then rmX = CDbl(wx)
-                    Next
-                    Dim nb As Boolean = (InStr(4, det.ACName, "Belly", CompareMethod.Text) = 0 _
-                                        Or InStr(1, det.ACName, "B747", CompareMethod.Text) > 0 _
-                                        Or InStr(1, det.ACName, "A380", CompareMethod.Text) > 0)
-                    If nb AndAlso det.GearType <> "A" Then
-                        effectiveXCenter = avgX2 + det.TandemSpacing / 2.0 + Math.Abs(rmX)
-                    Else
-                        effectiveXCenter = avgX2
-                    End If
-                    effectiveNWheels = allWheelsX.Count
-                    effectiveWheelsX = allWheelsX
-                End If
-
-                ' Compute per-tire C/P using effective (possibly reconstructed) wheel set
-                Dim nTiresForCurves As Integer = If(effectiveWheelsX IsNot Nothing, effectiveWheelsX.Count, det.NWheels)
-                Dim perTireCtoP(nTiresForCurves, nBilateral - 1) As Double
-                Dim totalCtoP(nBilateral - 1) As Double
-                For ib As Integer = 0 To nBilateral - 1
-                    Dim offVal As Double = xMinVal + ib * CDF.OFFSETINC
-                    totalCtoP(ib) = 0
-                    For iw As Integer = 1 To nTiresForCurves
-                        Dim wx As Double = If(effectiveWheelsX IsNot Nothing, effectiveWheelsX(iw - 1), det.WheelX(iw))
-                        Dim wheelOff As Double = effectiveXCenter + wx
-                        Dim yoffR As Double = Math.Abs(offVal - wheelOff)
-                        Dim cpR As Double = GaussArea(yoffR - halfTW, yoffR + halfTW, sigma)
-                        Dim yoffL As Double = Math.Abs(offVal + wheelOff)
-                        Dim cpL As Double = GaussArea(yoffL - halfTW, yoffL + halfTW, sigma)
-                        perTireCtoP(iw, ib) = cpR + cpL
-                        totalCtoP(ib) += cpR + cpL
-                    Next
-                Next
-
-                ' Scale factor
-                Dim scaleFactor As Double = 1.0
-                Dim storedPeak As Double = 0
-                For ioff As Integer = 1 To CDF.NOFF
-                    If det.CDFByOffset(ioff) > storedPeak Then storedPeak = det.CDFByOffset(ioff)
-                Next
-                Dim recompPeak As Double = 0
-                For ib As Integer = 0 To nBilateral - 1
-                    If totalCtoP(ib) > recompPeak Then recompPeak = totalCtoP(ib)
-                Next
-                If recompPeak > 0.000001 Then scaleFactor = storedPeak / recompPeak
-
-                ' Draw tire bands using effective wheel positions
-                For iw As Integer = 1 To nTiresForCurves
-                    Dim cIdx As Integer = (iw - 1) Mod tireColorsHex.Length
-                    Dim wx As Double = If(effectiveWheelsX IsNot Nothing, effectiveWheelsX(iw - 1), det.WheelX(iw))
-                    Dim wheelOff As Double = effectiveXCenter + wx
-                    ' Right side
-                    Dim bL As Double = toX(wheelOff - halfTW)
-                    Dim bR As Double = toX(wheelOff + halfTW)
-                    bL = Math.Max(bL, ml) : bR = Math.Min(bR, ml + pw)
-                    If bR > bL Then
-                        sb.AppendLine("<rect x='" & Fmt(bL) & "' y='" & mt & "' width='" & Fmt(bR - bL) & "' height='" & ph & "' fill='" & tireColorsHex(cIdx) & "' opacity='0.06'/>")
-                        sb.AppendLine("<line x1='" & Fmt(toX(wheelOff)) & "' y1='" & mt & "' x2='" & Fmt(toX(wheelOff)) & "' y2='" & (mt + ph) & "' stroke='" & tireColorsHex(cIdx) & "' stroke-width='0.8' stroke-dasharray='3,3' opacity='0.4'/>")
-                    End If
-                    ' Mirror (left side)
-                    Dim mL2 As Double = toX(-wheelOff - halfTW)
-                    Dim mR2 As Double = toX(-wheelOff + halfTW)
-                    mL2 = Math.Max(mL2, ml) : mR2 = Math.Min(mR2, ml + pw)
-                    If mR2 > mL2 Then
-                        sb.AppendLine("<rect x='" & Fmt(mL2) & "' y='" & mt & "' width='" & Fmt(mR2 - mL2) & "' height='" & ph & "' fill='" & tireColorsHex(cIdx) & "' opacity='0.06'/>")
-                        sb.AppendLine("<line x1='" & Fmt(toX(-wheelOff)) & "' y1='" & mt & "' x2='" & Fmt(toX(-wheelOff)) & "' y2='" & (mt + ph) & "' stroke='" & tireColorsHex(cIdx) & "' stroke-width='0.8' stroke-dasharray='3,3' opacity='0.4'/>")
-                    End If
-                Next
-
-                ' Draw per-tire CDF curves
-                For iw As Integer = 1 To nTiresForCurves
-                    Dim cIdx As Integer = (iw - 1) Mod tireColorsHex.Length
-                    Dim tirePath As New StringBuilder()
-                    For ib As Integer = 0 To nBilateral - 1
-                        Dim offVal As Double = xMinVal + ib * CDF.OFFSETINC
-                        Dim scaledCDF As Double = perTireCtoP(iw, ib) * scaleFactor
-                        Dim xp As Double = toX(offVal)
-                        Dim yp As Double = mt + ph - (scaledCDF / yMax) * ph
-                        If ib = 0 Then
-                            tirePath.Append("M" & Fmt(xp) & " " & Fmt(yp))
-                        Else
-                            tirePath.Append(" L" & Fmt(xp) & " " & Fmt(yp))
-                        End If
-                    Next
-                    sb.AppendLine("<path d='" & tirePath.ToString() & "' fill='none' stroke='" & tireColorsHex(cIdx) & "' stroke-width='1.2' stroke-dasharray='5,3'/>")
-                Next
-            End If
-
-            ' Bilateral combined CDF path
-            ' When wheels were reconstructed via mirror inference, use the analytically
-            ' recomputed CDF (correct unimodal shape). Otherwise, mirror stored backend data.
-            Dim nBilPts As Integer = 2 * (CDF.NOFF - 1) + 1
-            Dim cdfPath As New StringBuilder()
-            Dim cdfFill As New StringBuilder()
-            Dim cdfFirstX As Double = 0
-            Dim cdfLastX As Double = 0
-            For ib As Integer = 0 To nBilPts - 1
-                Dim offVal As Double = xMinVal + ib * CDF.OFFSETINC
-                Dim cdfVal As Double = 0
-                If useReconstructedCDF AndAlso reconBilateralCDF IsNot Nothing Then
-                    cdfVal = reconBilateralCDF(ib)
-                Else
-                    Dim absIdx As Integer = Math.Abs(ib - (CDF.NOFF - 1)) + 1
-                    If absIdx >= 1 AndAlso absIdx <= CDF.NOFF Then cdfVal = det.CDFByOffset(absIdx)
-                End If
-                Dim xp As Double = toX(offVal)
-                Dim yp As Double = mt + ph - (cdfVal / yMax) * ph
-                If ib = 0 Then
-                    cdfPath.Append("M" & Fmt(xp) & " " & Fmt(yp))
-                    cdfFill.Append("M" & Fmt(xp) & " " & Fmt(mt + ph) & " L" & Fmt(xp) & " " & Fmt(yp))
-                    cdfFirstX = xp
-                Else
-                    cdfPath.Append(" L" & Fmt(xp) & " " & Fmt(yp))
-                    cdfFill.Append(" L" & Fmt(xp) & " " & Fmt(yp))
-                End If
-                cdfLastX = xp
+            ' Y axis grid + tick labels (drawn first so the curve renders on top)
+            Dim nYTicks As Integer = 5
+            For i As Integer = 0 To nYTicks
+                Dim val As Double = yMax * i / nYTicks
+                Dim y As Double = mt + ph - (i / CDbl(nYTicks)) * ph
+                sb.AppendLine("<text x='" & (ml - 5) & "' y='" & Fmt(y + 4) & "' text-anchor='end' class='tick'>" & FmtCDFSvg(val) & "</text>")
+                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#d0d4da' stroke-width='0.9'/>")
             Next
-            cdfFill.Append(" L" & Fmt(cdfLastX) & " " & Fmt(mt + ph) & " Z")
-            sb.AppendLine("<path d='" & cdfFill.ToString() & "' fill='" & acColor & "' opacity='0.06'/>")
-            sb.AppendLine("<path d='" & cdfPath.ToString() & "' fill='none' stroke='" & acColor & "' stroke-width='2'/>")
+            For xTick As Integer = CInt(xMinVal) To CInt(xMaxVal) Step 100
+                Dim xp As Double = toX(xTick)
+                sb.AppendLine("<text x='" & Fmt(xp) & "' y='" & (mt + ph + 18) & "' text-anchor='middle' class='tick'>" & xTick.ToString() & "</text>")
+            Next
 
-            ' Zero-line (centerline)
+            ' CDF = 1.0 horizontal reference line (design-failure threshold) when within range
+            Dim showDesignLine As Boolean = (1.0 <= yMax)
+            If showDesignLine Then
+                Dim yDesign As Double = mt + ph - (1.0 / yMax) * ph
+                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(yDesign) & "' x2='" & (ml + pw) & "' y2='" & Fmt(yDesign) & "' stroke='#888' stroke-width='1' stroke-dasharray='6,3' opacity='0.7'/>")
+                sb.AppendLine("<text x='" & (ml + pw - 5) & "' y='" & Fmt(yDesign - 4) & "' text-anchor='end' style='font-size:11px;fill:#666'>CDF = 1.0 (design)</text>")
+            End If
+
+            ' Bilateral mirror: absIdx = |ib - (NOFF-1)| + 1 maps bilateral index ib in
+            ' [0, 2·NOFF-2] back to unilateral [1, NOFF]. Render strategy:
+            '   1) If per-tire CDF capture is available, draw a stacked area where each colored
+            '      layer is one tire's CDF contribution (det.CDFContribByTireByOffset(iw, IOFF))
+            '      and the stack top equals det.CDFByOffset(IOFF). This makes the strip-by-strip
+            '      tire summation visually obvious.
+            '   2) Otherwise (older saved jobs), fall back to the previous single-curve fill+stroke.
+            Dim nBilPts As Integer = 2 * (CDF.NOFF - 1) + 1
+            Dim tireColors() As String = {"#1F77B4", "#FF7F0E", "#2CA02C", "#D6272B", "#9467BD", "#8C564B", "#E377C2", "#7F7F7F"}
+
+            Dim haveStack As Boolean = det.HasTireCDFContrib AndAlso det.NWheels >= 1 _
+                                       AndAlso det.CDFContribByTireByOffset IsNot Nothing
+            If haveStack Then
+                Dim nTires As Integer = det.NWheels
+                ' Build per-tire bilateral series and cumulative stack heights.
+                Dim cumLower(nBilPts - 1) As Double  ' running stack baseline
+                Dim cumUpper(nBilPts - 1) As Double  ' running stack top
+                For ib As Integer = 0 To nBilPts - 1
+                    cumLower(ib) = 0
+                    cumUpper(ib) = 0
+                Next
+                For iw As Integer = 1 To nTires
+                    Dim cIdx As Integer = (iw - 1) Mod tireColors.Length
+                    Dim layerPath As New StringBuilder()
+                    ' Upper boundary forward
+                    For ib As Integer = 0 To nBilPts - 1
+                        Dim offVal As Double = xMinVal + ib * CDF.OFFSETINC
+                        Dim absIdx As Integer = Math.Abs(ib - (CDF.NOFF - 1)) + 1
+                        Dim contrib As Double = 0
+                        If absIdx >= 1 AndAlso absIdx <= CDF.NOFF AndAlso iw <= det.CDFContribByTireByOffset.GetUpperBound(0) Then
+                            contrib = det.CDFContribByTireByOffset(iw, absIdx)
+                        End If
+                        cumUpper(ib) = cumLower(ib) + contrib
+                        Dim xp As Double = toX(offVal)
+                        Dim yp As Double = mt + ph - (Math.Min(cumUpper(ib), yMax) / yMax) * ph
+                        If ib = 0 Then layerPath.Append("M" & Fmt(xp) & " " & Fmt(yp)) Else layerPath.Append(" L" & Fmt(xp) & " " & Fmt(yp))
+                    Next
+                    ' Lower boundary reverse (close the polygon)
+                    For ib As Integer = nBilPts - 1 To 0 Step -1
+                        Dim offVal As Double = xMinVal + ib * CDF.OFFSETINC
+                        Dim xp As Double = toX(offVal)
+                        Dim yp As Double = mt + ph - (Math.Min(cumLower(ib), yMax) / yMax) * ph
+                        layerPath.Append(" L" & Fmt(xp) & " " & Fmt(yp))
+                    Next
+                    layerPath.Append(" Z")
+                    sb.AppendLine("<path d='" & layerPath.ToString() & "' fill='" & tireColors(cIdx) & "' opacity='0.55' stroke='" & tireColors(cIdx) & "' stroke-width='0.5' stroke-opacity='0.35'/>")
+                    ' Promote upper to next layer's lower
+                    For ib As Integer = 0 To nBilPts - 1
+                        cumLower(ib) = cumUpper(ib)
+                    Next
+                Next
+
+                ' Top stroke: trace det.CDFByOffset directly so the visible top equals the
+                ' analysis-side cumulative regardless of any rounding in the per-tire stack.
+                Dim topPath As New StringBuilder()
+                For ib As Integer = 0 To nBilPts - 1
+                    Dim offVal As Double = xMinVal + ib * CDF.OFFSETINC
+                    Dim absIdx As Integer = Math.Abs(ib - (CDF.NOFF - 1)) + 1
+                    Dim cdfVal As Double = If(absIdx >= 1 AndAlso absIdx <= CDF.NOFF, det.CDFByOffset(absIdx), 0)
+                    Dim xp As Double = toX(offVal)
+                    Dim yp As Double = mt + ph - (Math.Min(cdfVal, yMax) / yMax) * ph
+                    If ib = 0 Then topPath.Append("M" & Fmt(xp) & " " & Fmt(yp)) Else topPath.Append(" L" & Fmt(xp) & " " & Fmt(yp))
+                Next
+                sb.AppendLine("<path d='" & topPath.ToString() & "' fill='none' stroke='" & acColor & "' stroke-width='1.6'/>")
+            Else
+                ' Fallback: single-curve fill+stroke (older saved jobs without per-tire capture).
+                Dim cdfPath As New StringBuilder()
+                Dim cdfFill As New StringBuilder()
+                Dim cdfLastX As Double = 0
+                For ib As Integer = 0 To nBilPts - 1
+                    Dim offVal As Double = xMinVal + ib * CDF.OFFSETINC
+                    Dim absIdx As Integer = Math.Abs(ib - (CDF.NOFF - 1)) + 1
+                    Dim cdfVal As Double = If(absIdx >= 1 AndAlso absIdx <= CDF.NOFF, det.CDFByOffset(absIdx), 0)
+                    Dim xp As Double = toX(offVal)
+                    Dim yp As Double = mt + ph - (cdfVal / yMax) * ph
+                    If ib = 0 Then
+                        cdfPath.Append("M" & Fmt(xp) & " " & Fmt(yp))
+                        cdfFill.Append("M" & Fmt(xp) & " " & Fmt(mt + ph) & " L" & Fmt(xp) & " " & Fmt(yp))
+                    Else
+                        cdfPath.Append(" L" & Fmt(xp) & " " & Fmt(yp))
+                        cdfFill.Append(" L" & Fmt(xp) & " " & Fmt(yp))
+                    End If
+                    cdfLastX = xp
+                Next
+                cdfFill.Append(" L" & Fmt(cdfLastX) & " " & Fmt(mt + ph) & " Z")
+                sb.AppendLine("<path d='" & cdfFill.ToString() & "' fill='" & acColor & "' opacity='0.10'/>")
+                sb.AppendLine("<path d='" & cdfPath.ToString() & "' fill='none' stroke='" & acColor & "' stroke-width='2.2'/>")
+            End If
+
+            ' Centerline (offset = 0)
             Dim zeroX As Double = toX(0)
             sb.AppendLine("<line x1='" & Fmt(zeroX) & "' y1='" & mt & "' x2='" & Fmt(zeroX) & "' y2='" & (mt + ph) & "' stroke='black' stroke-width='1.5'/>")
 
-            ' Critical offset markers (both sides)
+            ' Critical offset markers (both sides of centerline)
             If critOffset >= 1 AndAlso critOffset <= CDF.NOFF Then
                 Dim critVal As Double = (critOffset - 1) * CDF.OFFSETINC
                 Dim critXR As Double = toX(critVal)
@@ -1615,43 +1671,41 @@ Namespace Libs
                 If critVal > 0 Then sb.AppendLine("<line x1='" & Fmt(critXL) & "' y1='" & mt & "' x2='" & Fmt(critXL) & "' y2='" & (mt + ph) & "' stroke='#D62728' stroke-width='1' stroke-dasharray='5,3'/>")
             End If
 
-            ' Y axis ticks
-            Dim nYTicks As Integer = 5
-            For i As Integer = 0 To nYTicks
-                Dim val = yMax * i / nYTicks
-                Dim y = mt + ph - (i / CDbl(nYTicks)) * ph
-                sb.AppendLine("<text x='" & (ml - 5) & "' y='" & Fmt(y + 4) & "' text-anchor='end' class='tick'>" & FmtCDFSvg(val) & "</text>")
-                sb.AppendLine("<line x1='" & ml & "' y1='" & Fmt(y) & "' x2='" & (ml + pw) & "' y2='" & Fmt(y) & "' stroke='#d0d4da' stroke-width='0.9'/>")
-            Next
-            ' X axis ticks: -400, -300, ..., 0, ..., 300, 400
-            For xTick As Integer = CInt(xMinVal) To CInt(xMaxVal) Step 100
-                Dim xp As Double = toX(xTick)
-                sb.AppendLine("<text x='" & Fmt(xp) & "' y='" & (mt + ph + 18) & "' text-anchor='middle' class='tick'>" & xTick.ToString() & "</text>")
-            Next
-
+            ' Axis labels
             sb.AppendLine("<text x='" & Fmt(ml + pw / 2) & "' y='" & (svgH - 5) & "' text-anchor='middle' class='axis-label'>Offset (" & lengthUnit & ")</text>")
             sb.AppendLine("<text x='12' y='" & Fmt(mt + ph / 2) & "' text-anchor='middle' class='axis-label' transform='rotate(-90,12," & Fmt(mt + ph / 2) & ")'>CDF</text>")
 
             ' Legend
-            Dim lgX As Integer = svgW - mr - 200
+            Dim lgX As Integer = svgW - mr - 230
             Dim lgY As Integer = mt + 8
-            sb.AppendLine("<line x1='" & lgX & "' y1='" & (lgY + 5) & "' x2='" & (lgX + 16) & "' y2='" & (lgY + 5) & "' stroke='" & acColor & "' stroke-width='2'/>")
-            sb.AppendLine("<text x='" & (lgX + 20) & "' y='" & (lgY + 9) & "' style='font-size:13px'>Combined CDF</text>")
+            ' Per-aircraft cumulative CDF (top stroke)
+            sb.AppendLine("<line x1='" & lgX & "' y1='" & (lgY + 5) & "' x2='" & (lgX + 16) & "' y2='" & (lgY + 5) & "' stroke='" & acColor & "' stroke-width='1.6'/>")
+            sb.AppendLine("<text x='" & (lgX + 20) & "' y='" & (lgY + 9) & "' style='font-size:13px'>Per-aircraft CDF (&Sigma; tires per strip)</text>")
+            ' Tire-contributions stacked swatch (only when stack rendered)
+            If haveStack Then
+                lgY += 16
+                ' Build a 4-band swatch using the first 4 palette colors
+                Dim swatchY As Integer = lgY + 1
+                Dim swatchH As Integer = 9
+                Dim swatchBandH As Integer = swatchH \ 4
+                Dim sw0 As Integer = lgX
+                Dim sw1 As Integer = lgX + 16
+                For sb_i As Integer = 0 To 3
+                    Dim cIdx As Integer = sb_i Mod tireColors.Length
+                    sb.AppendLine("<rect x='" & sw0 & "' y='" & (swatchY + sb_i * swatchBandH) & "' width='" & (sw1 - sw0) & "' height='" & swatchBandH & "' fill='" & tireColors(cIdx) & "' opacity='0.55'/>")
+                Next
+                sb.AppendLine("<text x='" & (lgX + 20) & "' y='" & (lgY + 9) & "' style='font-size:13px'>Tire contributions (stacked)</text>")
+            End If
             lgY += 16
             sb.AppendLine("<line x1='" & lgX & "' y1='" & (lgY + 5) & "' x2='" & (lgX + 16) & "' y2='" & (lgY + 5) & "' stroke='black' stroke-width='1.5'/>")
             sb.AppendLine("<text x='" & (lgX + 20) & "' y='" & (lgY + 9) & "' style='font-size:13px'>Centerline (0)</text>")
             lgY += 16
             sb.AppendLine("<line x1='" & lgX & "' y1='" & (lgY + 5) & "' x2='" & (lgX + 16) & "' y2='" & (lgY + 5) & "' stroke='#D62728' stroke-width='1' stroke-dasharray='5,3'/>")
             sb.AppendLine("<text x='" & (lgX + 20) & "' y='" & (lgY + 9) & "' fill='#D62728' style='font-size:13px'>Critical offset</text>")
-
-            If hasTireData AndAlso det.TireWidth > 0 Then
-                For iw As Integer = 1 To Math.Min(det.NWheels, tireColorsHex.Length)
-                    lgY += 16
-                    Dim cIdx As Integer = (iw - 1) Mod tireColorsHex.Length
-                    Dim wheelPos As Double = det.XCenter + det.WheelX(iw)
-                    sb.AppendLine("<line x1='" & lgX & "' y1='" & (lgY + 5) & "' x2='" & (lgX + 16) & "' y2='" & (lgY + 5) & "' stroke='" & tireColorsHex(cIdx) & "' stroke-width='1.2' stroke-dasharray='5,3'/>")
-                    sb.AppendLine("<text x='" & (lgX + 20) & "' y='" & (lgY + 9) & "' style='font-size:13px'>Tire " & iw & " (x=" & Format(wheelPos, "0.0") & ")</text>")
-                Next
+            If showDesignLine Then
+                lgY += 16
+                sb.AppendLine("<line x1='" & lgX & "' y1='" & (lgY + 5) & "' x2='" & (lgX + 16) & "' y2='" & (lgY + 5) & "' stroke='#888' stroke-width='1' stroke-dasharray='6,3'/>")
+                sb.AppendLine("<text x='" & (lgX + 20) & "' y='" & (lgY + 9) & "' fill='#666' style='font-size:13px'>CDF = 1.0</text>")
             End If
 
             sb.AppendLine("</svg></div>")
@@ -3099,6 +3153,7 @@ thead { display: table-header-group; }
 .data-table tbody tr:nth-child(even) { background: #f8f9fb; }
 .data-table tbody tr:nth-child(even):hover { background: #e8eef6; }
 .data-table.compact td, .data-table.compact th { padding: 6px 10px; font-size: 12px; }
+.data-table.centered th, .data-table.centered td { text-align: center; }
 .highlight { background: #fff8e1 !important; }
 .highlight td { font-weight: 600; }
 .table-scroll { overflow-x: auto; margin-bottom: 16px; }
@@ -3261,8 +3316,11 @@ footer a { color: #1a3c6e; text-decoration: none; }
   font-size: 13px;
   line-height: 1.5;
 }
-.param-compare td:not(:first-child) { text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
-.sublayer-detail { max-width: 500px; }
+.sublayer-detail { max-width: 100%; width: 100%; }
+.sublayer-detail th, .sublayer-detail td { padding: 6px 8px; font-size: 12px; }
+.sublayer-detail th { white-space: nowrap; }
+.sublayer-detail td { font-variant-numeric: tabular-nums; text-align: right; }
+.sublayer-detail td:first-child { text-align: left; white-space: nowrap; }
 .sublayer-detail .ref-row { background: #fff8e1; font-style: italic; }
 .modulus-depth-svg {
   width: 100%;

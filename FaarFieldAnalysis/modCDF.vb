@@ -45,6 +45,30 @@ Public Module CDF
     Public TSS_P209(99) As Single
     Public NS_P209, NS_P154 As Single 'ikawa
     Public publicNS_P154, publicNS_P209 As Single
+    ' CM Report instrumentation: per-sublayer formula intermediates captured during FAAModulusThick.
+    ' These are read by modStrDesignFlex.vb when populating clsDetailedReportData.SublayerData.
+    Public TSU_P209(99), TSU_P154(99) As Single        ' thickness fed into f1/f2 formula
+    Public MUnder_P209(99), MUnder_P154(99) As Single  ' E_{i-1} (modulus below) used in formula
+    Public F1_P209(99), F2_P209(99) As Single
+    Public F1_P154(99), F2_P154(99) As Single
+    Public BoundaryInterp_P209(99), BoundaryInterp_P154(99) As Boolean
+    ' CM Report instrumentation: per-tire CDF decomposition. CoverageToPassFlexible already loops
+    ' over each wheel summing Gaussian-area into one CtoP1 scalar; we additionally capture each
+    ' wheel's contribution (raw AREA in gTireAreaCapture, then ACCDF-scaled in gTirePerOffsetCDF)
+    ' so the per-aircraft chart can render a stacked area whose top equals det.CDFByOffset(IOFF).
+    Public gTireAreaCapture(,) As Double      ' (wheel_idx, IOFF) raw AREA per wheel per offset
+    Public gTirePerOffsetCDF(,) As Double     ' (wheel_idx, IOFF) per-tire CDF contribution per offset
+    Public gCurrentIOFF As Integer            ' set by LeafCDFFlex before each CovToPass call
+    ' CM Report instrumentation: per-aircraft vertical stress at top of subgrade (S22).
+    ' Populated by an additional LEAF AllResponses call in modStrDesignFlex.vb at the same
+    ' EvalDepth as the existing VerticalStrain call. Read by LeafCDFFlex's capture block.
+    Public gSubgradeStress(MaxSectAC) As Double
+    ' CM Report instrumentation: per-aircraft principal horizontal tensile strain at bottom of
+    ' AC layer (E11). Populated by an additional LEAF AllResponses call in modStrDesignFlex.vb
+    ' at EvalDepth(1) = -julThick(1), with EvalDepth saved/restored around the call. Read by
+    ' LeafCDFFlex's capture block into det.AsphaltStrain when > 0 (preserves any value the
+    ' existing asphalt-fatigue path may have set).
+    Public gAcBottomStrain(MaxSectAC) As Double
     Public Const NOFF As Short = 41 ' Number of offsets for CDF calculations.
     Public Const OFFSETINC As Single = 10.0! ' Distance between offsets in inches.
     Dim CDFFlexVal(NOFF) As Single ' Sum over all aircraft for each offset.
@@ -156,6 +180,11 @@ Public Module CDF
         Dim IEval, IEvaly As Short ' kairat replace tandem
         ReDim gStrain2(80) : ReDim gNtoFail(80)
 
+        ' CM Report instrumentation: allocate per-tire capture arrays once per LeafCDFFlex call.
+        ' Indexed [1..MaxNTires*2, 1..NOFF] to cover any wheel index used inside CoverageToPassFlexible.
+        ReDim gTireAreaCapture(MaxNTires * 2, NOFF)
+        ReDim gTirePerOffsetCDF(MaxNTires * 2, NOFF)
+
 
         Try
 
@@ -194,6 +223,9 @@ Public Module CDF
 
             Overflow = True
             For IA = 1 To NAC
+                ' Zero per-tire CDF accumulator so it starts fresh for each aircraft and
+                ' the multi-gear (IGearLoads = 2) accumulation pattern lines up with lclCDF.
+                Array.Clear(gTirePerOffsetCDF, 0, gTirePerOffsetCDF.Length)
                 LI = LibIndex(IA)
 
                 If AC(LI).libGear = "WFBF" Or AC(LI).libGear = "WFBN" Then ' 4-4 or 4-6 wing-body.
@@ -556,6 +588,13 @@ FAILURELAW:
                         'Call CoverageToPassFlexible(IA, GearACType, IGearLoads, GearLoadType, OFFSET, CovToPass, Depth)
 
 
+                        ' CM Report instrumentation: zero this offset's per-tire AREA slot before
+                        ' the call so the unilateral + bilateral mirror writes accumulate cleanly.
+                        gCurrentIOFF = IOFF
+                        For iwClr As Integer = 0 To gTireAreaCapture.GetUpperBound(0)
+                            gTireAreaCapture(iwClr, IOFF) = 0
+                        Next
+
                         If AC(LI).libGear = "X" Then
                             'CToPFlexGeneral13(ByRef IA As Short, ByVal OFFSET As Single, ByRef CovToPass As Single, ByRef Depth As Double)
                             Call CoverageToPassFlexGeneral13B(IA, IGearLoads, OFFSET, CovToPass, Depth)
@@ -610,6 +649,27 @@ FAILURELAW:
                             '         Report maximum CtoP for multiple gear aircraft.
                             If CovToPass > CtoP(IA, IOFF) Then CtoP(IA, IOFF) = CovToPass ' GFH 08/10/03.
                         End If
+
+                        ' CM Report instrumentation: scale per-tire AREA to per-tire ACCDF using the
+                        ' same multiplier the gear-level ACCDF uses, and accumulate across gear loads
+                        ' (= for IGearLoads=1, += for IGearLoads=2) — mirrors lclCDF accumulation above.
+                        Dim perTireScale As Double
+                        If gTandemFnew Then
+                            perTireScale = Reps(IA) * Damage
+                        ElseIf NtoFail > 0 Then
+                            perTireScale = Reps(IA) / NtoFail
+                        Else
+                            perTireScale = 0
+                        End If
+                        Dim ubW As Integer = gTireAreaCapture.GetUpperBound(0)
+                        For iwAcc As Integer = 0 To ubW
+                            Dim contrib As Double = gTireAreaCapture(iwAcc, IOFF) * perTireScale
+                            If IGearLoads = 1 Then
+                                gTirePerOffsetCDF(iwAcc, IOFF) = contrib
+                            Else
+                                gTirePerOffsetCDF(iwAcc, IOFF) += contrib
+                            End If
+                        Next
                         If lclCDF(IA, IOFF) > jobCDFacrftMaxtable(ISect, IA) Then jobCDFacrftMaxtable(ISect, IA) = lclCDF(IA, IOFF) ' GFH 08/10/03.
                         If jobCtoPtable(ISect, IA) < CtoP(IA, IOFF) Then jobCtoPtable(ISect, IA) = CtoP(IA, IOFF) ' GFH 08/10/03.
                         '       Note: CtoP(IA, IOFF) is used only for printing when required.
@@ -685,6 +745,11 @@ FAILURELAW:
                     det.AnnualDepartures = RepsAnnual(IA)
                     det.TotalRepetitions = Reps(IA)
                     det.VerticalStrain = gSTRAIN(IA)
+                    det.SubgradeVertStress = gSubgradeStress(IA)
+                    ' E11 (AC-bottom tensile strain). Only overwrite when the dedicated AC-bottom
+                    ' LEAF call captured a value; preserves any value the existing asphalt-fatigue
+                    ' path may have set later in LeafCDFFlex.
+                    If gAcBottomStrain(IA) > 0 Then det.AsphaltStrain = gAcBottomStrain(IA)
                     det.NtoFail = gNtoFail(IA)
                     det.MaxCDF = jobCDFacrftMaxtable(ISect, IA)
                     det.CDFAtCriticalOffset = lclCDF(IA, IControl)
@@ -746,10 +811,32 @@ FAILURELAW:
                     det.XCenter = lclXCenter
 
                     ' Capture per-offset data
+                    ReDim det.CDFContribByTireByOffset(AC(LI).libNTires, NOFF)
                     For IOFF = 1 To NOFF
                         det.CDFByOffset(IOFF) = lclCDF(IA, IOFF)
                         det.CtoPByOffset(IOFF) = CtoP(IA, IOFF)
+                        For iwCap As Integer = 1 To AC(LI).libNTires
+                            det.CDFContribByTireByOffset(iwCap, IOFF) = gTirePerOffsetCDF(iwCap, IOFF)
+                        Next
                     Next
+
+                    ' Drift correction: ensure Σ tire contributions = lclCDF(IA, IOFF) at every
+                    ' offset so the chart's stack top is bit-equivalent to det.CDFByOffset.
+                    For IOFF = 1 To NOFF
+                        Dim sumContrib As Double = 0
+                        For iwSum As Integer = 1 To AC(LI).libNTires
+                            sumContrib += det.CDFContribByTireByOffset(iwSum, IOFF)
+                        Next
+                        Dim target As Double = lclCDF(IA, IOFF)
+                        If sumContrib > 0 AndAlso target > 0 AndAlso Math.Abs(sumContrib - target) / Math.Max(sumContrib, 0.0000000001) > 0.000000001 Then
+                            Dim sf As Double = target / sumContrib
+                            For iwScale As Integer = 1 To AC(LI).libNTires
+                                det.CDFContribByTireByOffset(iwScale, IOFF) *= sf
+                            Next
+                        End If
+                    Next
+                    det.HasTireCDFContrib = True
+
                     gDetailedReportData.AircraftDetails(IA) = det
                 Next IA
             Catch ex As Exception
@@ -1075,6 +1162,12 @@ FAILURELAW:
                     Temp1 = CSng(1.0! + C * System.Math.Log(tempTS) / Log10)
                     Temp2 = CSng(D * System.Math.Log(BaseMod(I + 1)) * System.Math.Log(tempTS) / (Log10 * Log10))
                     BaseMod(I) = BaseMod(I + 1) * (Temp1 - Temp2)
+                    ' CM Report capture — default (overwritten below for boundary-corrected cases)
+                    TSU_P209(I) = tempTS
+                    MUnder_P209(I) = BaseMod(I + 1)
+                    F1_P209(I) = Temp1
+                    F2_P209(I) = Temp2
+                    BoundaryInterp_P209(I) = False
 
                     If I = 2 And TS1 < MaxThick10 Then
                         KeepMod2 = BaseMod(I)
@@ -1082,6 +1175,10 @@ FAILURELAW:
                         Temp1 = CSng(1.0! + C * System.Math.Log(expr1) / Log10)
                         Temp2 = CSng(D * System.Math.Log(BaseMod(I + 1)) * System.Math.Log(expr1) / (Log10 * Log10))
                         BaseMod(I) = BaseMod(I + 1) * (Temp1 - Temp2)
+                        ' CM Report capture — overwrite with extended-thickness values
+                        TSU_P209(I) = expr1
+                        F1_P209(I) = Temp1
+                        F2_P209(I) = Temp2
                     End If
 
                     If I = 1 And TS1 < MaxThick10 And NS <> 1 Then
@@ -1090,6 +1187,14 @@ FAILURELAW:
                         expr1 = MaxThick10 / 2
                         BaseMod(I) = KeepMod2 * (Temp1 - Temp2)
                         BaseMod(I) = BaseMod(I + 1) + (TS1 - expr1) / expr1 * (BaseMod(I) - BaseMod(I + 1))
+                        ' CM Report capture — boundary interpolation: formula evaluated at MaxThick10
+                        ' against KeepMod2 (sublayer-2 modulus before its own boundary correction),
+                        ' result then linearly blended toward BaseMod(I+1).
+                        TSU_P209(I) = MaxThick10
+                        MUnder_P209(I) = KeepMod2
+                        F1_P209(I) = Temp1
+                        F2_P209(I) = Temp2
+                        BoundaryInterp_P209(I) = True
                     End If
 
                 Next I
@@ -1102,6 +1207,12 @@ FAILURELAW:
                     Temp1 = CSng(1.0! + C * System.Math.Log(TS) / Log10)
                     Temp2 = CSng(D * System.Math.Log(BaseMod(I + 1)) * System.Math.Log(TS) / (Log10 * Log10))
                     BaseMod(I) = BaseMod(I + 1) * (Temp1 - Temp2)
+                    ' CM Report capture
+                    TSU_P209(I) = TS
+                    MUnder_P209(I) = BaseMod(I + 1)
+                    F1_P209(I) = Temp1
+                    F2_P209(I) = Temp2
+                    BoundaryInterp_P209(I) = False
                 Next I
 
             End If
@@ -1118,6 +1229,12 @@ FAILURELAW:
                     Temp1 = CSng(1.0! + C * System.Math.Log(tempTS) / Log10)
                     Temp2 = CSng(D * System.Math.Log(SubbaseMod(I + 1)) * System.Math.Log(tempTS) / (Log10 * Log10))
                     SubbaseMod(I) = SubbaseMod(I + 1) * (Temp1 - Temp2)
+                    ' CM Report capture — default (overwritten below for boundary-corrected cases)
+                    TSU_P154(I) = tempTS
+                    MUnder_P154(I) = SubbaseMod(I + 1)
+                    F1_P154(I) = Temp1
+                    F2_P154(I) = Temp2
+                    BoundaryInterp_P154(I) = False
 
                     If I = 2 And TSarray(1) < MaxThick8 Then
                         KeepMod2 = SubbaseMod(I)
@@ -1125,6 +1242,10 @@ FAILURELAW:
                         Temp1 = CSng(1.0! + C * System.Math.Log(expr1) / Log10)
                         Temp2 = CSng(D * System.Math.Log(SubbaseMod(I + 1)) * System.Math.Log(expr1) / (Log10 * Log10))
                         SubbaseMod(I) = SubbaseMod(I + 1) * (Temp1 - Temp2)
+                        ' CM Report capture — overwrite with extended-thickness values
+                        TSU_P154(I) = expr1
+                        F1_P154(I) = Temp1
+                        F2_P154(I) = Temp2
                     End If
 
                     If I = 1 And TSarray(1) < MaxThick8 And NS <> 1 Then
@@ -1133,6 +1254,13 @@ FAILURELAW:
                         expr1 = MaxThick8 / 2
                         SubbaseMod(I) = KeepMod2 * (Temp1 - Temp2)
                         SubbaseMod(I) = SubbaseMod(I + 1) + (TS1 - expr1) / expr1 * (SubbaseMod(I) - SubbaseMod(I + 1))
+                        ' CM Report capture — boundary interpolation: formula evaluated at MaxThick8
+                        ' against KeepMod2; result then linearly blended toward SubbaseMod(I+1).
+                        TSU_P154(I) = MaxThick8
+                        MUnder_P154(I) = KeepMod2
+                        F1_P154(I) = Temp1
+                        F2_P154(I) = Temp2
+                        BoundaryInterp_P154(I) = True
                     End If
                 Next I
 
@@ -1143,6 +1271,12 @@ FAILURELAW:
                     Temp1 = CSng(1.0! + C * System.Math.Log(TS) / Log10)
                     Temp2 = CSng(D * System.Math.Log(SubbaseMod(I + 1)) * System.Math.Log(TS) / (Log10 * Log10))
                     SubbaseMod(I) = SubbaseMod(I + 1) * (Temp1 - Temp2)
+                    ' CM Report capture
+                    TSU_P154(I) = TS
+                    MUnder_P154(I) = SubbaseMod(I + 1)
+                    F1_P154(I) = Temp1
+                    F2_P154(I) = Temp2
+                    BoundaryInterp_P154(I) = False
                 Next I
             End If
 
@@ -1711,11 +1845,18 @@ CPTOTAL1:
                 AREA = AREA * 2
             End If
             'CtoP1 = CtoP1 + AREA
+            Dim wheelAreaContrib As Double
             If gTandemFnew Then
                 CtoP1 = CtoP1 + AREA
-
+                wheelAreaContrib = AREA
             Else
                 CtoP1 = CtoP1 + AREA * multiplier1(I)
+                wheelAreaContrib = AREA * multiplier1(I)
+            End If
+            ' CM Report instrumentation: capture this wheel's contribution to CtoP1 at the
+            ' current offset so the per-aircraft chart can render the strip-by-strip stack.
+            If gCurrentIOFF >= 1 AndAlso gCurrentIOFF <= NOFF AndAlso I <= gTireAreaCapture.GetUpperBound(0) Then
+                gTireAreaCapture(I, gCurrentIOFF) += wheelAreaContrib
             End If
             gFirstIter = False
 
@@ -1746,11 +1887,17 @@ CPTOTAL1:
 
                 '   gTandemFnew = false
 
+                Dim wheelAreaContrib2 As Double
                 If gTandemFnew Then
                     CtoP1 = CtoP1 + AREA
-
+                    wheelAreaContrib2 = AREA
                 Else
                     CtoP1 = CtoP1 + AREA * multiplier1(I)
+                    wheelAreaContrib2 = AREA * multiplier1(I)
+                End If
+                ' CM Report instrumentation: bilateral mirror contribution lands on the same wheel slot.
+                If gCurrentIOFF >= 1 AndAlso gCurrentIOFF <= NOFF AndAlso I <= gTireAreaCapture.GetUpperBound(0) Then
+                    gTireAreaCapture(I, gCurrentIOFF) += wheelAreaContrib2
                 End If
                 gFirstIter = False
 
@@ -2134,16 +2281,23 @@ CPTOTAL1:
             'If AC(LI).libACName = "C-5" Then
             '    AREA = AREA * 2
             'End If
+            Dim wheelAreaContribX As Double
             If gTandemFnew Then ' kairat replace tandem =CoverageToPassFlexGeneral13B
                 CtoP1 = CtoP1 + AREA ' tandem factor expressed by multiplier1 is deleted
+                wheelAreaContribX = AREA
                 'If gFirstIter Then
                 '    MsgBox("Tandem factor is replaced, but for this case it would be equal to " & TDnumber(I), MsgBoxStyle.OkOnly)
                 'End If
             Else
                 CtoP1 = CtoP1 + AREA * TDnumber(I)
+                wheelAreaContribX = AREA * TDnumber(I)
                 'If gFirstIter Then
                 '    MsgBox("Tandem factor is on and equal to " & TDnumber(I), MsgBoxStyle.OkOnly)
                 'End If
+            End If
+            ' CM Report instrumentation: capture this wheel's contribution to CtoP1.
+            If gCurrentIOFF >= 1 AndAlso gCurrentIOFF <= NOFF AndAlso I <= gTireAreaCapture.GetUpperBound(0) Then
+                gTireAreaCapture(I, gCurrentIOFF) += wheelAreaContribX
             End If
             gFirstIter = False ' kairat replace tandem
 
