@@ -420,11 +420,25 @@ The CM Report needs per-aircraft responses (σ₂₂ at subgrade, ε₁₁ at AC
 **Pattern (critical):**
 
 1. **Always pass a separate temp `Response(,)` array** to `ComputeResponse(AllResponses, …)`. `clsLEAF.vb:1080–1087` writes into and zeroes slots in the `Response` parameter, so reusing `VertStrainReponse` corrupts the strain pipeline and breaks `LeafCDFFlex` downstream (manifests as "subgrade strains too low to accurately compute life" — symptom from a previous regression).
-2. For S22 capture: same `EvalDepth` as the subgrade strain call, read `AllResp(IA, IEv).StressZ`, store in `gSubgradeStress(IA)`. Captured into `det.SubgradeVertStress`.
-3. For E11 capture: save current `EvalDepth(1)`, set to `-julThick(1)` (AC bottom), call `WriteFile()` + `LEDFAA_to_LEAF()` to push, run the LEAF AllResponses call, do Mohr's-circle principal-tensile-strain extraction (mirror of `modStrDesignFlex.vb:755–765`), **restore `EvalDepth(1)` and re-call `WriteFile()` + `LEDFAA_to_LEAF()`** before the design loop continues. Stored in `gAcBottomStrain(IA)`, captured into `det.AsphaltStrain` when `> 0` (preserves any value the existing asphalt-fatigue path may set later).
-4. For per-tire C/P shares: `gTireAreaCapture(wheel, offset)` accumulates inside `CoverageToPassFlexible` / `CoverageToPassFlexGeneral13B` (per-wheel `+=` of the Gaussian-area contribution), scaled to per-tire CDF in `LeafCDFFlex` (`gTirePerOffsetCDF`), copied to `det.CDFContribByTireByOffset`. A drift-correction normalization ensures the per-tire stack sums to `det.CDFByOffset(IOFF)`.
+2. **σ₂₂ + ε₁₁ are captured ONCE post-loop** by `modStrDesignFlex.CaptureFinalPavementResponses()` — called right after each main design `Loop` in `LeafDesignFlex2`, `LeafDesignFlexOFlex`, and `LeafDesignFlexOFlex_light`. The helper:
+   - Runs `ComputeResponse(AllResponses)` at the current (subgrade) `EvalDepth(1)` and reads `AllResp(IA, IEv).StressZ` → `gSubgradeStress(IA)` → `det.SubgradeVertStress`.
+   - Saves `EvalDepth(1)`, sets it to `-julThick(1)` (AC bottom), calls `WriteFile()` + `LEDFAA_to_LEAF()` to push, runs another `ComputeResponse(AllResponses)`, does Mohr's-circle principal-tensile-strain extraction (mirror of `modStrDesignFlex.vb:697–707`) → `gAcBottomStrain(IA)` → `det.AsphaltStrain` (only when `> 0`).
+   - **Restores** `EvalDepth(1)` and re-calls `WriteFile()` + `LEDFAA_to_LEAF()` so the asphalt-fatigue block (line ~785) sees the same state it had on entry.
+   - Sizes its temp `Response(,)` arrays from `AllResp.GetUpperBound(...)` (module-level, already dimensioned by the design-loop's earlier LEAF calls). VertStrainReponse is local to the design Subs and not visible from the helper.
+   - **The per-iteration capture inside the design loop has been removed** to avoid 30–50% added LEAF time per iteration.
+3. For per-tire C/P shares: `gTireAreaCapture(wheel, offset)` accumulates inside `CoverageToPassFlexible` / `CoverageToPassFlexGeneral13B` (per-wheel `+=` of the Gaussian-area contribution), scaled to per-tire CDF in `LeafCDFFlex` (`gTirePerOffsetCDF`), copied to `det.CDFContribByTireByOffset`. A drift-correction normalization ensures the per-tire stack sums to `det.CDFByOffset(IOFF)`.
 
 **Don't reuse output arrays.** `VertStrainReponse` and `HorizStrainResponse` are consumed by downstream code; instrumentation calls must use freshly-allocated temps so the original outputs survive.
+
+### Cancel coverage
+
+`RunAnalysis.RunOrCancel` sets `gUserInterrupted = True` (line 176) **before** `tokenSource.Cancel()` (line 181), so checking either flag is token-equivalent for synchronous code. Cancellation latency is bounded by:
+
+- **Top of every analysis entry-point Sub** (`NewFlexibleAnalysis`, `NewRigidAnalysis`, `FlexibleOnFlexibleAnalysis`, `FlexibleOnRigid`, `PccOnFlexible`, `UnbondOnRigid` in `RunAnalysis.vb`) calls `ct.ThrowIfCancellationRequested()` then `If gUserInterrupted Then Exit Sub`.
+- **Top of every iteration** of the design `Do … Loop` in `LeafDesignFlex2`, `LeafDesignFlexOFlex`, and `LeafDesignFlexOFlex_light` checks `If gUserInterrupted Then Exit Do`.
+- **Inside the iteration**, an additional `If gUserInterrupted Then Exit Do` guard sits between the existing `VerticalStrain` `ComputeResponse` call and the `LeafCDFFlex` invocation that follows.
+
+Net effect: abort takes effect within **one LEAF call** of the user clicking Cancel — the LEAF kernel itself doesn't poll, so any in-progress kernel call must finish before the next checkpoint is hit.
 
 ### CDF vs Offset alignment with FAARFIELD's legacy "CDF Graph"
 

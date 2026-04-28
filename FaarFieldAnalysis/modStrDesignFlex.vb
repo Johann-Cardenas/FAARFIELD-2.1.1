@@ -126,6 +126,10 @@ Public Module modStrDesign
         Do
 
 StartFlexLoop:
+            ' Cancel checkpoint at top of each iteration. RunAnalysis.RunOrCancel sets
+            ' gUserInterrupted before tokenSource.Cancel(), so this is token-equivalent.
+            If gUserInterrupted Then Exit Do
+
             NStrIterations = ILoop
             ILoop = ILoop + 1S
             '    Debug.Print "Prelim " & Time$ & "  ";
@@ -161,76 +165,15 @@ StartFlexLoop:
             Else
                 Call RunLEAF.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.VerticalStrain, CShort(NAC), CallAC, LEAStrActiveX, VertStrainReponse, AllResp)
             End If
-            ' CM Report instrumentation: extract per-aircraft vertical stress at top of subgrade
-            ' (S22) by re-running LEAF at the same EvalDepth with AllResponses option, then
-            ' reading AllResp(IA, IEval).StressZ. The strain pipeline above is unchanged.
-            ' IMPORTANT: pass a SEPARATE temp Response array — LEAF writes into the Response
-            ' parameter (clsLEAF.vb line 1080) and zeroes IEval > 1 slots (line 1087), which
-            ' would corrupt VertStrainReponse and break LeafCDFFlex downstream.
-            Try
-                Dim tempStressResponse(,) As Double
-                ReDim tempStressResponse(VertStrainReponse.GetUpperBound(0), VertStrainReponse.GetUpperBound(1))
-                Call RunLEAF.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.AllResponses, CShort(NAC), CallAC, LEAStrActiveX, tempStressResponse, AllResp)
-                For iaCap As Integer = 1 To NAC
-                    Dim liCap As Integer = LibIndex(iaCap)
-                    Dim maxAbsStress As Double = 0
-                    For iEvCap As Integer = 1 To AC(liCap).libNEVPTS
-                        If iEvCap <= AllResp.GetUpperBound(1) AndAlso iaCap <= AllResp.GetUpperBound(0) Then
-                            Dim sz As Double = AllResp(iaCap, iEvCap).StressZ
-                            If Math.Abs(sz) > Math.Abs(maxAbsStress) Then maxAbsStress = sz
-                        End If
-                    Next
-                    gSubgradeStress(iaCap) = Math.Abs(maxAbsStress)
-                Next
-            Catch ex As Exception
-                ' Non-critical instrumentation; do not block the design.
-            End Try
+            ' CM Report S22 / E11 instrumentation has been moved out of the per-iteration loop
+            ' to a single post-loop call site (CaptureFinalPavementResponses) — those captures
+            ' only need the converged structure, and AllResponses is materially slower than the
+            ' per-iteration VerticalStrain pipeline above.
             RunLEAF = Nothing
 
-            ' CM Report instrumentation: extract per-aircraft principal horizontal tensile strain
-            ' at the bottom of the AC layer (E11). Mirrors the asphalt-fatigue LEAF call pattern
-            ' at modStrDesignFlex.vb line 743+ but runs unconditionally so PCR / life runs that
-            ' don't enter the asphalt-CDF block still capture E11. Save/restore EvalDepth(1) so
-            ' the rest of the design loop (LeafCDFFlex on line ~202+) still uses subgrade depth.
-            ' Pass a SEPARATE temp Response array — LEAF writes into Response (clsLEAF.vb 1080).
-            Try
-                Dim savedEvalDepth As Double = EvalDepth(1)
-                EvalDepth(1) = -julThick(1)            ' AC bottom (negative depth below surface)
-                Call WriteFile()                        ' push EvalDepth into LEAStructure.EvalDepth
-                Call LEDFAA_to_LEAF(DesignType)
-                RunLEAF = New LEAFClassLib.clsLEAF()
-                Dim tempE11Response(,) As Double
-                ReDim tempE11Response(VertStrainReponse.GetUpperBound(0), VertStrainReponse.GetUpperBound(1))
-                Call RunLEAF.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.AllResponses, CShort(NAC), CallAC, LEAStrActiveX, tempE11Response, AllResp)
-                RunLEAF = Nothing
-
-                ' Mohr's-circle principal-tensile-strain extraction (mirrors lines ~755-765 used
-                ' by the existing asphalt-fatigue path). Track the max |eps11| across eval points.
-                For iaE11 As Integer = 1 To NAC
-                    Dim liE11 As Integer = LibIndex(iaE11)
-                    Dim maxAbsE11 As Double = 0
-                    For iEvE11 As Integer = 1 To AC(liE11).libNEVPTS
-                        If iEvE11 <= AllResp.GetUpperBound(1) AndAlso iaE11 <= AllResp.GetUpperBound(0) Then
-                            Dim sMC As Double = (AllResp(iaE11, iEvE11).StrainX + AllResp(iaE11, iEvE11).StrainY) / 2
-                            Dim sMR As Double = (AllResp(iaE11, iEvE11).StrainX - AllResp(iaE11, iEvE11).StrainY) / 2
-                            Dim tD As Double = Math.Sqrt(sMR * sMR + AllResp(iaE11, iEvE11).StrainXY * AllResp(iaE11, iEvE11).StrainXY)
-                            Dim e11 As Double
-                            If Math.Abs(sMC + tD) > Math.Abs(sMC - tD) Then e11 = sMC + tD Else e11 = sMC - tD
-                            If Math.Abs(e11) > maxAbsE11 Then maxAbsE11 = Math.Abs(e11)
-                        End If
-                    Next
-                    gAcBottomStrain(iaE11) = maxAbsE11
-                Next
-
-                ' Restore EvalDepth(1) for the subgrade pipeline. WriteFile() + LEDFAA_to_LEAF()
-                ' so LEAStructure.EvalDepth (consumed by any subsequent LEAF call) is back to
-                ' the subgrade depth before LeafCDFFlex runs.
-                EvalDepth(1) = savedEvalDepth
-                Call WriteFile()
-                Call LEDFAA_to_LEAF(DesignType)
-            Catch ex As Exception
-                ' Non-critical instrumentation; do not block the design.
-            End Try
+            ' Cancel checkpoint: gUserInterrupted is set first by RunAnalysis.RunOrCancel
+            ' before tokenSource.Cancel(), so checking it here gives prompt mid-loop abort.
+            If gUserInterrupted Then Exit Do
 
             RunTimeSelected = RunTimeSelected + (timeGetTime - TimeSave1)
             If DesigningStr = False Then Exit Do ' Also set by JULEA error.
@@ -606,6 +549,9 @@ StartFlexLoop:
                 '---------------------------------
             End If
         Loop
+
+        ' CM Report S22 / E11 single-shot capture on the converged structure.
+        Call CaptureFinalPavementResponses()
 
         ' Capture sublayer data and mark detailed report as populated
         Try
@@ -1024,6 +970,9 @@ StartFlexLoop:
         IL = 1
         Do
 StartFlexOFlexLoop:
+            ' Cancel checkpoint at top of each iteration (FlexOnFlex path).
+            If gUserInterrupted Then Exit Do
+
             NStrIterations = ILoop
             ILoop = ILoop + 1S
             Call UpdateCurrentSectData()
@@ -1324,6 +1273,9 @@ StartFlexOFlexLoop:
                 Exit Do
             End If
         Loop
+
+        ' CM Report S22 / E11 single-shot capture on the converged structure (FlexOnFlex path).
+        Call CaptureFinalPavementResponses()
 
         'cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf
         If Not LifeComputation Then
@@ -2495,6 +2447,9 @@ UnbondOnRigid1:
 
         Do
 StartFlexOFlexLoop:
+            ' Cancel checkpoint at top of each iteration (FlexOnFlex_light path).
+            If gUserInterrupted Then Exit Do
+
             NStrIterations = ILoop
             ILoop = ILoop + 1S
             Call UpdateCurrentSectData()
@@ -2675,6 +2630,9 @@ StartFlexOFlexLoop:
                 GoTo EndSub 'kairat 8.4
             End If
         Loop
+
+        ' CM Report S22 / E11 single-shot capture on the converged structure (FlexOnFlex_light).
+        Call CaptureFinalPavementResponses()
 
         'cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf cdf
         If Not LifeComputation Then
@@ -2982,6 +2940,100 @@ EndSub:
     End Sub
 
 
+    ''' <summary>
+    ''' CM Report instrumentation: capture per-aircraft σ22 (vertical stress at top of subgrade)
+    ''' and ε11 (principal horizontal tensile strain at bottom of AC) ONCE on the converged
+    ''' structure, after the design Do…Loop in LeafDesignFlex2 / LeafDesignFlexOFlex /
+    ''' LeafDesignFlexOFlex_light. This replaces the per-iteration captures that previously
+    ''' lived inside the loop body; the captured values are only ever consumed by the report
+    ''' renderer at the end, so per-iteration AllResponses calls were wasted work (~30–50%
+    ''' added LEAF time per iteration).
+    '''
+    ''' Invariants the caller is expected to satisfy:
+    '''   • Design loop has exited; gDetailedReportData.AircraftDetails is populated.
+    '''   • EvalDepth(1) is at the subgrade depth.
+    '''   • RunLEAF is out of scope (the helper instantiates a fresh one).
+    '''
+    ''' The helper restores EvalDepth(1) before returning so any subsequent code (e.g. the
+    ''' asphalt-fatigue block at line ~785) sees the same EvalDepth state it had on entry.
+    ''' All operations are wrapped in Try/Catch — instrumentation must never block the design.
+    ''' </summary>
+    Public Sub CaptureFinalPavementResponses()
+        Try
+            If NAC < 1 Then Exit Sub
+            If gDetailedReportData Is Nothing Then Exit Sub
+
+            Dim runLEAFFinal As New LEAFClassLib.clsLEAF()
+
+            ' --- σ22 at subgrade (current EvalDepth assumed to be subgrade depth) ---
+            Dim tempStress(,) As Double
+            ' Size temp arrays from AllResp (module-level, already dimensioned by the
+            ' design loop's earlier LEAF calls). VertStrainReponse is local to the design
+            ' Subs and not visible from this module-level helper.
+            Dim respDim0 As Integer = If(AllResp Is Nothing, NAC + 1, AllResp.GetUpperBound(0))
+            Dim respDim1 As Integer = If(AllResp Is Nothing, 32, Math.Max(AllResp.GetUpperBound(1), 8))
+            ReDim tempStress(respDim0, respDim1)
+            Call WriteFile()
+            Call LEDFAA_to_LEAF(DesignType)
+            Call runLEAFFinal.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.AllResponses, CShort(NAC), CallAC, LEAStrActiveX, tempStress, AllResp)
+            For ia As Integer = 1 To NAC
+                Dim li As Integer = LibIndex(ia)
+                Dim m As Double = 0
+                For iEv As Integer = 1 To AC(li).libNEVPTS
+                    If iEv <= AllResp.GetUpperBound(1) AndAlso ia <= AllResp.GetUpperBound(0) Then
+                        Dim sz As Double = AllResp(ia, iEv).StressZ
+                        If Math.Abs(sz) > Math.Abs(m) Then m = sz
+                    End If
+                Next
+                gSubgradeStress(ia) = Math.Abs(m)
+            Next
+
+            ' --- ε11 at AC bottom (save / restore EvalDepth so caller's state is preserved) ---
+            Dim savedEvalDepth As Double = EvalDepth(1)
+            EvalDepth(1) = -julThick(1)
+            Call WriteFile()
+            Call LEDFAA_to_LEAF(DesignType)
+            Dim tempE11(,) As Double
+            ReDim tempE11(respDim0, respDim1)
+            Call runLEAFFinal.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.AllResponses, CShort(NAC), CallAC, LEAStrActiveX, tempE11, AllResp)
+            For ia As Integer = 1 To NAC
+                Dim li As Integer = LibIndex(ia)
+                Dim m As Double = 0
+                For iEv As Integer = 1 To AC(li).libNEVPTS
+                    If iEv <= AllResp.GetUpperBound(1) AndAlso ia <= AllResp.GetUpperBound(0) Then
+                        Dim sMC As Double = (AllResp(ia, iEv).StrainX + AllResp(ia, iEv).StrainY) / 2
+                        Dim sMR As Double = (AllResp(ia, iEv).StrainX - AllResp(ia, iEv).StrainY) / 2
+                        Dim tD As Double = Math.Sqrt(sMR * sMR + AllResp(ia, iEv).StrainXY * AllResp(ia, iEv).StrainXY)
+                        Dim e11 As Double
+                        If Math.Abs(sMC + tD) > Math.Abs(sMC - tD) Then e11 = sMC + tD Else e11 = sMC - tD
+                        If Math.Abs(e11) > m Then m = Math.Abs(e11)
+                    End If
+                Next
+                gAcBottomStrain(ia) = m
+            Next
+
+            ' Restore subgrade depth before returning so the asphalt-fatigue block (and any
+            ' other downstream code) sees EvalDepth(1) exactly as we found it.
+            EvalDepth(1) = savedEvalDepth
+            Call WriteFile()
+            Call LEDFAA_to_LEAF(DesignType)
+            runLEAFFinal = Nothing
+
+            ' Mirror the captured values onto det.AircraftDetails. LeafCDFFlex no longer does
+            ' this (the per-iteration assignments were removed alongside the per-iteration LEAF
+            ' calls), so this single post-loop pass is the sole source for σ22 / ε11.
+            If gDetailedReportData.AircraftDetails IsNot Nothing Then
+                For ia As Integer = 1 To NAC
+                    If ia <= UBound(gDetailedReportData.AircraftDetails) AndAlso gDetailedReportData.AircraftDetails(ia) IsNot Nothing Then
+                        gDetailedReportData.AircraftDetails(ia).SubgradeVertStress = gSubgradeStress(ia)
+                        If gAcBottomStrain(ia) > 0 Then gDetailedReportData.AircraftDetails(ia).AsphaltStrain = gAcBottomStrain(ia)
+                    End If
+                Next
+            End If
+        Catch ex As Exception
+            ' Non-critical instrumentation; never block the design.
+        End Try
+    End Sub
 
 
 End Module

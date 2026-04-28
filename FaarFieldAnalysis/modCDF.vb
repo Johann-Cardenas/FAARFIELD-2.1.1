@@ -745,11 +745,8 @@ FAILURELAW:
                     det.AnnualDepartures = RepsAnnual(IA)
                     det.TotalRepetitions = Reps(IA)
                     det.VerticalStrain = gSTRAIN(IA)
-                    det.SubgradeVertStress = gSubgradeStress(IA)
-                    ' E11 (AC-bottom tensile strain). Only overwrite when the dedicated AC-bottom
-                    ' LEAF call captured a value; preserves any value the existing asphalt-fatigue
-                    ' path may have set later in LeafCDFFlex.
-                    If gAcBottomStrain(IA) > 0 Then det.AsphaltStrain = gAcBottomStrain(IA)
+                    ' σ22 / ε11 are populated by modStrDesignFlex.CaptureFinalPavementResponses
+                    ' once after the design loop converges (single LEAF call instead of per-iteration).
                     det.NtoFail = gNtoFail(IA)
                     det.MaxCDF = jobCDFacrftMaxtable(ISect, IA)
                     det.CDFAtCriticalOffset = lclCDF(IA, IControl)
