@@ -134,15 +134,29 @@ Namespace Libs
                 sb.AppendLine("<th>&sigma;<sub>22</sub><br/><span style='font-weight:normal;font-size:11px'>Vertical Stress @ Top of Subgrade<br/>(kPa)</span></th>")
                 sb.AppendLine("<th>&epsilon;<sub>11</sub><br/><span style='font-weight:normal;font-size:11px'>Tensile Strain @ Bottom of AC<br/>(&mu;&epsilon;)</span></th>")
                 sb.AppendLine("</tr></thead><tbody>")
+                ' For PCR runs the engine iterates GL(IA) to find a round-MGW, so the standard
+                ' det fields reflect the converged MGW load. UserInput* fields hold the responses
+                ' captured at the user's typed gear load by a dedicated pre-PCR LEAF pass — those
+                ' are what the user wants to see here.
+                Dim usingUserInput As Boolean = False
+                For ia As Integer = 1 To UBound(acDetailsForResponse)
+                    If acDetailsForResponse(ia) IsNot Nothing AndAlso acDetailsForResponse(ia).HasUserInputResponses Then
+                        usingUserInput = True : Exit For
+                    End If
+                Next
+
                 For ia As Integer = 1 To UBound(acDetailsForResponse)
                     If acDetailsForResponse(ia) Is Nothing Then Continue For
                     Dim det = acDetailsForResponse(ia)
-                    Dim e22Str As String = If(det.VerticalStrain > 0, Format(det.VerticalStrain * 1000000, "0.00"), "&mdash;")
+                    Dim e22Val As Double = If(det.HasUserInputResponses, det.UserInputVerticalStrain, det.VerticalStrain)
+                    Dim s22Psi As Double = If(det.HasUserInputResponses, det.UserInputSubgradeStress, det.SubgradeVertStress)
+                    Dim e11Val As Double = If(det.HasUserInputResponses, det.UserInputAsphaltStrain, det.AsphaltStrain)
+                    Dim e22Str As String = If(e22Val > 0, Format(e22Val * 1000000, "0.00"), "&mdash;")
                     ' FAARFIELD internal stress unit is psi (US Customary). Convert to kPa for display
                     ' regardless of the UI's measurement system (1 psi = 6.89475729 kPa).
-                    Dim s22Kpa As Double = det.SubgradeVertStress * 6.89475729
-                    Dim s22Str As String = If(det.SubgradeVertStress > 0, Format(s22Kpa, "0.00"), "&mdash;")
-                    Dim e11Str As String = If(det.AsphaltStrain > 0, Format(det.AsphaltStrain * 1000000, "0.00"), "&mdash;")
+                    Dim s22Kpa As Double = s22Psi * 6.89475729
+                    Dim s22Str As String = If(s22Psi > 0, Format(s22Kpa, "0.00"), "&mdash;")
+                    Dim e11Str As String = If(e11Val > 0, Format(e11Val * 1000000, "0.00"), "&mdash;")
                     sb.AppendLine("<tr>")
                     sb.Append("<td>" & WebEncode(det.ACName) & "</td>")
                     sb.Append("<td>" & e22Str & "</td>")
@@ -151,10 +165,15 @@ Namespace Libs
                     sb.AppendLine("</tr>")
                 Next
                 sb.AppendLine("</tbody></table>")
-                sb.AppendLine("<p class='fig-caption'>&epsilon;<sub>22</sub> is taken at the top of the subgrade (LEAF VerticalStrain). " &
-                    "&sigma;<sub>22</sub> is the LEAF AllResponses StressZ at the same evaluation depth, converted from psi to kPa (&times; 6.89475729). " &
-                    "&epsilon;<sub>11</sub> is the principal horizontal tensile strain at the bottom of the asphalt concrete layer " &
-                    "(from the LEAF AllResponses call used for asphalt fatigue). A &mdash; means the response was not computed for this aircraft (e.g., asphalt CDF disabled).</p>")
+                If usingUserInput Then
+                    sb.AppendLine("<p class='fig-caption'><strong>PCR run:</strong> &epsilon;<sub>22</sub>, &sigma;<sub>22</sub>, &epsilon;<sub>11</sub> shown above are computed at the <strong>user-input gear load</strong> on the evaluation pavement (a dedicated LEAF pass before the PCR rounds run). " &
+                        "&sigma;<sub>22</sub> converted from psi to kPa (&times; 6.89475729). The PCR rounds' converged Maximum Gross Weight (MGW) and per-round PCR are reported separately in Section K.</p>")
+                Else
+                    sb.AppendLine("<p class='fig-caption'>&epsilon;<sub>22</sub> is taken at the top of the subgrade (LEAF VerticalStrain). " &
+                        "&sigma;<sub>22</sub> is the LEAF AllResponses StressZ at the same evaluation depth, converted from psi to kPa (&times; 6.89475729). " &
+                        "&epsilon;<sub>11</sub> is the principal horizontal tensile strain at the bottom of the asphalt concrete layer " &
+                        "(from the LEAF AllResponses call used for asphalt fatigue). A &mdash; means the response was not computed for this aircraft (e.g., asphalt CDF disabled).</p>")
+                End If
                 sb.AppendLine("</section>")
             End If
 
@@ -451,13 +470,28 @@ Namespace Libs
             If acDetailsForE IsNot Nothing Then
                 sb.AppendLine("<section id='section-e'>")
                 sb.AppendLine("<h2><span class='sec-num'>E</span> Per-Aircraft Detailed Breakdown</h2>")
-                If isEvalSource AndAlso rpt.PCRRounds IsNot Nothing AndAlso rpt.PCRRounds.Count > 0 Then
-                    sb.AppendLine("<div class='callout info'><p><strong>Data source:</strong> values shown are computed at the <strong>user-input gear load</strong> on the evaluation pavement (PCR Step-1 pass, before any round-MGW iteration). The PCR rounds' converged Maximum Gross Weight (MGW) and per-round PCR are reported separately in Section K.</p></div>")
+                ' Detect whether ANY aircraft in this view has a user-input snapshot. If yes,
+                ' the table will read GearLoad / ε22 / σ22 / ε11 from the UserInput* fields.
+                Dim eUsesUserInput As Boolean = False
+                For ia As Integer = 1 To UBound(acDetailsForE)
+                    If acDetailsForE(ia) IsNot Nothing AndAlso acDetailsForE(ia).HasUserInputResponses Then
+                        eUsesUserInput = True : Exit For
+                    End If
+                Next
+                If eUsesUserInput AndAlso rpt.PCRRounds IsNot Nothing AndAlso rpt.PCRRounds.Count > 0 Then
+                    sb.AppendLine("<div class='callout info'><p><strong>Data source (PCR run):</strong> Gear Load and the &epsilon;<sub>22</sub>, &sigma;<sub>22</sub>, &epsilon;<sub>11</sub> responses below are computed at the <strong>user-input gear load</strong> (Gross Taxi Weight &times; main-gear distribution). A dedicated LEAF pass before the PCR rounds run captures these values; the PCR engine itself is not modified. The PCR rounds' converged Maximum Gross Weight (MGW) and per-round PCR appear separately in Section K.</p></div>")
+                ElseIf isEvalSource AndAlso rpt.PCRRounds IsNot Nothing AndAlso rpt.PCRRounds.Count > 0 Then
+                    sb.AppendLine("<div class='callout info'><p><strong>Data source:</strong> values shown are computed at the <strong>user-input gear load</strong> on the evaluation pavement (PCR Step-1 pass). The PCR rounds' converged Maximum Gross Weight (MGW) and per-round PCR are reported separately in Section K.</p></div>")
                 End If
 
                 For ia As Integer = 1 To UBound(acDetailsForE)
                     If acDetailsForE(ia) Is Nothing Then Continue For
                     Dim det = acDetailsForE(ia)
+                    ' Per-aircraft user-input switch: the helpers below pull from UserInput* fields
+                    ' when populated; otherwise they fall through to the standard det.* fields used
+                    ' for non-PCR runs.
+                    Dim displayedGearLoad As Single = If(det.HasUserInputResponses AndAlso det.UserInputGrossLoad > 0, det.UserInputGrossLoad, det.GrossLoad)
+                    Dim displayedE22 As Double = If(det.HasUserInputResponses AndAlso det.UserInputVerticalStrain > 0, det.UserInputVerticalStrain, det.VerticalStrain)
 
                     sb.AppendLine("<div class='aircraft-block'>")
                     sb.AppendLine("<h3>Aircraft " & ia.ToString() & ": " & WebEncode(det.ACName) & "</h3>")
@@ -465,7 +499,7 @@ Namespace Libs
                     ' Gear parameters table
                     sb.AppendLine("<table class='data-table param-table'><thead><tr><th>Parameter</th><th>Value</th><th>Description</th></tr></thead><tbody>")
                     AppendParamRow(sb, "Gear Type", det.GearType, "Landing gear configuration")
-                    AppendParamRow(sb, "Gear Load", Format(det.GrossLoad, "#,##0") & " " & weightUnit, "Maximum gear load applied to pavement")
+                    AppendParamRow(sb, "Gear Load", Format(displayedGearLoad, "#,##0") & " " & weightUnit, If(det.HasUserInputResponses, "User-input gear load (GTW &times; main-gear distribution)", "Maximum gear load applied to pavement"))
                     AppendParamRow(sb, "Tire Pressure", Format(det.TirePressure, "0.0") & " " & pressureUnit, "Inflation pressure")
                     AppendParamRow(sb, "Tire Width (TW)", Format(det.TireWidth, "0.00") & " " & lengthUnit, "Contact width at surface")
                     If det.TandemSpacing > 0 Then
@@ -476,7 +510,7 @@ Namespace Libs
                     AppendParamRow(sb, "Total Repetitions", Format(det.TotalRepetitions, "#,##0"), "Computed from ADL &times; 20-year design life")
                     AppendParamRow(sb, "# Gear Loads", det.NGearLoads.ToString(), "Main + belly gear load groups")
                     AppendParamRow(sb, "Projected TW at Subgrade", Format(det.ProjectedTireWidthAtSubgrade, "0.00") & " " & lengthUnit, "TW + 2&times;depth (45&deg; spread)")
-                    AppendParamRow(sb, "Max Vertical Strain", Format(det.VerticalStrain * 1000000, "0.00") & " &mu;&epsilon;", "LEAF-computed subgrade strain")
+                    AppendParamRow(sb, "Max Vertical Strain", Format(displayedE22 * 1000000, "0.00") & " &mu;&epsilon;", If(det.HasUserInputResponses, "&epsilon;<sub>22</sub> at user-input gear load", "LEAF-computed subgrade strain"))
                     If det.HorizontalStrain <> 0 Then
                         AppendParamRow(sb, "Horizontal Strain", Format(det.HorizontalStrain * 1000000, "0.00") & " &mu;&epsilon;", "LEAF-computed horizontal strain")
                     End If
@@ -534,7 +568,7 @@ Namespace Libs
                     sb.AppendLine("<div class='steps'>")
                     sb.AppendLine("<h4>Step-by-Step Computation</h4>")
                     sb.AppendLine("<ol>")
-                    sb.AppendLine("<li>Apply gear load of " & Format(det.GrossLoad, "#,##0") & " " & weightUnit &
+                    sb.AppendLine("<li>Apply gear load of " & Format(displayedGearLoad, "#,##0") & " " & weightUnit &
                         " with tire pressure " & Format(det.TirePressure, "0.0") & " " & pressureUnit &
                         " and tire contact width " & Format(det.TireWidth, "0.00") & " " & lengthUnit &
                         " (" & WebEncode(det.GearType) & " gear).</li>")

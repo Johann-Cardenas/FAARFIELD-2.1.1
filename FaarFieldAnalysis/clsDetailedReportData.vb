@@ -97,6 +97,18 @@ Public Class clsAircraftDetail
     Public AsphaltNtoFail As Double     ' N_fail for HMA fatigue (RDEC or AI)
     Public AsphaltStrain As Double      ' Horizontal tensile strain in HMA layer
 
+    ' Snapshot of the USER-INPUT gear load and the pavement responses LEAF produces at THAT
+    ' load on the evaluation pavement. Only populated by the pre/post-PCR capture pass for
+    ' PCR runs (HasUserInputResponses = True). For PCR, Section E and the Pavement Response
+    ' Summary read these in preference to the standard det.* fields, which reflect whatever
+    ' load the PCR engine landed on (typically the converged round-MGW). The standard fields
+    ' remain untouched so non-PCR runs and Section K (Round MGW) work exactly as before.
+    Public UserInputGrossLoad As Single
+    Public UserInputVerticalStrain As Double
+    Public UserInputSubgradeStress As Double
+    Public UserInputAsphaltStrain As Double
+    Public HasUserInputResponses As Boolean = False
+
 End Class
 
 

@@ -69,6 +69,17 @@ Public Module CDF
     ' LeafCDFFlex's capture block into det.AsphaltStrain when > 0 (preserves any value the
     ' existing asphalt-fatigue path may have set).
     Public gAcBottomStrain(MaxSectAC) As Double
+    ' CM Report instrumentation: per-aircraft snapshot of the USER-INPUT gear load and the
+    ' pavement responses computed at THAT load on the user's evaluation pavement. The PCR
+    ' engine modifies GL(IA) during MGW iteration to find the load that drives CDF→1, so the
+    ' standard det fields would reflect that converged MGW rather than what the user typed
+    ' into the traffic table. These globals are populated by a dedicated pre/post-PCR LEAF
+    ' pass that does NOT alter the PCR engine — purely a parallel capture for reporting.
+    Public gUserInputGrossLoad(MaxSectAC) As Single
+    Public gUserInputVerticalStrain(MaxSectAC) As Double
+    Public gUserInputSubgradeStress(MaxSectAC) As Double
+    Public gUserInputAsphaltStrain(MaxSectAC) As Double
+    Public gHasUserInputResponses As Boolean = False
     Public Const NOFF As Short = 41 ' Number of offsets for CDF calculations.
     Public Const OFFSETINC As Single = 10.0! ' Distance between offsets in inches.
     Dim CDFFlexVal(NOFF) As Single ' Sum over all aircraft for each offset.

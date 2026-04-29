@@ -3036,4 +3036,84 @@ EndSub:
     End Sub
 
 
+    ''' <summary>
+    ''' CM Report instrumentation: capture per-aircraft σ22 (subgrade vertical stress),
+    ''' ε22 (subgrade vertical strain), and ε11 (AC-bottom principal tensile strain) at the
+    ''' USER-INPUT gear load (gUserInputGrossLoad) on the user's evaluation pavement.
+    '''
+    ''' Caller contract: GL(IA) has already been restored to the user-input values
+    ''' (gUserInputGrossLoad(IA)), and CallAC has been refreshed via WriteFile() +
+    ''' LEDFAA_to_LEAF() so LEAF reads those loads. The structure (julThick / julModulus /
+    ''' julLCode etc.) must be the user's evaluation pavement.
+    '''
+    ''' Sets gHasUserInputResponses = True on success. The PCR engine itself is unmodified;
+    ''' this is purely a side computation for reporting.
+    ''' </summary>
+    Public Sub CaptureUserInputResponses()
+        Try
+            If NAC < 1 Then Exit Sub
+
+            Dim runLEAFUI As New LEAFClassLib.clsLEAF()
+            Dim respDim0 As Integer = If(AllResp Is Nothing, NAC + 1, AllResp.GetUpperBound(0))
+            Dim respDim1 As Integer = If(AllResp Is Nothing, 32, Math.Max(AllResp.GetUpperBound(1), 8))
+
+            ' --- σ22 + ε22 at top of subgrade (current EvalDepth assumed subgrade) ---
+            Dim tempSubg(,) As Double
+            ReDim tempSubg(respDim0, respDim1)
+            Call WriteFile()
+            Call LEDFAA_to_LEAF(DesignType)
+            Call runLEAFUI.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.AllResponses, CShort(NAC), CallAC, LEAStrActiveX, tempSubg, AllResp)
+            For ia As Integer = 1 To NAC
+                Dim li As Integer = LibIndex(ia)
+                Dim mStress As Double = 0
+                Dim mStrain As Double = 0
+                For iEv As Integer = 1 To AC(li).libNEVPTS
+                    If iEv <= AllResp.GetUpperBound(1) AndAlso ia <= AllResp.GetUpperBound(0) Then
+                        Dim sz As Double = AllResp(ia, iEv).StressZ
+                        If Math.Abs(sz) > Math.Abs(mStress) Then mStress = sz
+                        Dim ez As Double = AllResp(ia, iEv).StrainZ
+                        If Math.Abs(ez) > Math.Abs(mStrain) Then mStrain = ez
+                    End If
+                Next
+                gUserInputSubgradeStress(ia) = Math.Abs(mStress)
+                gUserInputVerticalStrain(ia) = Math.Abs(mStrain)
+            Next
+
+            ' --- ε11 at AC bottom (save / restore EvalDepth) ---
+            Dim savedEvalDepth As Double = EvalDepth(1)
+            EvalDepth(1) = -julThick(1)
+            Call WriteFile()
+            Call LEDFAA_to_LEAF(DesignType)
+            Dim tempE11(,) As Double
+            ReDim tempE11(respDim0, respDim1)
+            Call runLEAFUI.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.AllResponses, CShort(NAC), CallAC, LEAStrActiveX, tempE11, AllResp)
+            For ia As Integer = 1 To NAC
+                Dim li As Integer = LibIndex(ia)
+                Dim m As Double = 0
+                For iEv As Integer = 1 To AC(li).libNEVPTS
+                    If iEv <= AllResp.GetUpperBound(1) AndAlso ia <= AllResp.GetUpperBound(0) Then
+                        Dim sMC As Double = (AllResp(ia, iEv).StrainX + AllResp(ia, iEv).StrainY) / 2
+                        Dim sMR As Double = (AllResp(ia, iEv).StrainX - AllResp(ia, iEv).StrainY) / 2
+                        Dim tD As Double = Math.Sqrt(sMR * sMR + AllResp(ia, iEv).StrainXY * AllResp(ia, iEv).StrainXY)
+                        Dim e11 As Double
+                        If Math.Abs(sMC + tD) > Math.Abs(sMC - tD) Then e11 = sMC + tD Else e11 = sMC - tD
+                        If Math.Abs(e11) > m Then m = Math.Abs(e11)
+                    End If
+                Next
+                gUserInputAsphaltStrain(ia) = m
+            Next
+
+            ' Restore subgrade depth so caller's EvalDepth state is preserved.
+            EvalDepth(1) = savedEvalDepth
+            Call WriteFile()
+            Call LEDFAA_to_LEAF(DesignType)
+            runLEAFUI = Nothing
+
+            gHasUserInputResponses = True
+        Catch ex As Exception
+            ' Non-critical instrumentation; never block PCR.
+        End Try
+    End Sub
+
+
 End Module

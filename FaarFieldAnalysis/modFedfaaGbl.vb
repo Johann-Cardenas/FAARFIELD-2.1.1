@@ -1779,6 +1779,15 @@ skipACR:
             ReDim gLEAFstressGreater(NAC)
             ReDim gLEAFstressGreaterOverlay(NAC)
 
+            ' CM Report instrumentation: snapshot the user-input gear loads BEFORE any PCR
+            ' processing. These are what the user typed into the traffic table (GTW × MgPercent).
+            ' The PCR engine will iterate GL(IA) to find the round-MGW; we restore from this
+            ' snapshot after Step 1 to capture σ22 / ε22 / ε11 at the user-input load.
+            gHasUserInputResponses = False
+            For iUI As Integer = 1 To NAC
+                gUserInputGrossLoad(iUI) = GL(iUI)
+            Next
+
             gPCR_Life = True
             Call PCNLifeCalc()
             gPCR_Life = False
@@ -1796,6 +1805,36 @@ skipACR:
                 End If
             Catch ex As Exception
                 ' Reporting capture is non-critical
+            End Try
+
+            ' CM Report instrumentation: with PCNLifeCalc Step 1 done, the structure is set up
+            ' in LEAStrActiveX but GL(IA) may have been mutated by the engine's MGW search.
+            ' Restore GL to the user-input snapshot, run a dedicated LEAF pass to capture the
+            ' user-input pavement responses, then propagate to det.UserInput* fields on every
+            ' aircraft in BOTH detail arrays so the renderer always has them.
+            Try
+                ' Save current (post-Step-1) GL so we can put it back before rounds start.
+                Dim glAfterStep1(NAC) As Single
+                For iUI As Integer = 1 To NAC
+                    glAfterStep1(iUI) = GL(iUI)
+                    GL(iUI) = gUserInputGrossLoad(iUI)
+                Next
+
+                Call CaptureUserInputResponses()
+
+                ' Restore GL to whatever Step 1 left it at, so the round logic that follows is
+                ' identical to the unmodified PCR engine path.
+                For iUI As Integer = 1 To NAC
+                    GL(iUI) = glAfterStep1(iUI)
+                Next
+
+                ' Propagate user-input snapshot onto every det object so the renderer can read it.
+                If gHasUserInputResponses Then
+                    PropagateUserInputToDetails(gDetailedReportData.AircraftDetails)
+                    PropagateUserInputToDetails(gDetailedReportData.EvaluationAircraftDetails)
+                End If
+            Catch exUI As Exception
+                ' Non-critical instrumentation; never block PCR.
             End Try
 
             Call SaveACdata1()
@@ -8304,6 +8343,30 @@ repeat1:
     End Function
 
 
+    ''' <summary>
+    ''' CM Report helper: copy gUserInputGrossLoad / gUserInputVerticalStrain /
+    ''' gUserInputSubgradeStress / gUserInputAsphaltStrain (captured by
+    ''' CaptureUserInputResponses) onto every clsAircraftDetail in the supplied array.
+    ''' Used by the PCR initiation path to populate det.UserInput* fields BEFORE the
+    ''' PCR rounds run (which would otherwise replace AircraftDetails entries with
+    ''' fresh det objects holding round-MGW values).
+    ''' </summary>
+    Public Sub PropagateUserInputToDetails(details() As clsAircraftDetail)
+        Try
+            If details Is Nothing Then Return
+            For ia As Integer = 1 To NAC
+                If ia <= UBound(details) AndAlso details(ia) IsNot Nothing Then
+                    details(ia).UserInputGrossLoad = gUserInputGrossLoad(ia)
+                    details(ia).UserInputVerticalStrain = gUserInputVerticalStrain(ia)
+                    details(ia).UserInputSubgradeStress = gUserInputSubgradeStress(ia)
+                    details(ia).UserInputAsphaltStrain = gUserInputAsphaltStrain(ia)
+                    details(ia).HasUserInputResponses = True
+                End If
+            Next
+        Catch ex As Exception
+            ' Non-critical reporting wiring.
+        End Try
+    End Sub
 
 
 End Module
