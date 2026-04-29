@@ -282,7 +282,7 @@ Analysis Engine (FaarFieldAnalysis/)
 | Class | Purpose |
 |-------|---------|
 | `clsDetailedReportData` | Top-level container: AircraftDetails(), EvaluationAircraftDetails(), Iterations, CDFSweep, SublayerData, ACRDetails, PCRRounds |
-| `clsAircraftDetail` | Per-aircraft: strain, stress, NtoFail, CDF, C/P, gear params, CDFByOffset(NOFF), CtoPByOffset(NOFF), CDFContribByTireByOffset(NWheels,NOFF), WheelX/Y, NWheels, DualSpacing, GearSpacing. Strain/stress fields: `VerticalStrain` (ε₂₂ at top of subgrade), `SubgradeVertStress` (σ₂₂ at top of subgrade, in psi internally; rendered in kPa), `AsphaltStrain` (ε₁₁ principal tensile strain at AC bottom). |
+| `clsAircraftDetail` | Per-aircraft: strain, stress, NtoFail, CDF, C/P, gear params, CDFByOffset(NOFF), CtoPByOffset(NOFF), CDFContribByTireByOffset(NWheels,NOFF), WheelX/Y, NWheels, DualSpacing, GearSpacing. Strain/stress fields: `VerticalStrain` (ε₂₂ at top of subgrade), `SubgradeVertStress` (σ₂₂ at top of subgrade, in psi internally; rendered in kPa), `AsphaltStrain` (ε₁₁ principal tensile strain at AC bottom). **PCR-only user-input snapshot** (set via the pre-PCR LEAF pass): `UserInputGrossLoad`, `UserInputVerticalStrain`, `UserInputSubgradeStress`, `UserInputAsphaltStrain`, `HasUserInputResponses`. The renderer prefers these over the standard fields when `HasUserInputResponses = True`. |
 | `clsIterationRecord` | Per-iteration: Thickness, CDFMAX, CDFErr, DELT, Factor, SubLayered |
 | `clsCDFSweepData` | Full sweep: CDFPerAircraftPerOffset(nac,noff), CDFTotalPerOffset(noff), CtoPPerAircraftPerOffset(nac,noff) |
 | `clsSublayerData` | DesignLayers, ExpandedSublayers (List of clsLayerInfo), BaseSublayers/SubbaseSublayers (List of clsAggregateSublayer), C/D/ModUnder/SublayerCount per material, EvalDepthSubgrade |
@@ -430,6 +430,17 @@ The CM Report needs per-aircraft responses (σ₂₂ at subgrade, ε₁₁ at AC
 
 **Don't reuse output arrays.** `VertStrainReponse` and `HorizStrainResponse` are consumed by downstream code; instrumentation calls must use freshly-allocated temps so the original outputs survive.
 
+### Pre-PCR user-input response capture
+
+PCR's elimination algorithm iterates each aircraft's `GL(IA)` to its converged MGW (`modFedfaaGbl.vb:2119/2120/2241/2242` mutate `GL` in place). By the time Section E renders, the standard `det.VerticalStrain`/`SubgradeVertStress`/`AsphaltStrain` reflect the **converged MGW**, not the user-input gross load. To still report ε₂₂, σ₂₂, and ε₁₁ at the user-input load (without changing PCR engine logic), the report does a one-shot LEAF pass before the PCR loop:
+
+1. **Snapshot the user load** into `gUserInputGrossLoad(1..NAC) = GL(1..NAC)` immediately before `Call PCNLifeCalc()` in `modFedfaaGbl.vb` (around line 1782).
+2. **Save → swap → call → restore `GL`** around `CaptureUserInputResponses()` (defined at the bottom of `modStrDesignFlex.vb`). The helper runs LEAF `AllResponses` at subgrade depth (σ₂₂ via `StressZ`, ε₂₂ via `StrainZ`) and then at AC-bottom depth (ε₁₁ via Mohr's-circle from `StrainX/Y/XY`), using **separate temp `Response(,)` arrays** and **`EvalDepth` save/restore** (same rules as `CaptureFinalPavementResponses`). Results land in `gUserInputVerticalStrain`, `gUserInputSubgradeStress`, `gUserInputAsphaltStrain`, with `gHasUserInputResponses = True` on success.
+3. **Propagate** to both `gDetailedReportData.AircraftDetails` and `gDetailedReportData.EvaluationAircraftDetails` via `PropagateUserInputToDetails()`. Each `clsAircraftDetail` gets `UserInputGrossLoad`, `UserInputVerticalStrain`, `UserInputSubgradeStress`, `UserInputAsphaltStrain`, `HasUserInputResponses`.
+4. **Renderer preference:** `HtmlReportGenerator.vb` Section E + Pavement Response Summary read `UserInput*` fields when `HasUserInputResponses = True`; otherwise fall back to standard `det.*` fields. Non-PCR runs skip the snapshot entirely (`HasUserInputResponses` stays `False`), so behavior is unchanged.
+
+The `gPCR_Life = True/False` toggle around `PCNLifeCalc()` keeps the standard PCR Step-1 invocation intact — only the snapshot/restore is added around it.
+
 ### Cancel coverage
 
 `RunAnalysis.RunOrCancel` sets `gUserInterrupted = True` (line 176) **before** `tokenSource.Cancel()` (line 181), so checking either flag is token-equivalent for synchronous code. Cancellation latency is bounded by:
@@ -448,3 +459,14 @@ The legacy "CDF Graph" tree-view item (rendered by `MainWindowViewModel.DrawCDFG
 - **PCR** (`SelectedRun = 3`): `airplane.CDFGraphData(N) = CDFdata3(1, i, N)` (`RunAnalysis.vb:1496`). `CDFdata3` is the original-mix Step-1 snapshot frozen in `modFAILURE_MODEL_NP.vb:1771/3008`.
 
 The CM Report's per-aircraft "CDF vs Offset" chart aligns with this ground truth by mirroring `airplane.CDFGraphData(N)` into `det.CDFByOffset(N)` (and `EvaluationAircraftDetails(i).CDFByOffset(N)`) at the same `RunAnalysis.vb` loop. This **overrides** the per-iteration capture in `modCDF.vb:757` so the CM Report chart shows identical Y values to the legacy graph — including for PCR runs.
+
+### Closeable report tabs
+
+The 7 report panes inside `RadDocking.DocumentHost` (`MainWindow.xaml`, lines ~2050–2262: Summary, Section, CDF Graph, PCR Report, PCR Graph, Airport Master Record, CM Report) had `CanUserClose="True"` but Telerik's default × glyph was effectively invisible to the user. Pattern in place:
+
+- **`PaneCloseButton` style** in `FF2/Themes/ModernTheme.xaml` — 16×16 always-visible × glyph that flips white-on-`FaaErrorRed` on hover.
+- **Custom `<telerik:RadPane.Header>`** on each of the 7 panes: `StackPanel Orientation="Horizontal"` containing the title `TextBlock` + a `Button Style="{StaticResource PaneCloseButton}" Command="{Binding CloseReportCommand}" CommandParameter="..."`. Each pane sets `CanUserClose="False"` so Telerik doesn't double-render its own close. The two-way `IsHidden` binding is preserved — that's what hides the pane when the command sets the property to `True`.
+- **`CloseReportCommand`** in `MainWindowViewModel.vb` — `DelegateCommand(Of String)` that maps the `CommandParameter` (e.g. `"CMReport"`) to the corresponding `XxxIsHidden = True`, then calls `DeselectReportTreeNode(reportKey)`.
+- **`DeselectReportTreeNode`** walks `Jobs → JobVM.Children → SectionFolderVM → SectionVM.Children` and matches the report tree-view item by `item.GetType().Name` (string match — direct casts fail under WPF temp-project type resolution). Setting `IsSelected = False` clears the selection so the next click on the same tree node fires the `False → True` transition and reopens the pane.
+- **Idempotent `IsSelected = True`** in the 7 report tree-view ViewModels (`DetailedReportViewModel`, `CDFGraphViewModel`, `PCRReportViewModel`, `GraphPCNViewModel`, `Form5010ViewModel`, `ReportViewModel`/section, `SummaryReportViewModel`): the unhide path runs whenever `Value = True` regardless of whether `_isSelected` was already `True`. Belt-and-suspenders so that even if `DeselectReportTreeNode` mismatches a node, the tab still reopens on the next tree-view click cycle.
+- **Main "Structure" pane** at `MainWindow.xaml:311` (outside `DocumentHost`, holding the Structure/Traffic/Status sub-tabs) is **not** modified — it remains non-closeable.
