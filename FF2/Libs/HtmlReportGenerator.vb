@@ -438,13 +438,26 @@ Namespace Libs
             End If
 
             ' ===== Section E: Per-Aircraft Breakdown =====
-            If rpt.AircraftDetails IsNot Nothing Then
+            ' Prefer EvaluationAircraftDetails (Step-1 PCNLifeCalc snapshot of the original mix)
+            ' so PCR runs show every field at the USER-INPUT gear load. AircraftDetails is
+            ' overwritten by each PCR round's MGW iteration — reading from there would label
+            ' the round's converged MGW as "Gear Load", which is misleading.
+            Dim acDetailsForE() As clsAircraftDetail = rpt.AircraftDetails
+            Dim isEvalSource As Boolean = False
+            If rpt.EvaluationAircraftDetails IsNot Nothing AndAlso rpt.EvaluationAircraftDetails.Length > 1 Then
+                acDetailsForE = rpt.EvaluationAircraftDetails
+                isEvalSource = True
+            End If
+            If acDetailsForE IsNot Nothing Then
                 sb.AppendLine("<section id='section-e'>")
                 sb.AppendLine("<h2><span class='sec-num'>E</span> Per-Aircraft Detailed Breakdown</h2>")
+                If isEvalSource AndAlso rpt.PCRRounds IsNot Nothing AndAlso rpt.PCRRounds.Count > 0 Then
+                    sb.AppendLine("<div class='callout info'><p><strong>Data source:</strong> values shown are computed at the <strong>user-input gear load</strong> on the evaluation pavement (PCR Step-1 pass, before any round-MGW iteration). The PCR rounds' converged Maximum Gross Weight (MGW) and per-round PCR are reported separately in Section K.</p></div>")
+                End If
 
-                For ia As Integer = 1 To UBound(rpt.AircraftDetails)
-                    If rpt.AircraftDetails(ia) Is Nothing Then Continue For
-                    Dim det = rpt.AircraftDetails(ia)
+                For ia As Integer = 1 To UBound(acDetailsForE)
+                    If acDetailsForE(ia) Is Nothing Then Continue For
+                    Dim det = acDetailsForE(ia)
 
                     sb.AppendLine("<div class='aircraft-block'>")
                     sb.AppendLine("<h3>Aircraft " & ia.ToString() & ": " & WebEncode(det.ACName) & "</h3>")
