@@ -53,27 +53,30 @@ Namespace ViewModels
                 Return _isSelected
             End Get
             Set
-                If Value <> IsSelected Then
-                    _isSelected = Value
-                    OnPropertyChanged(NameOf(IsSelected))
-                    If Value Then
-                        Try
-                            Dim sectionview = CType(Parent, SectionViewModel)
-                            If FaarFieldViewModel.CurrentSectionView IsNot sectionview Then
-                                FaarFieldViewModel.SetCurrentSection(sectionview)
-                            End If
-                            Dim html = FaarFieldViewModel.refreshDetailedReport()
-                            If html <> FaarFieldViewModel.DetailedReportHtml Then
-                                FaarFieldViewModel.DetailedReportIsHidden = True
-                                FaarFieldViewModel.DetailedReportHtml = html
-                            End If
-                            FaarFieldViewModel.DetailedReportIsHidden = False
-                        Catch ex As Exception
-                            Debug.WriteLine("DetailedReportViewModel.IsSelected error: " & ex.Message)
-                            FaarFieldViewModel.DetailedReportIsHidden = False
-                            FaarFieldViewModel.DetailedReportHtml = FaarFieldViewModel.CreateDetailedReportErrorPage(ex.Message)
-                        End Try
-                    End If
+                ' Idempotent on True: always run the unhide/refresh path when Value=True so the
+                ' user can re-open a closed pane by re-clicking the same tree node (the pane's
+                ' close button clears IsHidden via CloseReportCommand but, without this, the
+                ' tree-view's IsSelected wouldn't transition again).
+                Dim transitioning As Boolean = (Value <> _isSelected)
+                _isSelected = Value
+                If transitioning Then OnPropertyChanged(NameOf(IsSelected))
+                If Value Then
+                    Try
+                        Dim sectionview = CType(Parent, SectionViewModel)
+                        If FaarFieldViewModel.CurrentSectionView IsNot sectionview Then
+                            FaarFieldViewModel.SetCurrentSection(sectionview)
+                        End If
+                        Dim html = FaarFieldViewModel.refreshDetailedReport()
+                        If html <> FaarFieldViewModel.DetailedReportHtml Then
+                            FaarFieldViewModel.DetailedReportIsHidden = True
+                            FaarFieldViewModel.DetailedReportHtml = html
+                        End If
+                        FaarFieldViewModel.DetailedReportIsHidden = False
+                    Catch ex As Exception
+                        Debug.WriteLine("DetailedReportViewModel.IsSelected error: " & ex.Message)
+                        FaarFieldViewModel.DetailedReportIsHidden = False
+                        FaarFieldViewModel.DetailedReportHtml = FaarFieldViewModel.CreateDetailedReportErrorPage(ex.Message)
+                    End Try
                 End If
             End Set
         End Property

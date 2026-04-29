@@ -17130,6 +17130,81 @@ FoundTandemPair:
         End Property
 
 
+        ''' <summary>
+        ''' Closes a report pane (set its IsHidden = True) and clears the matching tree-view
+        ''' node selection so re-clicking the node will reopen the tab. Bound from the per-pane
+        ''' close (×) button defined in MainWindow.xaml; the CommandParameter selects which pane.
+        ''' </summary>
+        Private _CloseReportCommand As ICommand
+        Public ReadOnly Property CloseReportCommand As ICommand
+            Get
+                If _CloseReportCommand Is Nothing Then
+                    _CloseReportCommand = New DelegateCommand(Of String)(AddressOf CloseReport)
+                End If
+                Return _CloseReportCommand
+            End Get
+        End Property
+
+        Private Sub CloseReport(reportKey As String)
+            If String.IsNullOrEmpty(reportKey) Then Return
+            Select Case reportKey
+                Case "SummaryReport" : SummaryReportIsHidden = True
+                Case "SectionReport" : SectionReportIsHidden = True
+                Case "CDFGraph" : CDFGraphIsHidden = True
+                Case "PCRReport" : PCRReportIsHidden = True
+                Case "PCRGraph" : PCRGraphIsHidden = True
+                Case "AirportMasterRecord" : AirportMasterRecordIsHidden = True
+                Case "CMReport" : DetailedReportIsHidden = True
+            End Select
+            DeselectReportTreeNode(reportKey)
+        End Sub
+
+        ''' <summary>
+        ''' Walk the Job tree to find the report tree-view item matching reportKey and clear its
+        ''' IsSelected flag, so the next user click re-fires the False→True transition that
+        ''' refreshes content and unhides the pane. Robust against missing/orphaned nodes.
+        ''' </summary>
+        Private Sub DeselectReportTreeNode(reportKey As String)
+            Try
+                If Jobs Is Nothing Then Return
+                For Each jobItem As Object In Jobs
+                    Dim jobVM = TryCast(jobItem, ITreeViewItemViewModel)
+                    If jobVM Is Nothing OrElse jobVM.Children Is Nothing Then Continue For
+                    For Each child As ITreeViewItemViewModel In jobVM.Children
+                        If child Is Nothing Then Continue For
+                        ' Job-level report — match by type-name string to avoid hard refs to types
+                        ' that may not resolve cleanly inside the WPF markup-compile temp project.
+                        If reportKey = "SummaryReport" AndAlso String.Equals(child.GetType().Name, "SummaryReportViewModel", StringComparison.Ordinal) Then
+                            If child.IsSelected Then child.IsSelected = False
+                            Continue For
+                        End If
+                        ' Section-level reports live deeper: Job → SectionFolder → Section → ReportItem.
+                        If child.Children Is Nothing Then Continue For
+                        For Each section As ITreeViewItemViewModel In child.Children
+                            If section Is Nothing OrElse section.Children Is Nothing Then Continue For
+                            For Each item As ITreeViewItemViewModel In section.Children
+                                If item Is Nothing Then Continue For
+                                Dim typeName As String = item.GetType().Name
+                                Dim matches As Boolean = False
+                                Select Case reportKey
+                                    Case "CMReport" : matches = (typeName = "DetailedReportViewModel")
+                                    Case "CDFGraph" : matches = (typeName = "CDFGraphViewModel")
+                                    Case "PCRReport" : matches = (typeName = "PCRReportViewModel")
+                                    Case "PCRGraph" : matches = (typeName = "GraphPCN")
+                                    Case "AirportMasterRecord" : matches = (typeName = "Form5010")
+                                    Case "SectionReport" : matches = (typeName = "ReportViewModel")
+                                End Select
+                                If matches AndAlso item.IsSelected Then item.IsSelected = False
+                            Next
+                        Next
+                    Next
+                Next
+            Catch ex As Exception
+                ' Non-critical UX wiring; never block the pane-close action.
+            End Try
+        End Sub
+
+
         Public Property DeleteTrafficEnabled As Boolean
             Get
                 Return _DeleteTrafficEnabled

@@ -2060,11 +2060,19 @@
                             </ScrollViewer>
                         </telerik:RadPane>
 
-                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Summary Report"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}"
                                         IsHidden="{Binding SummaryReportIsHidden,  Mode=TwoWay}"
-                                        CanUserClose="True"
+                                        CanUserClose="False"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="SummaryReport">
+                            <telerik:RadPane.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Summary Report" VerticalAlignment="Center"/>
+                                    <Button Style="{StaticResource PaneCloseButton}"
+                                            Command="{Binding CloseReportCommand}"
+                                            CommandParameter="SummaryReport"/>
+                                </StackPanel>
+                            </telerik:RadPane.Header>
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="40" />
@@ -2084,11 +2092,19 @@
                             </Grid>
                         </telerik:RadPane>
 
-                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Structure Report"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}"
                                         IsHidden="{Binding SectionReportIsHidden,  Mode=TwoWay}"
-                                        CanUserClose="True"
+                                        CanUserClose="False"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="SectionReport">
+                            <telerik:RadPane.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Structure Report" VerticalAlignment="Center"/>
+                                    <Button Style="{StaticResource PaneCloseButton}"
+                                            Command="{Binding CloseReportCommand}"
+                                            CommandParameter="SectionReport"/>
+                                </StackPanel>
+                            </telerik:RadPane.Header>
 
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -2109,11 +2125,19 @@
                             </Grid>
                         </telerik:RadPane>
 
-                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="CDF Graph"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}"
                                         IsHidden="{Binding CDFGraphIsHidden,  Mode=TwoWay}"
-                                        CanUserClose="True"
+                                        CanUserClose="False"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="CDFGraph">
+                            <telerik:RadPane.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="CDF Graph" VerticalAlignment="Center"/>
+                                    <Button Style="{StaticResource PaneCloseButton}"
+                                            Command="{Binding CloseReportCommand}"
+                                            CommandParameter="CDFGraph"/>
+                                </StackPanel>
+                            </telerik:RadPane.Header>
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="40" />
@@ -2135,11 +2159,19 @@
 
                         </telerik:RadPane>
 
-                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="PCR Report"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}"
                                         IsHidden="{Binding PCRReportIsHidden,  Mode=TwoWay}"
-                                        CanUserClose="True"
+                                        CanUserClose="False"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="PCRReport">
+                            <telerik:RadPane.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="PCR Report" VerticalAlignment="Center"/>
+                                    <Button Style="{StaticResource PaneCloseButton}"
+                                            Command="{Binding CloseReportCommand}"
+                                            CommandParameter="PCRReport"/>
+                                </StackPanel>
+                            </telerik:RadPane.Header>
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="40" />
@@ -2160,12 +2192,19 @@
                             </Grid>
                         </telerik:RadPane>
 
-                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="PCR Graph"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}"
                                         IsHidden="{Binding PCRGraphIsHidden,  Mode=TwoWay}"
-                                        CanUserClose="True"
+                                        CanUserClose="False"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="PCRGraph">
-
+                            <telerik:RadPane.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="PCR Graph" VerticalAlignment="Center"/>
+                                    <Button Style="{StaticResource PaneCloseButton}"
+                                            Command="{Binding CloseReportCommand}"
+                                            CommandParameter="PCRGraph"/>
+                                </StackPanel>
+                            </telerik:RadPane.Header>
 
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -2187,11 +2226,19 @@
                             </Grid>
                         </telerik:RadPane>
 
-                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}" Header="Airport Master Record"
+                        <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}"
                                         IsHidden="{Binding AirportMasterRecordIsHidden,  Mode=TwoWay}"
-                                        CanUserClose="True"
+                                        CanUserClose="False"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="AirportMasterRecord">
+                            <telerik:RadPane.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Airport Master Record" VerticalAlignment="Center"/>
+                                    <Button Style="{StaticResource PaneCloseButton}"
+                                            Command="{Binding CloseReportCommand}"
+                                            CommandParameter="AirportMasterRecord"/>
+                                </StackPanel>
+                            </telerik:RadPane.Header>
 
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -2216,7 +2263,7 @@
 
                         <telerik:RadPane Style="{StaticResource AnimatedPaneStyle}"
                                         IsHidden="{Binding DetailedReportIsHidden,  Mode=TwoWay}"
-                                        CanUserClose="True"
+                                        CanUserClose="False"
                                         DataContext="{StaticResource MainWindowViewModel}"
                                         telerik:RadDocking.SerializationTag="DetailedReport">
                             <telerik:RadPane.Header>
@@ -2225,6 +2272,9 @@
                                     <TextBlock Text="CM Report" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                     <TextBlock Text=" &#x24D8;" FontSize="12" Foreground="{StaticResource FaaPrimary}"
                                                VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                    <Button Style="{StaticResource PaneCloseButton}"
+                                            Command="{Binding CloseReportCommand}"
+                                            CommandParameter="CMReport"/>
                                 </StackPanel>
                             </telerik:RadPane.Header>
 

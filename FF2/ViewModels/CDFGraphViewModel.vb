@@ -64,21 +64,23 @@ Namespace ViewModels
                 Return _isSelected
             End Get
             Set
-                If Value <> IsSelected Then
-                    _isSelected = Value
-                    OnPropertyChanged(NameOf(IsSelected))
-                    If Value Then
-                        Dim sectionview = CType(Parent, SectionViewModel)
-                        If FaarFieldViewModel.CurrentSectionView IsNot sectionview Then
-                            FaarFieldViewModel.SetCurrentSection(sectionview)
-                        End If
-                        Dim html = FaarFieldViewModel.refreshcdfgraph()
-                        If html <> FaarFieldViewModel.CDFGraphHtml Then
-                            FaarFieldViewModel.CDFGraphIsHidden = True
-                            FaarFieldViewModel.CDFGraphHtml = html
-                        End If
-                        FaarFieldViewModel.CDFGraphIsHidden = False
+                ' Idempotent on True so re-clicking the tree node after the user closed the
+                ' pane via its × button reopens the tab. The False→True transition still fires
+                ' OnPropertyChanged for the tree-view binding.
+                Dim transitioning As Boolean = (Value <> _isSelected)
+                _isSelected = Value
+                If transitioning Then OnPropertyChanged(NameOf(IsSelected))
+                If Value Then
+                    Dim sectionview = CType(Parent, SectionViewModel)
+                    If FaarFieldViewModel.CurrentSectionView IsNot sectionview Then
+                        FaarFieldViewModel.SetCurrentSection(sectionview)
                     End If
+                    Dim html = FaarFieldViewModel.refreshcdfgraph()
+                    If html <> FaarFieldViewModel.CDFGraphHtml Then
+                        FaarFieldViewModel.CDFGraphIsHidden = True
+                        FaarFieldViewModel.CDFGraphHtml = html
+                    End If
+                    FaarFieldViewModel.CDFGraphIsHidden = False
                 End If
             End Set
         End Property

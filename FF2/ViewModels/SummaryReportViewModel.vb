@@ -58,22 +58,21 @@ Namespace ViewModels
                 Return _isSelected
             End Get
             Set
-                If Value <> IsSelected Then
-                    _isSelected = Value
-                    OnPropertyChanged(NameOf(IsSelected))
-
-                    If Value Then
-                        Dim jobview = CType(Parent, JobViewModel)
-                        If ViewModel.CurrentJobView IsNot jobview Then
-                            ViewModel.SetCurrentJob(jobview)
-                        End If
-                        Dim html = ViewModel.RefreshHtml()
-                        If html <> ViewModel.SummaryReportHtml Then
-                            ViewModel.SummaryReportIsHidden = True
-                            ViewModel.SummaryReportHtml = html
-                        End If
-                        ViewModel.SummaryReportIsHidden = False
+                ' Idempotent on True so re-clicking reopens a closed pane.
+                Dim transitioning As Boolean = (Value <> _isSelected)
+                _isSelected = Value
+                If transitioning Then OnPropertyChanged(NameOf(IsSelected))
+                If Value Then
+                    Dim jobview = CType(Parent, JobViewModel)
+                    If ViewModel.CurrentJobView IsNot jobview Then
+                        ViewModel.SetCurrentJob(jobview)
                     End If
+                    Dim html = ViewModel.RefreshHtml()
+                    If html <> ViewModel.SummaryReportHtml Then
+                        ViewModel.SummaryReportIsHidden = True
+                        ViewModel.SummaryReportHtml = html
+                    End If
+                    ViewModel.SummaryReportIsHidden = False
                 End If
             End Set
         End Property

@@ -82,21 +82,21 @@ Namespace ViewModels
                 Return _isSelected
             End Get
             Set
-                If Value <> IsSelected Then
-                    _isSelected = Value
-                    OnPropertyChanged(NameOf(IsSelected))
-                    If Value Then
-                        Dim sectionview = CType(Parent, SectionViewModel)
-                        If FaarFieldViewModel.CurrentSectionView IsNot sectionview Then
-                            FaarFieldViewModel.SetCurrentSection(sectionview)
-                        End If
-                        Dim html = FaarFieldViewModel.RefreshPCRGraph()
-                        If html <> FaarFieldViewModel.PCRGraphHtml Then
-                            FaarFieldViewModel.PCRGraphIsHidden = True
-                            FaarFieldViewModel.PCRGraphHtml = html
-                        End If
-                        FaarFieldViewModel.PCRGraphIsHidden = False
+                ' Idempotent on True so re-clicking reopens a closed pane.
+                Dim transitioning As Boolean = (Value <> _isSelected)
+                _isSelected = Value
+                If transitioning Then OnPropertyChanged(NameOf(IsSelected))
+                If Value Then
+                    Dim sectionview = CType(Parent, SectionViewModel)
+                    If FaarFieldViewModel.CurrentSectionView IsNot sectionview Then
+                        FaarFieldViewModel.SetCurrentSection(sectionview)
                     End If
+                    Dim html = FaarFieldViewModel.RefreshPCRGraph()
+                    If html <> FaarFieldViewModel.PCRGraphHtml Then
+                        FaarFieldViewModel.PCRGraphIsHidden = True
+                        FaarFieldViewModel.PCRGraphHtml = html
+                    End If
+                    FaarFieldViewModel.PCRGraphIsHidden = False
                 End If
             End Set
         End Property
