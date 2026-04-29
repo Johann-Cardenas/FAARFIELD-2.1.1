@@ -20,6 +20,13 @@ Public Class clsDetailedReportData
     Public PCRRounds As New List(Of clsPCRRound)
     Public IsPopulated As Boolean = False
 
+    ' When True, Clear() preserves EvaluationAircraftDetails. The PCR flow sets this
+    ' after taking the Step-1 snapshot (and propagating the user-input ε22 / σ22 / ε11
+    ' onto those det objects) so that the inner PCNLifeCalc → LeafDesignFlex → Clear()
+    ' calls during NewAdjustAnnDepart2017 / NewAdjustGrossWeight2 don't blow the
+    ' snapshot away. Reset by btnPCR_Click on exit.
+    Public PreserveEvaluationSnapshot As Boolean = False
+
     ' Asphalt CDF data (section-level)
     Public AsphaltCDFTotal As Single            ' CDFAsp — total asphalt CDF for the section
     Public AsphaltCDFComputed As Boolean = False ' Whether asphalt CDF was actually computed
@@ -35,7 +42,12 @@ Public Class clsDetailedReportData
 
     Public Sub Clear()
         AircraftDetails = Nothing
-        EvaluationAircraftDetails = Nothing
+        ' Keep the Step-1 snapshot alive across PCR's inner PCNLifeCalc calls. Without
+        ' this, NewAdjustGrossWeight2's GL-iteration would null the user-input responses
+        ' (ε22/σ22/ε11 captured at the user-input gear load) on every Clear().
+        If Not PreserveEvaluationSnapshot Then
+            EvaluationAircraftDetails = Nothing
+        End If
         Iterations.Clear()
         CDFSweep = New clsCDFSweepData
         SublayerData = New clsSublayerData

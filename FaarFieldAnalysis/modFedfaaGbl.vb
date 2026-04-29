@@ -1833,6 +1833,13 @@ skipACR:
                     PropagateUserInputToDetails(gDetailedReportData.AircraftDetails)
                     PropagateUserInputToDetails(gDetailedReportData.EvaluationAircraftDetails)
                 End If
+
+                ' From here through finish1, every inner PCNLifeCalc (NewAdjustAnnDepart2017 /
+                ' NewAdjustGrossWeight2) calls LeafDesignFlex → gDetailedReportData.Clear().
+                ' Without this lock, that Clear() nulls EvaluationAircraftDetails and the
+                ' user-input ε22 / σ22 / ε11 we just captured are lost. The lock is released
+                ' below at finish1 (and in the Catch block).
+                gDetailedReportData.PreserveEvaluationSnapshot = True
             Catch exUI As Exception
                 ' Non-critical instrumentation; never block PCR.
             End Try
@@ -2025,6 +2032,10 @@ CDFPicMin_Case:
 finish1:
             'Call PrintResultsPCN05Summary(TFN)
 
+            ' Release the EvaluationAircraftDetails lock before any subsequent (non-PCR)
+            ' analysis run. The Step-1 snapshot itself stays in place for the renderer.
+            gDetailedReportData.PreserveEvaluationSnapshot = False
+
             ' btnPCR.Text = "PCR"
             Call Restore_Aircraft_data() '********************
             TimeSave2 = timeGetTime
@@ -2042,6 +2053,13 @@ finish1:
 
             'Call RestoreACdata1()
         Catch ex As Exception
+            ' Always release the snapshot lock so a cancelled/errored PCR run does not
+            ' leak the preservation flag into a subsequent non-PCR analysis.
+            Try
+                gDetailedReportData.PreserveEvaluationSnapshot = False
+            Catch
+            End Try
+
             If TypeOf ex Is TaskCanceledException Then
                 Debug.WriteLine("Task Cancelled: {0}",
                                  CType(ex, TaskCanceledException).Message)
