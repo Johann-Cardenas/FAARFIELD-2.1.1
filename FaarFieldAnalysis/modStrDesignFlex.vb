@@ -39,6 +39,16 @@ Public Module modStrDesign
     Public CDFacrftMaxtableTemp3(MaxSectAC) As Double
     Public CDFChecker As Boolean = False
 
+    ' One-shot diagnostic dump for the σ22 capture pipeline. When True, every call to
+    ' CaptureUserInputResponses / CaptureFinalPavementResponses appends a per-(aircraft,
+    ' eval-point) record of the LEAF AllResponses output (StrainZ, StressX, StressY,
+    ' StressZ, StrainX, StrainY, StrainXY) plus the structure / eval-layer modulus and
+    ' Poisson, plus a manual reconstruction of StressZ from the constitutive law, to:
+    '   <MyDocuments>\My FAARFIELD\CMReport_S22_Diagnostic.txt
+    ' The file is appended (never truncated) so successive runs can be compared. Flip to
+    ' False to disable. No production user ever sees this file unless they look for it.
+    Public gS22DiagnosticEnabled As Boolean = True
+
     Public NDenLevel As Short = 4
     Public jobCompactionIntDenNCtable(MaxSects, MaxJobs, NDenLevel) As Double
     Public jobCompactionIntDenCtable(MaxSects, MaxJobs, NDenLevel) As Double ' to display Compaction Criteria for Non-Cohesive soil in Notes, YGC 042312
@@ -2976,6 +2986,7 @@ EndSub:
             Call WriteFile()
             Call LEDFAA_to_LEAF(DesignType)
             Call runLEAFFinal.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.AllResponses, CShort(NAC), CallAC, LEAStrActiveX, tempStress, AllResp)
+            Call WriteS22Diagnostic("CaptureFinalPavementResponses — σ22 pass at top of subgrade (current EvalDepth)")
             For ia As Integer = 1 To NAC
                 Dim li As Integer = LibIndex(ia)
                 Dim m As Double = 0
@@ -3057,12 +3068,41 @@ EndSub:
             Dim respDim0 As Integer = If(AllResp Is Nothing, NAC + 1, AllResp.GetUpperBound(0))
             Dim respDim1 As Integer = If(AllResp Is Nothing, 32, Math.Max(AllResp.GetUpperBound(1), 8))
 
-            ' --- σ22 + ε22 at top of subgrade (current EvalDepth assumed subgrade) ---
+            ' Save the caller's EvalDepth(1) at entry; restore at the very end.
+            ' Empirically (CMReport_S22_Diagnostic.txt, 2026-04-30 run): when this helper is
+            ' called from modFedfaaGbl.vb:1823 right after PCR Step-1's PCNLifeCalc, PCNLifeCalc
+            ' leaves EvalDepth(1) at the AC bottom (= -julThick(1), e.g. -4.00) with EvalLayer=1.
+            ' Evaluating the σ22 pass at that state produced σ22 ≈ 60-65% of tire pressure
+            ' (e.g. 858 kPa for NAPTV-2D at 200 psi tires) — physically wrong for "top of
+            ' subgrade." The fix is a self-contained subgrade-top depth set, derived from
+            ' LEAStrActiveX.Thick (the post-sublayer-expansion structure, NOT the unsublayered
+            ' julThick — empirically NPLayers=4 but LEAStrActiveX.NLayers=6, and the engine's
+            ' canonical positive-convention subgrade depth is sum(LEAStrActiveX.Thick(1..N-1))
+            ' × 1.0001, matching modCDF.vb:1551-1553. CaptureFinalPavementResponses observes
+            ' EvalDepth(1)=30.0030 and EvalLayer=6 at every call and is left untouched.
+            Dim savedEvalDepthEntry As Double = EvalDepth(1)
+
+            Dim subgradeTopDepth As Double = 0
+            Try
+                For iL As Integer = 1 To LEAStrActiveX.NLayers - 1
+                    subgradeTopDepth = subgradeTopDepth + LEAStrActiveX.Thick(iL)
+                Next
+                subgradeTopDepth = subgradeTopDepth * 1.0001
+            Catch
+                ' If LEAStrActiveX is not in a usable state, skip the fix and fall through —
+                ' the helper still runs (with whatever depth the caller left) and the diagnostic
+                ' dump will record the issue.
+                subgradeTopDepth = 0
+            End Try
+            If subgradeTopDepth > 0 Then EvalDepth(1) = subgradeTopDepth
+
+            ' --- σ22 + ε22 at top of subgrade ---
             Dim tempSubg(,) As Double
             ReDim tempSubg(respDim0, respDim1)
             Call WriteFile()
             Call LEDFAA_to_LEAF(DesignType)
             Call runLEAFUI.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.AllResponses, CShort(NAC), CallAC, LEAStrActiveX, tempSubg, AllResp)
+            Call WriteS22Diagnostic("CaptureUserInputResponses — σ22 + ε22 pass at top of subgrade (user-input GL)")
             For ia As Integer = 1 To NAC
                 Dim li As Integer = LibIndex(ia)
                 Dim mStress As Double = 0
@@ -3079,14 +3119,14 @@ EndSub:
                 gUserInputVerticalStrain(ia) = Math.Abs(mStrain)
             Next
 
-            ' --- ε11 at AC bottom (save / restore EvalDepth) ---
-            Dim savedEvalDepth As Double = EvalDepth(1)
+            ' --- ε11 at AC bottom ---
             EvalDepth(1) = -julThick(1)
             Call WriteFile()
             Call LEDFAA_to_LEAF(DesignType)
             Dim tempE11(,) As Double
             ReDim tempE11(respDim0, respDim1)
             Call runLEAFUI.ComputeResponse(LEAFClassLib.clsLEAF.LEAFoptions.AllResponses, CShort(NAC), CallAC, LEAStrActiveX, tempE11, AllResp)
+            Call WriteS22Diagnostic("CaptureUserInputResponses — ε11 pass at AC bottom (user-input GL)")
             For ia As Integer = 1 To NAC
                 Dim li As Integer = LibIndex(ia)
                 Dim m As Double = 0
@@ -3103,8 +3143,10 @@ EndSub:
                 gUserInputAsphaltStrain(ia) = m
             Next
 
-            ' Restore subgrade depth so caller's EvalDepth state is preserved.
-            EvalDepth(1) = savedEvalDepth
+            ' Restore caller's EvalDepth(1) (saved at entry, before our subgrade-top set)
+            ' so any downstream code sees the depth state it had on entry — independent of
+            ' the depths we used internally for the σ22 and ε11 passes.
+            EvalDepth(1) = savedEvalDepthEntry
             Call WriteFile()
             Call LEDFAA_to_LEAF(DesignType)
             runLEAFUI = Nothing
@@ -3115,5 +3157,134 @@ EndSub:
         End Try
     End Sub
 
+
+    ' One-shot diagnostic dump for the σ22 capture pipeline. Writes the LEAF AllResponses
+    ' state for every (aircraft, eval-point) plus the structure and eval-layer constants
+    ' to {MyDocuments}\My FAARFIELD\CMReport_S22_Diagnostic.txt. Used to diagnose the
+    ' multi-tire σ22 inflation observed for NAPTV-2D / NAPTV-3D — pre-fix, ε22 was correct
+    ' but σ22 was 12× high, pinning the bug to (StressX + StressY) in the constitutive
+    ' law StressZ = StrainZ × E + (StressX + StressY) × ν (clsLEAF.vb:3437).
+    '
+    ' This dump prints StressZ alongside a manual reconstruction (StressZ_calc) using
+    ' the dumped strains/stresses and the eval-layer E/ν. If StressZ != StressZ_calc, the
+    ' bug is in clsLEAF's StressZ assignment. If they match but the magnitudes are
+    ' unphysical, the bug is in StressX / StressY from IntegrateHorizontalStress.
+    Private Sub WriteS22Diagnostic(label As String)
+        Try
+            If Not gS22DiagnosticEnabled Then Exit Sub
+            If AllResp Is Nothing Then Exit Sub
+            If NAC < 1 Then Exit Sub
+
+            Dim dir As String = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "My FAARFIELD")
+            If Not System.IO.Directory.Exists(dir) Then
+                System.IO.Directory.CreateDirectory(dir)
+            End If
+            Dim outPath As String = System.IO.Path.Combine(dir, "CMReport_S22_Diagnostic.txt")
+
+            Dim sb As New System.Text.StringBuilder()
+            sb.AppendLine("============================================================================")
+            sb.AppendLine("[" & DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") & "] " & label)
+            sb.AppendLine("============================================================================")
+
+            sb.AppendLine(String.Format("EvalDepth(1) = {0:F4}    EvalDepth(2) = {1:F4}", EvalDepth(1), EvalDepth(2)))
+            Try
+                sb.AppendLine(String.Format("LEAStrActiveX.EvalLayer = {0}    LEAStrActiveX.NLayers = {1}    NPLayers (module) = {2}",
+                    LEAStrActiveX.EvalLayer, LEAStrActiveX.NLayers, NPLayers))
+            Catch
+                sb.AppendLine("(could not read LEAStrActiveX.EvalLayer / NLayers)")
+            End Try
+
+            sb.AppendLine()
+            sb.AppendLine("Structure (LEAStrActiveX):")
+            sb.AppendLine("  Layer  Thick(in)  Modulus(psi)   Poisson")
+            Try
+                For I As Integer = 1 To LEAStrActiveX.NLayers
+                    sb.AppendLine(String.Format("  {0,5}  {1,9:F2}  {2,12:F1}    {3,5:F3}",
+                        I, LEAStrActiveX.Thick(I), LEAStrActiveX.Modulus(I), LEAStrActiveX.Poisson(I)))
+                Next
+            Catch
+                sb.AppendLine("(could not read LEAStrActiveX layer arrays)")
+            End Try
+
+            sb.AppendLine()
+            sb.AppendLine("Module-level structure (julThick / julModulus / julLCode):")
+            sb.AppendLine("  Layer  julThick   julModulus  julLCode")
+            Try
+                For I As Integer = 1 To NPLayers
+                    sb.AppendLine(String.Format("  {0,5}  {1,9:F2}  {2,12:F1}  {3,8}",
+                        I, julThick(I), julModulus(I), julLCode(I)))
+                Next
+            Catch
+                sb.AppendLine("(could not read jul* arrays)")
+            End Try
+
+            ' Eval layer modulus / Poisson (used for the StressZ reconstruction below).
+            Dim eL As Integer = 0
+            Dim eYoungs As Double = 0
+            Dim ePoisson As Double = 0
+            Try
+                eL = LEAStrActiveX.EvalLayer
+                If eL >= 1 AndAlso eL <= LEAStrActiveX.NLayers Then
+                    eYoungs = LEAStrActiveX.Modulus(eL)
+                    ePoisson = LEAStrActiveX.Poisson(eL)
+                End If
+            Catch
+            End Try
+            sb.AppendLine()
+            sb.AppendLine(String.Format("Eval layer for StressZ reconstruction: L{0}   E_eval = {1:F1} psi   ν_eval = {2:F3}",
+                eL, eYoungs, ePoisson))
+
+            For ia As Integer = 1 To NAC
+                If ia > AllResp.GetUpperBound(0) Then Exit For
+                sb.AppendLine()
+                sb.AppendLine("----------------------------------------------------------------------------")
+                Try
+                    Dim acRef = CallAC(ia)
+                    sb.AppendLine(String.Format("Aircraft {0}: {1}", ia, acRef.ACname))
+                    sb.AppendLine(String.Format("  GearLoad = {0:F1} lb   NTires = {1}   NEvalPoints = {2}",
+                        acRef.GearLoad, acRef.NTires, acRef.NEvalPoints))
+                    sb.AppendLine("  Tires:")
+                    sb.AppendLine("    Tire    TireX    TireY  TirePress    WheelLoad  ContactRadius")
+                    Dim wheelLd As Double = If(acRef.NTires > 0, acRef.GearLoad / acRef.NTires, 0)
+                    For it As Integer = 1 To acRef.NTires
+                        Dim a As Double = 0
+                        If acRef.TirePress(it) > 0 Then a = Math.Sqrt(wheelLd / (Math.PI * acRef.TirePress(it)))
+                        sb.AppendLine(String.Format("    {0,4}  {1,7:F2}  {2,7:F2}  {3,9:F1}  {4,11:F1}  {5,13:F2}",
+                            it, acRef.TireX(it), acRef.TireY(it), acRef.TirePress(it), wheelLd, a))
+                    Next
+
+                    sb.AppendLine("  Eval points and AllResp() values:")
+                    sb.AppendLine("    IEv  EvalX   EvalY        StrainZ        StressX        StressY        StressZ   StressZ_calc        StrainX        StrainY       StrainXY")
+                    Dim mStress As Double = 0
+                    Dim mStrain As Double = 0
+                    For iEv As Integer = 1 To acRef.NEvalPoints
+                        If iEv > AllResp.GetUpperBound(1) Then Exit For
+                        Dim r = AllResp(ia, iEv)
+                        Dim szCalc As Double = r.StrainZ * eYoungs + (r.StressX + r.StressY) * ePoisson
+                        sb.AppendLine(String.Format(
+                            "    {0,3}  {1,6:F2}  {2,6:F2}  {3,13:E5}  {4,13:E5}  {5,13:E5}  {6,13:E5}  {7,13:E5}  {8,13:E5}  {9,13:E5}  {10,13:E5}",
+                            iEv, acRef.EvalX(iEv), acRef.EvalY(iEv),
+                            r.StrainZ, r.StressX, r.StressY, r.StressZ, szCalc,
+                            r.StrainX, r.StrainY, r.StrainXY))
+                        If Math.Abs(r.StressZ) > Math.Abs(mStress) Then mStress = r.StressZ
+                        If Math.Abs(r.StrainZ) > Math.Abs(mStrain) Then mStrain = r.StrainZ
+                    Next
+                    sb.AppendLine(String.Format("  σ22 (max |StressZ|) = {0:F4} psi = {1:F2} kPa",
+                        Math.Abs(mStress), Math.Abs(mStress) * 6.89475729))
+                    sb.AppendLine(String.Format("  ε22 (max |StrainZ|) = {0:E5} ({1:F2} με)",
+                        Math.Abs(mStrain), Math.Abs(mStrain) * 1000000))
+                Catch exAC As Exception
+                    sb.AppendLine("(error dumping aircraft " & ia & ": " & exAC.Message & ")")
+                End Try
+            Next
+
+            sb.AppendLine()
+            System.IO.File.AppendAllText(outPath, sb.ToString())
+        Catch
+            ' Diagnostic must never block the analysis.
+        End Try
+    End Sub
 
 End Module
