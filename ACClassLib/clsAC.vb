@@ -251,18 +251,30 @@ Public Class clsAC
                     '    AC(IA).libMGpcntPCN = Convert.ToSingle(airplane.MgPercentPCN)
                     'End If
 
-                    If airplane.NumberWheels = 3 Then
-                        ReDim AC(IA).libTX(AC(IA).libNTires * 2)
-                        ReDim AC(IA).libTY(AC(IA).libNTires * 2)
-                        AC(IA).libNTires = Convert.ToInt16(airplane.NumberWheels * 2)
-                        AC(IA).libMGpcnt = Convert.ToSingle(airplane.MgPercent * 2)
-
-
-                        For j As Integer = 0 To airplane.NumberWheels * 2 - 1
-                            AC(IA).libTX(j + 1) = Convert.ToSingle(airplane.WheelCoordinates(j).X.UsCustomary)
-                            AC(IA).libTY(j + 1) = Convert.ToSingle(airplane.WheelCoordinates(j).Y.UsCustomary)
-                        Next
-                    End If
+                    ' Removed (2026-04-30): special case for NumberWheels = 3 UDA aircraft that
+                    ' overrode libNTires = NumberWheels × 2 (= 6) and libMGpcnt = MgPercent × 2,
+                    ' loading both mirrored struts as a single 6-wheel gear. This was inconsistent
+                    ' with the convention used for NumberWheels = 1 and 2 UDA aircraft (NAPTV-D
+                    ' and NAPTV-2D), which use libNTires = NumberWheels and analyze a single main
+                    ' strut. Diagnostic on 2026-04-30 showed the special case was halving the
+                    ' per-tire load for NAPTV-3D in PCR (15.3 kips/wheel instead of 30.6 kips),
+                    ' producing σ22 = 37 kPa at top of subgrade vs the equal-ACR-band-expected
+                    ' ~60 kPa observed for NAPTV-D and NAPTV-2D. Removing this block restores
+                    ' single-strut analysis (libNTires = NumberWheels, first NumberWheels
+                    ' WheelCoordinates) — consistent across 1, 2, and 3 wheel-per-strut UDA
+                    ' aircraft. The remaining mirrored-strut WheelCoordinates entries are still
+                    ' loaded into libTX / libTY (line 219-222) but only the first libNTires of
+                    ' them are used by downstream code.
+                    'If airplane.NumberWheels = 3 Then
+                    '    ReDim AC(IA).libTX(AC(IA).libNTires * 2)
+                    '    ReDim AC(IA).libTY(AC(IA).libNTires * 2)
+                    '    AC(IA).libNTires = Convert.ToInt16(airplane.NumberWheels * 2)
+                    '    AC(IA).libMGpcnt = Convert.ToSingle(airplane.MgPercent * 2)
+                    '    For j As Integer = 0 To airplane.NumberWheels * 2 - 1
+                    '        AC(IA).libTX(j + 1) = Convert.ToSingle(airplane.WheelCoordinates(j).X.UsCustomary)
+                    '        AC(IA).libTY(j + 1) = Convert.ToSingle(airplane.WheelCoordinates(j).Y.UsCustomary)
+                    '    Next
+                    'End If
                 End If
             Else
                 Dim check As Integer = 0
